@@ -134,7 +134,7 @@ def degree_requirements(url):
 	# -------     -------------------                   ------
 	# CS BS       "Total: 120 credits"                  (0..2)
 	# Bio BA      "Degree Total: Minimum 120 credits"   (0..5)
-	# Psych BA    "Degree Total: Minimum 120 credits" 
+	# Psych BA    "Degree Total: Minimum 120 credits"   (?..?)
 	
 	# NOTE: section headings for "Mason Core" and "BA Requirements" may vary
 	
