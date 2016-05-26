@@ -136,6 +136,7 @@ def degree_requirements(url):
 	# Bio BA      "Degree Total: Minimum 120 credits"   (0..5)
 	# Psych BA    "Degree Total: Minimum 120 credits" 
 	
+	# NOTE: section headings for "Mason Core" and "BA Requirements" may vary
 	
 	
 	
@@ -153,25 +154,10 @@ def degree_requirements(url):
 	
 	
 	
-	x = list(requirements.children)[a]
-	
-	text = x.get_text()
-	print text
-	
-	x = list(requirements.children)[b]
-	
-	
-	text = x.get_text()
-	print text
-
-	
-	
 	
 	# ruby: arry[0..3]  # inclusive of both ends
-	# python: arry[0:4] # exclusive of the top end
+	# python: arry[0:4] # inclusive of bottom end, exclusive of top end
 	x = list(requirements.children)[(a+1):b]
-	# ok, this is the level where the stuff is
-	print type(x)
 	
 	write_html_to_file("fragment.html", x)
 	
