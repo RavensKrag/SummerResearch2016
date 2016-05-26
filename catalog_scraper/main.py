@@ -12,10 +12,27 @@ def write_html_to_file(filepath, data):
 	# BeautifulSoup basically chucks the original HTML out the window after processing.
 	# Need to prettify it if you want indentation, otherwise it becomes an unreadable mess.
 	# (everything on one line)
-	foo = data.prettify()
-	unicode_string = foo.encode('utf8') # without this, attempts to write ASCII which is bad
 	
-	file.write(unicode_string)
+	
+	# print "--- WRITE TO FILE ---"
+	# print type(data)
+	# print "---------------------"
+	
+	
+	
+	# TODO: figure out a better way to handle both lists and single items
+	
+	# must encode string to unicode, or attempts to write ASCII which is bad
+	if isinstance(data, list):
+		for x in list(data):
+			foo = x.prettify()
+			unicode_string = foo.encode('utf8')
+			file.write(unicode_string)
+	else:
+		foo = data.prettify()
+		unicode_string = foo.encode('utf8')
+		
+		file.write(unicode_string)
 	
 	file.close
 
@@ -89,7 +106,70 @@ def degree_requirements(url):
 	# should contain the actual course info
 	write_html_to_file("requirements.html", requirements)
 	
-	x = list(requirements.children)[1]
+	
+	
+	
+	# ruby:   if, elsif, else
+	# python: if, elif, else
+	a = -1
+	b = -1
+	for i, req in enumerate(requirements.children): # use enumerate() to get i AND value
+		text = req.get_text()
+		if "Degree Requirements" in text:
+			print "START"
+			print text
+			print i
+			a = i
+		elif "Total:" in text:
+			print text
+			print i
+			print "END"
+			b = i
+	
+	# different end markers for different departments
+	# (note that Psych BA uses "Total: " to show subtotals)
+	# Really want to check for the substrings "Total:" and "120 credits"
+	
+	# program     target end string                     range
+	# -------     -------------------                   ------
+	# CS BS       "Total: 120 credits"                  (0..2)
+	# Bio BA      "Degree Total: Minimum 120 credits"   (0..5)
+	# Psych BA    "Degree Total: Minimum 120 credits" 
+	
+	
+	
+	
+	
+	# TODO: raise exception if a != 0
+		# I assume that it should always be 0, so
+		# if that fundamental underlying assumption is broken,
+		# it is possible that many things have actually broken.
+	
+	# TODO: raise exception if a == -1 OR b == -1
+		# this means that the values were never initialized
+		# you need BOTH to be set
+	
+	# TODO: figure a better way of getting the start and end points, a and b
+	
+	
+	
+	x = list(requirements.children)[a]
+	
+	text = x.get_text()
+	print text
+	
+	x = list(requirements.children)[b]
+	
+	
+	text = x.get_text()
+	print text
+
+	
+	
+	
+	# ruby: arry[0..3]  # inclusive of both ends
+	# python: arry[0:4] # exclusive of the top end
+	x = list(requirements.children)[(a+1):b]
 	# ok, this is the level where the stuff is
 	print type(x)
 	
@@ -116,7 +196,7 @@ def degree_requirements(url):
 		
 		
 	# when examining the CS requriments: (seems to work for both CS and ACS)
-	# list(requirements.children)[1] # header
+	# list(requirements.children)[0] # header
 	# list(requirements.children)[1] # main requirements
 	#                                # (many divs inside here that break doc into sections)
 	# list(requirements.children)[2] # total number of credits
@@ -157,8 +237,9 @@ def degree_requirements(url):
 
 
 # main
-url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
-# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
+# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
+url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
+# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28492&returnto=6270" # Psych BA
 degree_requirements(url)
 
 
