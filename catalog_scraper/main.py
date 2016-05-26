@@ -4,6 +4,15 @@
 import requests
 from bs4 import BeautifulSoup
 
+
+# write the data to the file
+def dump(data, filepath):
+	file = open(filepath, "w")
+	file.write(str(data))
+	file.close
+
+
+
 url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270"
 r = requests.get(url)
 
@@ -22,26 +31,7 @@ print type(out)
 
 path = "./segment.html"
 
-file = open(path, "w")
-file.write(str(out))
-file.close
-
-
-
-
-# import scrapy
-
-# class BlogSpider(scrapy.Spider):
-# 	name = 'blogspider'
-# 	start_urls = ['http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270']
-	
-# 	def parse(self, response):
-# 		for url in response.css('ul li a::attr("href")').re('.*/category/.*'):
-# 			yield scrapy.Request(response.urljoin(url), self.parse_titles)
-
-# 	def parse_titles(self, response):
-# 		for post_title in response.css('div.entries > ul > li a::text').extract():
-# 		yield {'title': post_title}
+dump(out, path)
 
 
 
