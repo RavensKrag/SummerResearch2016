@@ -89,8 +89,6 @@ def degree_requirements(url):
 	# should contain the actual course info
 	write_html_to_file("requirements.html", requirements)
 	
-	# x = list(requirements.children)[1]
-	# full container
 	x = list(requirements.children)[1]
 	# ok, this is the level where the stuff is
 	print type(x)
@@ -101,8 +99,10 @@ def degree_requirements(url):
 	
 	
 	
-	
-	# list(requirements.children)[6]
+	# notes on BeautifulSoup4:
+	# .contents returns a list
+	# .children returns interator (same content)
+	# .descendants is a full tree traversal
 	
 	
 	
@@ -113,33 +113,24 @@ def degree_requirements(url):
 		# honors program
 		# change of major
 		# etc
-	
-	
-	
-	# notes on BeautifulSoup4:
-	# .contents returns a list
-	# .children returns interator (same content)
-	# .descendants is a full tree traversal
-	
-	
-	
-	
+		
 		
 	# when examining the CS requriments: (seems to work for both CS and ACS)
-	# a.children[0] # header
-	# a.children[1] # main requirements (many divs inside here that break doc into sections)
-	# a.children[2] # total number of credits
+	# list(requirements.children)[1] # header
+	# list(requirements.children)[1] # main requirements
+	#                                # (many divs inside here that break doc into sections)
+	# list(requirements.children)[2] # total number of credits
 	
-	# a.children[3] # each div from here on out has an h2 element with a title, and some text
+	# list(requirements.children)[3] # each div from here on out has an h2 element with a title,
+	#                                #  and some text
+	
 	
 	
 	# in the main div list:
 		# .acalog-core is the main stuff
 		# the other ones with inline style "padding-left: 20px" are notes etc
+		# (they aren't structurally under their "parent" elements, but visually and conceptually there is a clear parent-child relationship)
 		
-	
-	
-	
 	
 	
 	
@@ -151,12 +142,23 @@ def degree_requirements(url):
 	# * 
 	# h2: line listing the total number of credits (CS says "Total: " Bio BA says "Degree Total: ")
 	# * zero or more extra sections listing additional notes etc
+	
+	
+	
+	
+	
+	
+	# ohhh this is weird
+	# this document has many anchor tags <a>
+	# that are not actually hyperlinks.
+	# They are there so that you could add #foo at the end of the URL to jump to anchor "foo"
 
 
 
 
 # main
-url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270"
+url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
+# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
 degree_requirements(url)
 
 
