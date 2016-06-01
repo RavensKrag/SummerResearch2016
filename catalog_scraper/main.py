@@ -3,7 +3,12 @@
 
 import requests
 from bs4 import BeautifulSoup
+
 import re
+
+import itertools
+import csv
+
 
 
 # write the data to the file
@@ -37,6 +42,21 @@ def write_html_to_file(filepath, data):
 	
 	file.close
 
+# following CSV methods take code from the python CSV documentation:
+# source: https://docs.python.org/2/library/csv.html
+def write_csv(filepath, list):	
+	with open(filepath, 'w') as csvfile:
+		w = csv.writer(csvfile, quoting=csv.QUOTE_MINIMAL)
+		for row in list:
+			w.writerow(row)
+	
+def read_csv(filepath, list):
+	with open('filepath', 'rb') as csvfile:
+		r = csv.reader(csvfile)
+		for row in r:
+			print ', '.join(row)
+
+
 def get_soup(url):
 	r = requests.get(url)
 
@@ -49,7 +69,7 @@ def get_soup(url):
 def find_possible_degrees(url):
 	soup = get_soup(url)
 
-def degree_requirements(url):
+def required_courses(url):
 	# NOTE: beautiful soup (python) always returns a list from queries, 
 	#       as opposed to nokogiri (ruby) which will return a single item
 	#       if there is only one item in the list. That's why BS4 requires
@@ -158,84 +178,28 @@ def degree_requirements(url):
 	
 	# ruby: arry[0..3]  # inclusive of both ends
 	# python: arry[0:4] # inclusive of bottom end, exclusive of top end
-	fragment = list(requirements.children)[(a+1):b][0]
+	fragment = list(requirements.children)[(a+1):b]
 	
 	write_html_to_file("fragment.html", fragment)
 	
 	
 	
-	
-	
-	# notes on BeautifulSoup4:
-	# .contents returns a list
-	# .children returns interator (same content)
-	# .descendants is a full tree traversal
-	
-	
-	
-	# outer div with a bunch of divs inside it
-		# heading
-		# actual list of requiremnts (divided into many sub-sections)
-		# total number of credits
-		# honors program
-		# change of major
-		# etc
-		
-		
-	# when examining the CS requriments: (seems to work for both CS and ACS)
-	# list(requirements.children)[0] # header
-	# list(requirements.children)[1] # main requirements
-	#                                # (many divs inside here that break doc into sections)
-	# list(requirements.children)[2] # total number of credits
-	
-	# list(requirements.children)[3] # each div from here on out has an h2 element with a title,
-	#                                #  and some text
-	
-	
-	
-	# in the main div list:
-		# .acalog-core is the main stuff
-		# the other ones with inline style "padding-left: 20px" are notes etc
-		# (they aren't structurally under their "parent" elements, but visually and conceptually there is a clear parent-child relationship)
-		
-	
-	
-	
-	# ok, to list this in a more robust way:
-	# h2: "Degree Requirements"
-	# * 
-	# * one or more divs and their subcontainers that list course requirements
-	# * (probably want to keep this tree-like structure)
-	# * 
-	# h2: line listing the total number of credits (CS says "Total: " Bio BA says "Degree Total: ")
-	# * zero or more extra sections listing additional notes etc
-	
-	
-	
-	
-	
-	
-	# ohhh this is weird
-	# this document has many anchor tags <a>
-	# that are not actually hyperlinks.
-	# They are there so that you could add #foo at the end of the URL to jump to anchor "foo"
-	
-	
-	
-	# <a href="#" onclick="showCourse('29', '302776',this, 'a:2:{s:8:~location~;s:7:~program~;s:4:~core~;s:6:~245507~;}'); return false;">
-	#  CS 101 - Preview of Computer Science
-	# </a>
-	
 	# TODO: need to improve this selector. catching some false positives.
-	
 	# wait, variable 'fragment' is a list...
 	
-	links = [v.findAll("a",{"onclick":True}) for v in fragment]
-	for i in links:
-		for a in i:
-			title, url = extract_link(a)
-			print "%s, %s" % (title, url)
-			print "================="
+	links = [x.findAll("a",{"onclick":True}) for x in fragment]
+	
+	# NOTE: splat operator works in Python too, apparently
+	# for a in itertools.chain(*links):
+	# 	print type(a)
+	# 	title, url = extract_link(a)
+	# 	print "%s, %s" % (title, url)
+	# 	print "================="
+	
+	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
+	write_csv("./required_courses.csv", data)
+	
+	
 	
 	
 
@@ -312,7 +276,7 @@ def extract_link(html_anchor_node):
 url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
 # url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
 # url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28492&returnto=6270" # Psych BA
-degree_requirements(url)
+required_courses(url)
 
 
 
