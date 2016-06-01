@@ -1,0 +1,59 @@
+notes on BeautifulSoup4:
+.contents returns a list
+.children returns interator (same content)
+.descendants is a full tree traversal
+
+
+
+outer div with a bunch of divs inside it
+	heading
+	actual list of requiremnts (divided into many sub-sections)
+	total number of credits
+	honors program
+	change of major
+	etc
+	
+	
+when examining the CS requriments: (seems to work for both CS and ACS)
+list(requirements.children)[0] # header
+list(requirements.children)[1] # main requirements
+                               # (many divs inside here that break doc into sections)
+list(requirements.children)[2] # total number of credits
+
+list(requirements.children)[3] # each div from here on out has an h2 element with a title,
+                               #  and some text
+
+
+
+in the main div list:
+	.acalog-core is the main stuff
+	the other ones with inline style "padding-left: 20px" are notes etc
+	(they aren't structurally under their "parent" elements, but visually and conceptually there is a clear parent-child relationship)
+	
+
+
+
+ok, to list this in a more robust way:
+h2: "Degree Requirements"
+* 
+* one or more divs and their subcontainers that list course requirements
+* (probably want to keep this tree-like structure)
+* 
+h2: line listing the total number of credits (CS says "Total: " Bio BA says "Degree Total: ")
+* zero or more extra sections listing additional notes etc
+
+
+
+
+
+
+ohhh this is weird
+this document has many anchor tags <a>
+that are not actually hyperlinks.
+They are there so that you could add #foo at the end of the URL to jump to anchor "foo"
+
+
+
+<a href="#" onclick="showCourse('29', '302776',this, 'a:2:{s:8:~location~;s:7:~program~;s:4:~core~;s:6:~245507~;}'); return false;">
+ CS 101 - Preview of Computer Science
+</a>
