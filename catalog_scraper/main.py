@@ -197,7 +197,7 @@ def required_courses(url):
 	# 	print "================="
 	
 	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
-	write_csv("./required_courses.csv", data)
+	return data
 	
 	
 	
@@ -276,7 +276,8 @@ def extract_link(html_anchor_node):
 url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
 # url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
 # url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28492&returnto=6270" # Psych BA
-required_courses(url)
+course_list = required_courses(url)
+write_csv("./required_courses.csv", course_list)
 
 
 
