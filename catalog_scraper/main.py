@@ -3,6 +3,7 @@
 
 import requests
 from bs4 import BeautifulSoup
+import re
 
 
 # write the data to the file
@@ -157,7 +158,7 @@ def degree_requirements(url):
 	
 	# ruby: arry[0..3]  # inclusive of both ends
 	# python: arry[0:4] # inclusive of bottom end, exclusive of top end
-	x = list(requirements.children)[(a+1):b]
+	x = list(requirements.children)[(a+1):b][0]
 	
 	write_html_to_file("fragment.html", x)
 	
@@ -218,13 +219,74 @@ def degree_requirements(url):
 	# this document has many anchor tags <a>
 	# that are not actually hyperlinks.
 	# They are there so that you could add #foo at the end of the URL to jump to anchor "foo"
+	
+	
+	
+	# <a href="#" onclick="showCourse('29', '302776',this, 'a:2:{s:8:~location~;s:7:~program~;s:4:~core~;s:6:~245507~;}'); return false;">
+	#  CS 101 - Preview of Computer Science
+	# </a>
+	
+	# TODO: need to improve this selector. catching some false positives.
+	
+	# wait, x is a list...
+	
+	links = [v.findAll("a",{"onclick":True}) for v in x]
+	for i in links:
+		for a in i:
+			extract_link(a)
+	
+	
+
+# given a "link" from the course overview page, get an actual HTML link
+# html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
+def extract_link(html_anchor_node):
+	# print type(html_anchor_node)
+	# print html_anchor_node.name
+	script = html_anchor_node['onclick']
+	print script
+	
+	
+	# there are two formats:
+	# showCourse()
+	# acalogPopup()
+	# 
+	# showCourse('29', '302347',this, 'a:2:{s:8:~location~;s:7:~program~;s:4:~core~;s:6:~245513~;}'); return false;
+	# acalogPopup('preview_course.php?catoid=29&coid=318028&print', '3', 770, 530, 'yes');return false;
+	
+	regexp_a = r"showCourse\('(.+?)'\, '(.+?)',this,"
+	regexp_b = r"acalogPopup\('(.+?)'.*"
+	if "showCourse" in script:
+		# a = 29
+		# b = 302347
+		
+		match = re.match(regexp_a, script)
+		a = match.group(1) # TODO: convert both matches to actual numbers maybe?
+		b = match.group(2) #       idk, just going to convert back to string and use in URL again
+		print [a, b]
+		
+		print "preview_course.php?catoid=%s&coid=%s&print" % (a,b)
+		
+	elif "acalogPopup" in script:
+		match = re.match(regexp_b, script)
+		a = match.group(1)
+		print a
+	
+	print "==="
+		
+	
+
+# def extract_showCourse():
+	
+# def extract_acalogPopup():
+	
+
 
 
 
 
 # main
-# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
-url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
+url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
+# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
 # url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28492&returnto=6270" # Psych BA
 degree_requirements(url)
 
