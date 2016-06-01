@@ -158,9 +158,9 @@ def degree_requirements(url):
 	
 	# ruby: arry[0..3]  # inclusive of both ends
 	# python: arry[0:4] # inclusive of bottom end, exclusive of top end
-	x = list(requirements.children)[(a+1):b][0]
+	fragment = list(requirements.children)[(a+1):b][0]
 	
-	write_html_to_file("fragment.html", x)
+	write_html_to_file("fragment.html", fragment)
 	
 	
 	
@@ -228,18 +228,28 @@ def degree_requirements(url):
 	
 	# TODO: need to improve this selector. catching some false positives.
 	
-	# wait, x is a list...
+	# wait, variable 'fragment' is a list...
 	
-	links = [v.findAll("a",{"onclick":True}) for v in x]
+	links = [v.findAll("a",{"onclick":True}) for v in fragment]
 	for i in links:
 		for a in i:
-			extract_link(a)
+			title, url = extract_link(a)
+			print "%s, %s" % (title, url)
+			print "================="
 	
 	
 
 # given a "link" from the course overview page, get an actual HTML link
 # html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
 def extract_link(html_anchor_node):
+	course_title = html_anchor_node.contents[0]
+	print course_title
+	# NOTE: some times the course title is given, and sometimes it is not
+	# ex) CS 367 - Computer Systems and Programming
+	#       vs
+	#     ENGH 302
+	
+	
 	# print type(html_anchor_node)
 	# print html_anchor_node.name
 	script = html_anchor_node['onclick']
@@ -255,6 +265,7 @@ def extract_link(html_anchor_node):
 	
 	regexp_a = r"showCourse\('(.+?)'\, '(.+?)',this,"
 	regexp_b = r"acalogPopup\('(.+?)'.*"
+	url = ""
 	if "showCourse" in script:
 		# a = 29
 		# b = 302347
@@ -264,21 +275,34 @@ def extract_link(html_anchor_node):
 		b = match.group(2) #       idk, just going to convert back to string and use in URL again
 		print [a, b]
 		
-		print "preview_course.php?catoid=%s&coid=%s&print" % (a,b)
+		url = "preview_course.php?catoid=%s&coid=%s&print" % (a,b)
+		print url
 		
 	elif "acalogPopup" in script:
 		match = re.match(regexp_b, script)
 		a = match.group(1)
 		print a
+		url = a
 	
 	print "==="
-		
 	
+	return (course_title, url)
+
+
 
 # def extract_showCourse():
 	
 # def extract_acalogPopup():
 	
+
+# TODO: now that you have the links to each individual course, for one course, extract dependency information.
+	# prerequisites
+	# co requisites
+	# certain number of courses required before taking
+	# requirement to take at a certain time (duing first semester, before Junior year, etc)
+	# 
+	# eventually want to understand "systemic requirements" like that certain classes are only offered in Fall / only in Spring etc 
+# TODO: store all of this information in some easily accessible format
 
 
 
