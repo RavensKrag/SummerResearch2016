@@ -7,7 +7,10 @@ from bs4 import BeautifulSoup
 import re
 
 import itertools
+import operator
 import csv
+
+
 
 
 
@@ -55,6 +58,11 @@ def read_csv(filepath, list):
 		r = csv.reader(csvfile)
 		for row in r:
 			print ', '.join(row)
+
+# remove duplicates and keep order (in ruby this is Array#uniq)
+# src: http://stackoverflow.com/questions/479897/how-to-remove-duplicates-from-python-list-and-keep-order
+def uniq(input_list):
+	return list(map(operator.itemgetter(0), itertools.groupby(input_list)))
 
 
 def get_soup(url):
@@ -207,6 +215,14 @@ def required_courses(url):
 # html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
 def extract_link(html_anchor_node):
 	course_title = html_anchor_node.contents[0]
+	description  = ""
+	parts = course_title.split(" - ")
+	if len(parts) == 2:
+		course_title = parts[0]
+		description  = parts[1]
+	else:
+		course_title = parts[0]
+		
 	print course_title
 	# NOTE: some times the course title is given, and sometimes it is not
 	# ex) CS 367 - Computer Systems and Programming
@@ -250,13 +266,15 @@ def extract_link(html_anchor_node):
 	
 	print "==="
 	
-	return (course_title, url)
-
+	return (course_title, description, url)
 
 
 # def extract_showCourse():
 	
+
 # def extract_acalogPopup():
+
+
 	
 
 # TODO: now that you have the links to each individual course, for one course, extract dependency information.
@@ -277,6 +295,15 @@ url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=
 # url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
 # url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28492&returnto=6270" # Psych BA
 course_list = required_courses(url)
+
+
+# TODO: remove dupicate entries in the list of courses
+	# not just as simple as removing duplicates from list
+	# need to remove when two tuples have the same first element
+	# also - want to keep original ordering
+# NOTE: this may not be necessary if the selection filter on links is improved
+
+
 write_csv("./required_courses.csv", course_list)
 
 
