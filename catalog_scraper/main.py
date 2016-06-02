@@ -84,14 +84,15 @@ def get_soup_from_file(filepath):
 	
 	return soup
 
-def fix_br_tags(input_file, output_file):
+def fix_singleton_tags(input_file, output_file):
 	f = open(input_file,'r')
 	data = f.read()
 	f.close()
 	
 	new_data = data
-	new_data = new_data.replace("</br>","")
-	new_data = new_data.replace("<br>","<br />")
+	for tag in ["hr", "br"]: # list your singletons here, and fix them all
+		new_data = new_data.replace("</%s>" % (tag),"")
+		new_data = new_data.replace("<%s>" % (tag),"<%s />" % (tag))
 	
 	f = open(output_file,'w')
 	f.write(new_data)
@@ -329,7 +330,7 @@ def get_dependencies(catalog_url_fragment):
 	
 	input_file  = filepath
 	output_file = "./course_processed.html"
-	fix_br_tags(input_file, output_file)
+	fix_singleton_tags(input_file, output_file)
 	
 	
 	soup = get_soup_from_file(output_file)
@@ -344,8 +345,11 @@ def get_dependencies(catalog_url_fragment):
 	# 
 	
 	
-	# print type(chunk)
-	# print chunk.contents[5]
+	print type(chunk)
+	print len(chunk.contents)
+	
+	for i, c in enumerate(chunk.contents):
+		print "%d >> %s" % (i, c)
 	
 	
 	
