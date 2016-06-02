@@ -5,6 +5,7 @@ notes on BeautifulSoup4:
 
 
 
+=== program overview page ===
 outer div with a bunch of divs inside it
 	heading
 	actual list of requiremnts (divided into many sub-sections)
@@ -57,3 +58,25 @@ They are there so that you could add #foo at the end of the URL to jump to ancho
 <a href="#" onclick="showCourse('29', '302776',this, 'a:2:{s:8:~location~;s:7:~program~;s:4:~core~;s:6:~245507~;}'); return false;">
  CS 101 - Preview of Computer Science
 </a>
+
+
+
+
+
+
+
+
+=== course description page ===
+Corequisite(s): CS 112.
+
+Notes: All computer science majors are required to take this course within their first year.
+
+
+
+Prerequisite(s): C or higher in MATH 114 or MATH 116.
+Prerequisite(s) enforced by registration system.
+
+Schedule Type: LEC
+Hours of Lecture or Seminar per week: 3
+Hours of Lab or Studio per week: 0
+When Offered: Fall, Spring, Summer

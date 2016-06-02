@@ -74,6 +74,28 @@ def get_soup(url):
 	
 	return soup
 
+def fix_br_tags(input_file, output_file):
+	f = open(input_file,'r')
+	data = f.read()
+	f.close()
+	
+	new_data = data.replace("</br>","")
+	new_data = data.replace("<br>","<br></br>")
+	
+	f = open(output_file,'w')
+	f.write(new_data)
+	f.close()
+
+def get_scoup_from_file(filepath):
+	f = open(filepath,'r')
+	
+	content = f.read()
+	soup = BeautifulSoup(content, "html.parser")
+	
+	f.close()
+	
+	return soup
+
 def find_possible_degrees(url):
 	soup = get_soup(url)
 
@@ -275,6 +297,75 @@ def extract_link(html_anchor_node):
 # def extract_acalogPopup():
 
 
+def get_dependencies(catalog_url_fragment):
+	url = "http://catalog.gmu.edu/" + catalog_url_fragment
+	
+	# <strong>Prerequisite(s):</strong>
+	# also corequites, etc
+	# if mentions of prerequisites come up later, they will not be marked with <strong>
+	# NOTE: much like how the general program page indents things, but they are not considered under a branch in the markup (just div with styling), <strong> creates visual separation without actual nesting in the DOM. May want to run similar preprocessing on these two segments.
+	# NOTE: notes section usually explains extra requirements (take in x semester, take before x point in time, restricted to these people)
+	# NOTE: PSYC 300 / 301 noted in program overview, supposed to be taken before Junior year, but that is NOT noted on the course themselves. Thus, if there is special info on the course page, it will be under NOTES, but it is not necessarily true that all course info will be in one place.
+	# NOTE: some classes note in which semesters they are offered
+	#       (ex STAT 344 says "When Offered: Fall, Spring, Summer")
+	
+	print url
+	soup = get_soup(url)
+	chunk = soup.select("td.block_content_popup")[0]
+	
+	print type(chunk)
+	filepath = "./course.html"
+	write_html_to_file(filepath, chunk)
+	# table      <-- skip this
+	# h1         <-- name of course again
+	# * data you actually care about (some formatting markup, no semantic tree-like structure)
+	# p > br     <-- end of meaningful section
+	# some links to the catalog
+	
+	# TODO: need to pre-process this file, in order to replace <br> with <br /> and then re-load that. BS4 not properly processing <br> tags, and it's making things very difficult...
+	# BS4 misinterprets the <br> tag
+	# it is generally assumed that <br> == <br />, but BS4 seems fairly strict about things
+	
+	
+	
+	
+	# =======
+	input_file  = filepath
+	output_file = "./course_processed.html"
+	fix_br_tags(input_file, output_file)
+	# =======
+	
+	
+	
+	
+	soup = get_scoup_from_file(output_file)
+	chunk = soup.select("td.block_content_popup")[0]
+	write_html_to_file("./course_processed_bs4.html", chunk)
+	
+	# [0] nothing
+	# [1] navigation
+	# [2] nothing
+	# [3] h1
+	# [4] text after the h1 (mixed content) ex: "Credits: 2"
+	# 
+	
+	
+	# print type(chunk)
+	# print chunk.contents[5]
+	
+	
+	
+	# <strong>Corequisite(s):</strong>
+	# CS 112.
+	# <br>
+	# ---
+	# title in <strong> tags
+	# content
+	# <br>
+
+	
+
+
 	
 
 # TODO: now that you have the links to each individual course, for one course, extract dependency information.
@@ -306,6 +397,9 @@ course_list = required_courses(url)
 
 write_csv("./required_courses.csv", course_list)
 
+
+name, desc, url_fragment = course_list[0]
+get_dependencies(url_fragment)
 
 
 
