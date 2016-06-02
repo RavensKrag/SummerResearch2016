@@ -74,19 +74,7 @@ def get_soup(url):
 	
 	return soup
 
-def fix_br_tags(input_file, output_file):
-	f = open(input_file,'r')
-	data = f.read()
-	f.close()
-	
-	new_data = data.replace("</br>","")
-	new_data = data.replace("<br>","<br></br>")
-	
-	f = open(output_file,'w')
-	f.write(new_data)
-	f.close()
-
-def get_scoup_from_file(filepath):
+def get_soup_from_file(filepath):
 	f = open(filepath,'r')
 	
 	content = f.read()
@@ -95,6 +83,19 @@ def get_scoup_from_file(filepath):
 	f.close()
 	
 	return soup
+
+def fix_br_tags(input_file, output_file):
+	f = open(input_file,'r')
+	data = f.read()
+	f.close()
+	
+	new_data = data
+	new_data = new_data.replace("</br>","")
+	new_data = new_data.replace("<br>","<br />")
+	
+	f = open(output_file,'w')
+	f.write(new_data)
+	f.close()
 
 def find_possible_degrees(url):
 	soup = get_soup(url)
@@ -326,19 +327,12 @@ def get_dependencies(catalog_url_fragment):
 	# BS4 misinterprets the <br> tag
 	# it is generally assumed that <br> == <br />, but BS4 seems fairly strict about things
 	
-	
-	
-	
-	# =======
 	input_file  = filepath
 	output_file = "./course_processed.html"
 	fix_br_tags(input_file, output_file)
-	# =======
 	
 	
-	
-	
-	soup = get_scoup_from_file(output_file)
+	soup = get_soup_from_file(output_file)
 	chunk = soup.select("td.block_content_popup")[0]
 	write_html_to_file("./course_processed_bs4.html", chunk)
 	
