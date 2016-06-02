@@ -1,7 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
 # use 'pip' for package management
 # (very similar to 'gem' in Ruby)
 
 import requests
+import bs4
 from bs4 import BeautifulSoup
 
 import re
@@ -9,6 +14,7 @@ import re
 import itertools
 import operator
 import csv
+
 
 
 
@@ -73,6 +79,30 @@ def get_soup(url):
 	soup = BeautifulSoup(content, "html.parser")
 	
 	return soup
+
+def get_soup_from_file(filepath):
+	f = open(filepath,'r')
+	
+	content = f.read()
+	soup = BeautifulSoup(content, "html.parser")
+	
+	f.close()
+	
+	return soup
+
+def fix_singleton_tags(input_file, output_file):
+	f = open(input_file,'r')
+	data = f.read()
+	f.close()
+	
+	new_data = data
+	for tag in ["hr", "br"]: # list your singletons here, and fix them all
+		new_data = new_data.replace("</%s>" % (tag),"")
+		new_data = new_data.replace("<%s>" % (tag),"<%s />" % (tag))
+	
+	f = open(output_file,'w')
+	f.write(new_data)
+	f.close()
 
 def find_possible_degrees(url):
 	soup = get_soup(url)
@@ -206,10 +236,11 @@ def required_courses(url):
 	
 	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
 	return data
-	
-	
-	
-	
+
+
+
+
+
 
 # given a "link" from the course overview page, get an actual HTML link
 # html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
@@ -223,7 +254,7 @@ def extract_link(html_anchor_node):
 	else:
 		course_title = parts[0]
 		
-	print course_title
+	# print course_title
 	# NOTE: some times the course title is given, and sometimes it is not
 	# ex) CS 367 - Computer Systems and Programming
 	#       vs
@@ -233,7 +264,7 @@ def extract_link(html_anchor_node):
 	# print type(html_anchor_node)
 	# print html_anchor_node.name
 	script = html_anchor_node['onclick']
-	print script
+	# print script
 	
 	
 	# there are two formats:
@@ -253,18 +284,18 @@ def extract_link(html_anchor_node):
 		match = re.match(regexp_a, script)
 		a = match.group(1) # TODO: convert both matches to actual numbers maybe?
 		b = match.group(2) #       idk, just going to convert back to string and use in URL again
-		print [a, b]
+		# print [a, b]
 		
 		url = "preview_course.php?catoid=%s&coid=%s&print" % (a,b)
-		print url
+		# print url
 		
 	elif "acalogPopup" in script:
 		match = re.match(regexp_b, script)
 		a = match.group(1)
-		print a
+		# print a
 		url = a
 	
-	print "==="
+	# print "==="
 	
 	return (course_title, description, url)
 
@@ -273,6 +304,121 @@ def extract_link(html_anchor_node):
 	
 
 # def extract_acalogPopup():
+
+
+def get_dependencies(catalog_url_fragment):
+	url = "http://catalog.gmu.edu/" + catalog_url_fragment
+	
+	# <strong>Prerequisite(s):</strong>
+	# also corequites, etc
+	# if mentions of prerequisites come up later, they will not be marked with <strong>
+	# NOTE: much like how the general program page indents things, but they are not considered under a branch in the markup (just div with styling), <strong> creates visual separation without actual nesting in the DOM. May want to run similar preprocessing on these two segments.
+	# NOTE: notes section usually explains extra requirements (take in x semester, take before x point in time, restricted to these people)
+	# NOTE: PSYC 300 / 301 noted in program overview, supposed to be taken before Junior year, but that is NOT noted on the course themselves. Thus, if there is special info on the course page, it will be under NOTES, but it is not necessarily true that all course info will be in one place.
+	# NOTE: some classes note in which semesters they are offered
+	#       (ex STAT 344 says "When Offered: Fall, Spring, Summer")
+	
+	print url
+	soup = get_soup(url)
+	chunk = soup.select("td.block_content_popup")[0]
+	
+	print type(chunk)
+	filepath = "./course.html"
+	write_html_to_file(filepath, chunk)
+	# table      <-- skip this
+	# h1         <-- name of course again
+	# * data you actually care about (some formatting markup, no semantic tree-like structure)
+	# p > br     <-- end of meaningful section
+	# some links to the catalog
+	
+	# TODO: need to pre-process this file, in order to replace <br> with <br /> and then re-load that. BS4 not properly processing <br> tags, and it's making things very difficult...
+	# BS4 misinterprets the <br> tag
+	# it is generally assumed that <br> == <br />, but BS4 seems fairly strict about things
+	
+	input_file  = filepath
+	output_file = "./course_processed.html"
+	fix_singleton_tags(input_file, output_file)
+	
+	
+	soup = get_soup_from_file(output_file)
+	chunk = soup.select("td.block_content_popup")[0]
+	write_html_to_file("./course_processed_bs4.html", chunk)
+	
+	# [0] nothing
+	# [1] navigation
+	# [2] nothing
+	# [3] h1
+	# [4] text after the h1 (mixed content) ex: "Credits: 2"
+	# 
+	
+	
+	print type(chunk)
+	print len(chunk.contents)
+	
+	# <strong>Corequisite(s):</strong>
+	# CS 112.
+	# <br>
+	# ---
+	# title in <strong> tags
+	# content
+	# <br>
+	
+	
+	target_indecies = set()
+	dictionary = {}
+	
+	
+	key   = None
+	value = None
+	for i, token in enumerate(chunk.contents):
+		# print "%d >> %s" % (i, token)
+		# NOTE: at this point, each token should be either a tag, blank line, or plain text
+		
+		# print type(token)
+			# <class 'bs4.element.NavigableString'>
+			# <class 'bs4.element.Tag'>
+		# token is bs4.element.NavigableString  # exactly this class
+		# isinstance(token, bs4.element.Tag)    # any descendent class
+		if isinstance(token, bs4.element.Tag):
+			# print token.name
+			if token.name == "strong":
+				target_indecies.add(i)
+				
+				out = token.contents[0].strip()
+				unicode_string = out.encode('utf8')
+				print unicode_string
+				
+				key = unicode_string
+				# yield key
+		if isinstance(token, bs4.element.NavigableString):
+			if (i-1) in target_indecies:
+				out = token.strip()
+				unicode_string = out.encode('utf8')
+				print unicode_string
+				
+				value = unicode_string
+				# yield value
+		# NOTE: CS 330 prints with errors, even when converting unicode
+		# 
+		# ex) Systems Engineering Bachelorâs programs
+		
+		if key and value:
+			# print "yes"
+			print "k:v => %s, %s" % (key, value)
+			print "====="
+			dictionary[key] = value
+			key = None
+			value = None
+			# TODO: strip the trailing ":" (semicolon) off the end of the key
+	
+	print dictionary
+	
+	# TODO: consider using "yield" instead of returning a Dictionary for more flexibility
+	
+	
+	# TODO: extract credits, number of attempts, and deparment as well
+	# (these categories do not use the <strong> tag system)
+	
 
 
 	
@@ -306,6 +452,12 @@ course_list = required_courses(url)
 
 write_csv("./required_courses.csv", course_list)
 
+
+name, desc, url_fragment = course_list[0]
+get_dependencies(url_fragment)
+
+
+# get_dependencies("preview_course.php?catoid=29&coid=302788&print")
 
 
 
