@@ -2,6 +2,7 @@
 # (very similar to 'gem' in Ruby)
 
 import requests
+import bs4
 from bs4 import BeautifulSoup
 
 import re
@@ -9,6 +10,7 @@ import re
 import itertools
 import operator
 import csv
+
 
 
 
@@ -348,8 +350,30 @@ def get_dependencies(catalog_url_fragment):
 	print type(chunk)
 	print len(chunk.contents)
 	
-	for i, c in enumerate(chunk.contents):
-		print "%d >> %s" % (i, c)
+	
+	target_indecies = set()
+	
+	for i, token in enumerate(chunk.contents):
+		# print "%d >> %s" % (i, token)
+		# NOTE: at this point, each token should be either a tag, blank line, or plain text
+		
+		# print type(token)
+			# <class 'bs4.element.NavigableString'>
+			# <class 'bs4.element.Tag'>
+		# token is bs4.element.NavigableString  # exactly this class
+		# isinstance(token, bs4.element.Tag)    # any descendent class
+		if isinstance(token, bs4.element.Tag):
+			# print token.name
+			if token.name == "strong":
+				# print "yes"
+				target_indecies.add(i)
+				print token.contents[0].strip()
+		if isinstance(token, bs4.element.NavigableString):
+			if (i-1) in target_indecies:
+				print token.strip()
+				print "====="
+		
+
 	
 	
 	
