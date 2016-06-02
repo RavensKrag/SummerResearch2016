@@ -246,7 +246,7 @@ def extract_link(html_anchor_node):
 	else:
 		course_title = parts[0]
 		
-	print course_title
+	# print course_title
 	# NOTE: some times the course title is given, and sometimes it is not
 	# ex) CS 367 - Computer Systems and Programming
 	#       vs
@@ -256,7 +256,7 @@ def extract_link(html_anchor_node):
 	# print type(html_anchor_node)
 	# print html_anchor_node.name
 	script = html_anchor_node['onclick']
-	print script
+	# print script
 	
 	
 	# there are two formats:
@@ -276,18 +276,18 @@ def extract_link(html_anchor_node):
 		match = re.match(regexp_a, script)
 		a = match.group(1) # TODO: convert both matches to actual numbers maybe?
 		b = match.group(2) #       idk, just going to convert back to string and use in URL again
-		print [a, b]
+		# print [a, b]
 		
 		url = "preview_course.php?catoid=%s&coid=%s&print" % (a,b)
-		print url
+		# print url
 		
 	elif "acalogPopup" in script:
 		match = re.match(regexp_b, script)
 		a = match.group(1)
-		print a
+		# print a
 		url = a
 	
-	print "==="
+	# print "==="
 	
 	return (course_title, description, url)
 
