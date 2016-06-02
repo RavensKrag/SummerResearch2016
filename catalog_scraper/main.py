@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
 # use 'pip' for package management
 # (very similar to 'gem' in Ruby)
 
@@ -232,10 +236,11 @@ def required_courses(url):
 	
 	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
 	return data
-	
-	
-	
-	
+
+
+
+
+
 
 # given a "link" from the course overview page, get an actual HTML link
 # html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
@@ -350,9 +355,21 @@ def get_dependencies(catalog_url_fragment):
 	print type(chunk)
 	print len(chunk.contents)
 	
+	# <strong>Corequisite(s):</strong>
+	# CS 112.
+	# <br>
+	# ---
+	# title in <strong> tags
+	# content
+	# <br>
+	
 	
 	target_indecies = set()
+	dictionary = {}
 	
+	
+	key   = None
+	value = None
 	for i, token in enumerate(chunk.contents):
 		# print "%d >> %s" % (i, token)
 		# NOTE: at this point, each token should be either a tag, blank line, or plain text
@@ -365,26 +382,42 @@ def get_dependencies(catalog_url_fragment):
 		if isinstance(token, bs4.element.Tag):
 			# print token.name
 			if token.name == "strong":
-				# print "yes"
 				target_indecies.add(i)
-				print token.contents[0].strip()
+				
+				out = token.contents[0].strip()
+				unicode_string = out.encode('utf8')
+				print unicode_string
+				
+				key = unicode_string
+				# yield key
 		if isinstance(token, bs4.element.NavigableString):
 			if (i-1) in target_indecies:
-				print token.strip()
-				print "====="
+				out = token.strip()
+				unicode_string = out.encode('utf8')
+				print unicode_string
+				
+				value = unicode_string
+				# yield value
+		# NOTE: CS 330 prints with errors, even when converting unicode
+		# 
+		# ex) Systems Engineering Bachelorâs programs
 		
-
+		if key and value:
+			# print "yes"
+			print "k:v => %s, %s" % (key, value)
+			print "====="
+			dictionary[key] = value
+			key = None
+			value = None
+			# TODO: strip the trailing ":" (semicolon) off the end of the key
+	
+	print dictionary
+	
+	# TODO: consider using "yield" instead of returning a Dictionary for more flexibility
 	
 	
-	
-	# <strong>Corequisite(s):</strong>
-	# CS 112.
-	# <br>
-	# ---
-	# title in <strong> tags
-	# content
-	# <br>
-
+	# TODO: extract credits, number of attempts, and deparment as well
+	# (these categories do not use the <strong> tag system)
 	
 
 
@@ -422,6 +455,9 @@ write_csv("./required_courses.csv", course_list)
 
 name, desc, url_fragment = course_list[0]
 get_dependencies(url_fragment)
+
+
+# get_dependencies("preview_course.php?catoid=29&coid=302788&print")
 
 
 
