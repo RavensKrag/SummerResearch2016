@@ -306,7 +306,7 @@ def extract_link(html_anchor_node):
 # def extract_acalogPopup():
 
 
-def get_dependencies(catalog_url_fragment):
+def course_info(catalog_url_fragment):
 	url = "http://catalog.gmu.edu/" + catalog_url_fragment
 	
 	# <strong>Prerequisite(s):</strong>
@@ -454,10 +454,10 @@ write_csv("./required_courses.csv", course_list)
 
 
 name, desc, url_fragment = course_list[0]
-get_dependencies(url_fragment)
+course_info(url_fragment)
 
 
-# get_dependencies("preview_course.php?catoid=29&coid=302788&print")
+# course_info("preview_course.php?catoid=29&coid=302788&print")
 
 
 
