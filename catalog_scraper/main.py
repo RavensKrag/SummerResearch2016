@@ -88,39 +88,48 @@ def get_soup_from_file(filepath):
 def fix_singleton_tags(tag_object):
 	# TODO: create intermediate files HERE, as a debug procedure
 	
-	input_file  = "./course.html"
-	output_file = "./course_processed.html"
-	
-	chunk = tag_object
-	
+	input_file   = "./course.html"
+	intermediate = "./course_processed.html"
+	output_file  = "./course_processed_bs4.html"
 	
 	# TODO: eliminate intermediate files, and just perform transform in-memory
 	
+	# NOTE: write 3 files:
+	# 	raw input parsed by BS4
+	# 	input with replacement
+	# 	replaced code that was run through BS4 a second time (to make sure replacement worked)
 	
-	write_html_to_file(input_file, chunk)
+	# NOTE: writing to file and reading back eliminates potential weirdness of having a list as input, instead of a single tag, but I think that should never actually happen?
 	
 	
+	# html tree to text file
+	write_html_to_file(input_file, tag_object)
+	
+	# text file to data
 	f = open(input_file,'r')
 	data = f.read()
 	f.close()
 	
+	# replacement of malformed tags, in memory
+	singletons = ["hr", "br"] # list your singletons here, and fix them all
+	
 	new_data = data # need this, because of mulitple iterations of loop
-	for tag in ["hr", "br"]: # list your singletons here, and fix them all
+	for tag in singletons: 
 		new_data = new_data.replace("</%s>" % (tag), ""
 		                  ).replace( "<%s>" % (tag), "<%s />" % (tag)
 		                  )
 	
-	f = open(output_file,'w')
+	# write edited file back to disk
+	f = open(intermediate,'w')
 	f.write(new_data)
 	f.close()
 	
+	# load edited file, and return new subtree
+	soup = get_soup_from_file(intermediate)
+	tag_object = soup.contents[0]
+	write_html_to_file(output_file , tag_object)
 	
-	
-	soup = get_soup_from_file(output_file)
-	chunk = soup.contents[0]
-	write_html_to_file("./course_processed_bs4.html", chunk)
-	
-	return chunk
+	return tag_object
 
 def find_possible_degrees(url):
 	soup = get_soup(url)
@@ -346,22 +355,19 @@ def course_info(catalog_url_fragment):
 	soup = get_soup(url)
 	chunk = soup.select("td.block_content_popup")[0]
 	
-	# print type(chunk)
 	filepath = "./course.html"
 	write_html_to_file(filepath, chunk)
+	
+	# BS4 does not understand that <br> == <br />
+	# and so tries to fix the open <br> by inserting </br> tags (which are not real HTMl tags)
+	chunk = fix_singleton_tags(chunk)
+	
 	
 	# table      <-- skip this
 	# h1         <-- name of course again
 	# * data you actually care about (some formatting markup, no semantic tree-like structure)
 	# p > br     <-- end of meaningful section
 	# some links to the catalog
-	
-	
-	# TODO: need to pre-process this file, in order to replace <br> with <br /> and then re-load that. BS4 not properly processing <br> tags, and it's making things very difficult...
-	# BS4 misinterprets the <br> tag
-	# it is generally assumed that <br> == <br />, but BS4 seems fairly strict about things
-	chunk = fix_singleton_tags(chunk)
-	
 	
 	# [0] nothing
 	# [1] navigation
@@ -370,10 +376,6 @@ def course_info(catalog_url_fragment):
 	# [4] text after the h1 (mixed content) ex: "Credits: 2"
 	# 
 	
-	
-	# print type(chunk)
-	# print len(chunk.contents)
-	
 	# <strong>Corequisite(s):</strong>
 	# CS 112.
 	# <br>
@@ -381,6 +383,8 @@ def course_info(catalog_url_fragment):
 	# title in <strong> tags
 	# content
 	# <br>
+	
+	# NOTE: regaurdless of the number of "lines", BS4 should parse all of the plain text in between the <strong></strong> and <br/> as one line. No need to check for the possibilty of mulitple lines.
 	
 	
 	target_indecies = set()
