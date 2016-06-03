@@ -104,10 +104,11 @@ def fix_singleton_tags(tag_object):
 	data = f.read()
 	f.close()
 	
-	new_data = data
+	new_data = data # need this, because of mulitple iterations of loop
 	for tag in ["hr", "br"]: # list your singletons here, and fix them all
-		new_data = new_data.replace("</%s>" % (tag),"")
-		new_data = new_data.replace("<%s>" % (tag),"<%s />" % (tag))
+		new_data = new_data.replace("</%s>" % (tag), ""
+		                  ).replace( "<%s>" % (tag), "<%s />" % (tag)
+		                  )
 	
 	f = open(output_file,'w')
 	f.write(new_data)
