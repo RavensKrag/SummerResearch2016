@@ -28,13 +28,6 @@ def write_html_to_file(filepath, data):
 	# Need to prettify it if you want indentation, otherwise it becomes an unreadable mess.
 	# (everything on one line)
 	
-	
-	# print "--- WRITE TO FILE ---"
-	# print type(data)
-	# print "---------------------"
-	
-	
-	
 	# TODO: figure out a better way to handle both lists and single items
 	
 	# must encode string to unicode, or attempts to write ASCII which is bad
@@ -59,11 +52,13 @@ def write_csv(filepath, list):
 		for row in list:
 			w.writerow(row)
 	
-def read_csv(filepath, list):
-	with open('filepath', 'rb') as csvfile:
-		r = csv.reader(csvfile)
-		for row in r:
-			print ', '.join(row)
+def read_csv(filepath):
+	f = open(filepath, 'rb')
+	r = csv.reader(f)
+	out = [row for row in r]
+	f.close
+	
+	return out
 
 # remove duplicates and keep order (in ruby this is Array#uniq)
 # src: http://stackoverflow.com/questions/479897/how-to-remove-duplicates-from-python-list-and-keep-order
@@ -107,6 +102,13 @@ def fix_singleton_tags(input_file, output_file):
 def find_possible_degrees(url):
 	soup = get_soup(url)
 
+
+
+
+
+# given a url to the page in the catalog that lists all the requirements for a course,
+# extract tuples of the form (course ID, description, url_frament)
+# 'url_fragement' is a relative link from the catalog page, showing where to get specific info
 def required_courses(url):
 	# NOTE: beautiful soup (python) always returns a list from queries, 
 	#       as opposed to nokogiri (ruby) which will return a single item
@@ -237,11 +239,6 @@ def required_courses(url):
 	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
 	return data
 
-
-
-
-
-
 # given a "link" from the course overview page, get an actual HTML link
 # html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
 def extract_link(html_anchor_node):
@@ -306,6 +303,10 @@ def extract_link(html_anchor_node):
 # def extract_acalogPopup():
 
 
+
+
+
+# extract the info out of details page from the catalog
 def course_info(catalog_url_fragment):
 	url = "http://catalog.gmu.edu/" + catalog_url_fragment
 	
@@ -322,7 +323,7 @@ def course_info(catalog_url_fragment):
 	soup = get_soup(url)
 	chunk = soup.select("td.block_content_popup")[0]
 	
-	print type(chunk)
+	# print type(chunk)
 	filepath = "./course.html"
 	write_html_to_file(filepath, chunk)
 	# table      <-- skip this
@@ -344,6 +345,8 @@ def course_info(catalog_url_fragment):
 	chunk = soup.select("td.block_content_popup")[0]
 	write_html_to_file("./course_processed_bs4.html", chunk)
 	
+	# TODO: eliminate intermediate files, and just perform transform in-memory
+	
 	# [0] nothing
 	# [1] navigation
 	# [2] nothing
@@ -352,8 +355,8 @@ def course_info(catalog_url_fragment):
 	# 
 	
 	
-	print type(chunk)
-	print len(chunk.contents)
+	# print type(chunk)
+	# print len(chunk.contents)
 	
 	# <strong>Corequisite(s):</strong>
 	# CS 112.
@@ -375,41 +378,28 @@ def course_info(catalog_url_fragment):
 		# NOTE: at this point, each token should be either a tag, blank line, or plain text
 		
 		# print type(token)
-			# <class 'bs4.element.NavigableString'>
-			# <class 'bs4.element.Tag'>
-		# token is bs4.element.NavigableString  # exactly this class
-		# isinstance(token, bs4.element.Tag)    # any descendent class
+		
+		# NOTE: this is how you check types in python
+		# 	token is bs4.element.NavigableString   # exactly this class
+		# 	isinstance(token, bs4.element.Tag)     # any descendent class
 		if isinstance(token, bs4.element.Tag):
-			# print token.name
 			if token.name == "strong":
 				target_indecies.add(i)
 				
-				out = token.contents[0].strip()
-				unicode_string = out.encode('utf8')
-				print unicode_string
-				
-				key = unicode_string
+				key = token.contents[0].strip().rstrip(':')
 				# yield key
-		if isinstance(token, bs4.element.NavigableString):
+		elif isinstance(token, bs4.element.NavigableString):
 			if (i-1) in target_indecies:
-				out = token.strip()
-				unicode_string = out.encode('utf8')
-				print unicode_string
-				
-				value = unicode_string
+				value = token.strip()
 				# yield value
-		# NOTE: CS 330 prints with errors, even when converting unicode
-		# 
-		# ex) Systems Engineering Bachelorâs programs
+		else:
+			print "uhhh what? something has gone wrong"
 		
 		if key and value:
-			# print "yes"
-			print "k:v => %s, %s" % (key, value)
-			print "====="
+			print "%s => %s" % (key, value)
 			dictionary[key] = value
 			key = None
 			value = None
-			# TODO: strip the trailing ":" (semicolon) off the end of the key
 	
 	print dictionary
 	
@@ -451,13 +441,16 @@ course_list = required_courses(url)
 
 
 write_csv("./required_courses.csv", course_list)
+# course_list = read_csv("./required_courses.csv")
 
 
 name, desc, url_fragment = course_list[0]
+print name
 course_info(url_fragment)
 
 
-# course_info("preview_course.php?catoid=29&coid=302788&print")
+print "CS 330"
+course_info("preview_course.php?catoid=29&coid=302788&print")
 
 
 
