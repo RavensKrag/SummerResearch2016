@@ -85,7 +85,21 @@ def get_soup_from_file(filepath):
 	
 	return soup
 
-def fix_singleton_tags(input_file, output_file):
+def fix_singleton_tags(tag_object):
+	# TODO: create intermediate files HERE, as a debug procedure
+	
+	input_file  = "./course.html"
+	output_file = "./course_processed.html"
+	
+	chunk = tag_object
+	
+	
+	# TODO: eliminate intermediate files, and just perform transform in-memory
+	
+	
+	write_html_to_file(input_file, chunk)
+	
+	
 	f = open(input_file,'r')
 	data = f.read()
 	f.close()
@@ -98,6 +112,14 @@ def fix_singleton_tags(input_file, output_file):
 	f = open(output_file,'w')
 	f.write(new_data)
 	f.close()
+	
+	
+	
+	soup = get_soup_from_file(output_file)
+	chunk = soup.contents[0]
+	write_html_to_file("./course_processed_bs4.html", chunk)
+	
+	return chunk
 
 def find_possible_degrees(url):
 	soup = get_soup(url)
@@ -326,26 +348,19 @@ def course_info(catalog_url_fragment):
 	# print type(chunk)
 	filepath = "./course.html"
 	write_html_to_file(filepath, chunk)
+	
 	# table      <-- skip this
 	# h1         <-- name of course again
 	# * data you actually care about (some formatting markup, no semantic tree-like structure)
 	# p > br     <-- end of meaningful section
 	# some links to the catalog
 	
+	
 	# TODO: need to pre-process this file, in order to replace <br> with <br /> and then re-load that. BS4 not properly processing <br> tags, and it's making things very difficult...
 	# BS4 misinterprets the <br> tag
 	# it is generally assumed that <br> == <br />, but BS4 seems fairly strict about things
+	chunk = fix_singleton_tags(chunk)
 	
-	input_file  = filepath
-	output_file = "./course_processed.html"
-	fix_singleton_tags(input_file, output_file)
-	
-	
-	soup = get_soup_from_file(output_file)
-	chunk = soup.select("td.block_content_popup")[0]
-	write_html_to_file("./course_processed_bs4.html", chunk)
-	
-	# TODO: eliminate intermediate files, and just perform transform in-memory
 	
 	# [0] nothing
 	# [1] navigation
