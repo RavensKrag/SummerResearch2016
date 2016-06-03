@@ -394,7 +394,10 @@ def course_info(catalog_url_fragment):
 	key   = None
 	value = None
 	for i, token in enumerate(chunk.contents):
-		# print "%d >> %s" % (i, token)
+		if token.name == "div" and token["style"] == "float: right":
+			break
+		
+		print "%d >> %s" % (i, token)
 		# NOTE: at this point, each token should be either a tag, blank line, or plain text
 		
 		# print type(token)
@@ -420,7 +423,7 @@ def course_info(catalog_url_fragment):
 			dictionary[key] = value
 			key = None
 			value = None
-	
+		
 	print dictionary
 	
 	# TODO: consider using "yield" instead of returning a Dictionary for more flexibility
