@@ -136,10 +136,31 @@ def fix_singleton_tags(tag_object):
 	
 	return tag_object
 
-def find_possible_degrees(url):
+def find_possible_degrees(url, target_fields):
 	soup = get_soup(url)
-
-
+	
+	# --- the list of programs is the last list on the page
+	segment = soup.select("ul")[-1]
+	write_html_to_file("./degree_list.html", segment)
+	
+	# --- get the relevant string names, and the links to the requirements pages
+	degrees = [x for x in segment.children if isinstance(x, bs4.element.Tag)]
+	degrees = [(x.a.string.lstrip(), x.a["href"]) for x in degrees]
+	# print degrees
+	
+	# --- convert to dictionary
+	degrees = dict(degrees)
+	# print degrees
+	
+	# --- figure out what degrees you are looking for
+	# includy any degree in the catalog if
+	# it includes at least one of the query sequences in the "target_fields" list
+	fields = [x for x in degrees.iterkeys() if any([y for y in target_fields if y in x])]
+	# print fields
+	
+	# --- return a dictionary with only the relevant degrees inside
+	return dict( [ (x, "http://catalog.gmu.edu/" + degrees[x]) for x in fields ] )
+	
 
 
 
@@ -476,30 +497,38 @@ def course_info(catalog_url_fragment):
 	# TODO: consider using "yield" instead of returning a Dictionary for more flexibility
 	
 	
-	# TODO: extract credits, number of attempts, and deparment as well
-	# (these categories do not use the <strong> tag system)
+	
 	
 
 
-	
+# ==== main ====
+url = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
+degree_dict = find_possible_degrees(url, [
+						"Computer Science",
+						"Information Technology",
+						"Electrical Engineering",
+						"Biology",
+						"Psychology"
+					])
+print_dictionary(degree_dict)
 
-# TODO: now that you have the links to each individual course, for one course, extract dependency information.
-	# prerequisites
-	# co requisites
-	# certain number of courses required before taking
-	# requirement to take at a certain time (duing first semester, before Junior year, etc)
-	# 
-	# eventually want to understand "systemic requirements" like that certain classes are only offered in Fall / only in Spring etc 
-# TODO: store all of this information in some easily accessible format
+filepath = "./degrees_offered.txt"
+file = open(filepath, "w")
+
+for k in sorted(degree_dict.iterkeys()):
+	file.write(k.encode('utf8'))
+	file.write("\n")
+
+file.close
 
 
 
+# url = degree_dict["Computer Science, BS"])
+# url = degree_dict["Applied Computer Science, BS"]
+# url = degree_dict["Biology, BA"]
+# url = degree_dict["Biology, BS"]
+url = degree_dict["Psychology, BA"]
 
-
-# main
-url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
-# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
-# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28492&returnto=6270" # Psych BA
 course_list = required_courses(url)
 
 
@@ -530,6 +559,10 @@ course_info("preview_course.php?catoid=29&coid=306130&print")
 
 
 
+
+
+
+
 # parse programs of study page to get programs
 # parse each of those to get the courses
 # output course information and dependencies
@@ -537,3 +570,14 @@ course_info("preview_course.php?catoid=29&coid=306130&print")
 # another pass to figure out the program requirements?
 # higher-level dependecies than just what course requires what.
 # Need to understand that you need a certain number of courses from particular categories.
+
+
+
+# TODO: now that you have the links to each individual course, for one course, extract dependency information.
+	# prerequisites
+	# co requisites
+	# certain number of courses required before taking
+	# requirement to take at a certain time (duing first semester, before Junior year, etc)
+	# 
+	# eventually want to understand "systemic requirements" like that certain classes are only offered in Fall / only in Spring etc 
+# TODO: store all of this information in some easily accessible format
