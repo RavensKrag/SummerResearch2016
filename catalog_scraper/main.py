@@ -18,7 +18,12 @@ import csv
 
 
 
-
+# ruby-style pretty printing of dictionary
+def print_dictionary(dict):
+	print "{"
+	for k,v in dict.iteritems():
+		print "  %s => %s" % (k, v)
+	print "}"
 
 # write the data to the file
 def write_html_to_file(filepath, data):
@@ -409,8 +414,15 @@ def course_info(catalog_url_fragment):
 	value = None
 	
 	segment = chunk.contents[start_i:end_i]
+	
+	
+	dictionary["Title"]     = segment[0].contents[0].strip() # <h1>
+	dictionary["Credits"]   = segment[1].strip()
+	dictionary["Attempts"]  = segment[3].strip()
+	dictionary["Department"] = segment[6].contents[0].strip() # <a>, href dept. page in the catalog
+	
 	for i, token in enumerate(segment):
-		# print "%d >> %s" % (i, token)
+		print "%d >> %s" % (i, token)
 		# NOTE: at this point, each token should be either a tag, blank line, or plain text
 		
 		# print type(token)
@@ -437,7 +449,8 @@ def course_info(catalog_url_fragment):
 			key = None
 			value = None
 		
-	print dictionary
+	# print dictionary
+	print_dictionary(dictionary)
 	# NOTE: remember that all fields in this dictionary are unicode strings, even the numbers.
 	# TODO: consider converting the numerical fields to actual numbers
 	
@@ -489,6 +502,12 @@ course_info(url_fragment)
 
 print "CS 330"
 course_info("preview_course.php?catoid=29&coid=302788&print")
+
+print "STAT 344"
+course_info("preview_course.php?catoid=29&coid=306778&print")
+
+print "PSYC 320"
+course_info("preview_course.php?catoid=29&coid=306130&print")
 
 
 
