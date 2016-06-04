@@ -387,17 +387,30 @@ def course_info(catalog_url_fragment):
 	# NOTE: regaurdless of the number of "lines", BS4 should parse all of the plain text in between the <strong></strong> and <br/> as one line. No need to check for the possibilty of mulitple lines.
 	
 	
+	
+	
+	# figure out where the interesting section is
+	start_i = 0
+	end_i   = -1
+	for i, token in enumerate(chunk.contents):
+		if token.name == "h1":
+			start_i = i
+		if token.name == "div" and token["style"] == "float: right":
+			end_i = i
+			break
+	
+	
+	
+	# step through the interesting section, and extract valuable information
 	target_indecies = set()
 	dictionary = {}
 	
-	
 	key   = None
 	value = None
-	for i, token in enumerate(chunk.contents):
-		if token.name == "div" and token["style"] == "float: right":
-			break
-		
-		print "%d >> %s" % (i, token)
+	
+	segment = chunk.contents[start_i:end_i]
+	for i, token in enumerate(segment):
+		# print "%d >> %s" % (i, token)
 		# NOTE: at this point, each token should be either a tag, blank line, or plain text
 		
 		# print type(token)
@@ -425,6 +438,8 @@ def course_info(catalog_url_fragment):
 			value = None
 		
 	print dictionary
+	# NOTE: remember that all fields in this dictionary are unicode strings, even the numbers.
+	# TODO: consider converting the numerical fields to actual numbers
 	
 	# TODO: consider using "yield" instead of returning a Dictionary for more flexibility
 	
