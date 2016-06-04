@@ -416,13 +416,32 @@ def course_info(catalog_url_fragment):
 	segment = chunk.contents[start_i:end_i]
 	
 	
-	dictionary["Title"]     = segment[0].contents[0].strip() # <h1>
-	dictionary["Credits"]   = segment[1].strip()
-	dictionary["Attempts"]  = segment[3].strip()
+	dictionary["Title"]      = segment[0].contents[0].strip() # <h1>
+	dictionary["Credits"]    = segment[1].strip()
+	dictionary["Attempts"]   = segment[3].strip()
 	dictionary["Department"] = segment[6].contents[0].strip() # <a>, href dept. page in the catalog
 	
+	
+	# for description, start after the <hr> following an invisible <span></span>
+	# and go until first <strong>
+	# (this part may include mulitple lines, separated by <br/> tags)
+	
+	# itertools.takewhile explained here
+	# src: http://stackoverflow.com/questions/9572833/break-list-comprehension
+	
+	# consume until contition to generate list
+	description = list(itertools.takewhile(
+	                lambda token: token.name != "strong", segment[11:len(segment)])
+	              )
+	# select only elements that are strings
+	description = [x for x in description if isinstance(x, bs4.element.NavigableString)]
+	# join, and then strip surrounding whitespace (keep internal spacing)
+	description = "".join(description).strip()
+	
+	dictionary["Description"] = description
+	
 	for i, token in enumerate(segment):
-		print "%d >> %s" % (i, token)
+		# print "%d >> %s" % (i, token)
 		# NOTE: at this point, each token should be either a tag, blank line, or plain text
 		
 		# print type(token)
@@ -444,7 +463,7 @@ def course_info(catalog_url_fragment):
 			print "uhhh what? something has gone wrong"
 		
 		if key and value:
-			print "%s => %s" % (key, value)
+			# print "%s => %s" % (key, value)
 			dictionary[key] = value
 			key = None
 			value = None
