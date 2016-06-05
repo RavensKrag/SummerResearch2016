@@ -525,7 +525,8 @@ def search_by_department(dept_code):
 	# may return mulitple pages of results, but should be pretty clear
 	url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=" + dept_code + "&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter"
 	soup = get_soup(url)
-	print url
+	print "searching for classes under: " + dept_code
+	# print url
 	
 	tag = soup.select("td.block_content_outer table")[3]
 	write_html_to_file("./search.html", tag)
@@ -543,7 +544,8 @@ def search_by_department(dept_code):
 	
 	# TODO: make more robust by pulling from all pages in search, instead of just the first
 	# TODO: allow filtering of results to limit to specific course number range (ie, you only want the undegrad courses)
-	print course_listing
+	
+	return course_listing
 
 
 
@@ -556,7 +558,7 @@ degree_dict = find_possible_degrees(url, [
 						"Biology",
 						"Psychology"
 					])
-print_dictionary(degree_dict)
+# print_dictionary(degree_dict)
 
 filepath = "./degrees_offered.txt"
 file = open(filepath, "w")
@@ -604,7 +606,37 @@ print "PSYC 320"
 course_info("preview_course.php?catoid=29&coid=306130&print")
 
 
-search_by_department("BIOL")
+course_dict = {
+	"CS":   search_by_department("CS"),
+	"BIOL": search_by_department("BIOL"),
+	"PSYC": search_by_department("PSYC")
+}
+
+print course_dict["CS"][0]
+
+
+
+
+# list comprehension to get the first item that matches critera in list
+# really want a differet way of doing this...
+# like, why is the word "next"?
+# 
+# http://stackoverflow.com/questions/9542738/python-find-in-list
+# http://stackoverflow.com/questions/9868653/find-first-list-item-that-matches-criteria
+course_page = next(x[2] for x in course_dict["CS"] if "101" in x[0])
+# remember that the tuple is (course id, short desc, link)
+print course_page
+
+
+
+
+def get_info(storage, dept, number):
+	course_page = next(x[2] for x in storage[dept] if number in x[0])
+	return course_info(course_page)
+
+
+dept, number = "CS 101".split()
+get_info(course_dict, dept, number)
 
 
 
