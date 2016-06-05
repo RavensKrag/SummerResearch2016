@@ -310,6 +310,20 @@ def extract_link(html_anchor_node):
 	# 
 	# to be perfectly clear, at the end of this, "parts" appears to no longer be a unicode string (not printed as u'foo' when printng, but rather just 'foo')
 	
+	# NOTE: something seems to be mangling the em-dash found in some pages on the Catalog
+	# ex)
+	# output:   BIOL 103Â -Â Introductory Biology I
+	# expected: BIOL 103  -  Introductory Biology I
+	# (the bottom example here actually uses an en-dash ASCII character)
+	
+	# an noted in one article,
+	# it is likely this is a unicode problem. the character should most likely appear as an em-dash, but it is getting mangled.
+	# src: https://markmcb.com/2011/11/07/replacing-ae%E2%80%9C-ae%E2%84%A2-aeoe-etc-with-utf-8-characters-in-ruby-on-rails/
+	
+	# looks like maybe python just doesn't handle unicode very well?
+	# src: http://stackoverflow.com/questions/19528853/python-removing-particular-character-u-u2610-from-string
+	
+	
 	if len(parts) == 2:
 		course_title = parts[0]
 		description  = parts[1]
@@ -525,17 +539,6 @@ def search_by_department(dept_code):
 	                lambda tr: isinstance(tr.a, bs4.element.Tag), tr_list)
 	              )
 	course_listing = [extract_link(tr.a) for tr in tr_list]
-	# NOTE: extract link is failing to properly separate course title from the short description, because for some reason the spaces are getting mangled.
-	# ex)  BIOL 103Â -Â Introductory Biology I
-	# output:   BIOL 103Â -Â Introductory Biology I
-	# expected: BIOL 103  -  Introductory Biology I
-	
-	# an noted in one article,
-	# it is likely this is a unicode problem. the character should most likely appear as an em-dash, but it is getting mangled.
-	# src: https://markmcb.com/2011/11/07/replacing-ae%E2%80%9C-ae%E2%84%A2-aeoe-etc-with-utf-8-characters-in-ruby-on-rails/
-	
-	# looks like maybe python just doesn't handle unicode very well?
-	# src: http://stackoverflow.com/questions/19528853/python-removing-particular-character-u-u2610-from-string
 	
 	
 	# TODO: make more robust by pulling from all pages in search, instead of just the first
