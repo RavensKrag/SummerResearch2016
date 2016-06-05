@@ -18,7 +18,12 @@ import csv
 
 
 
-
+# ruby-style pretty printing of dictionary
+def print_dictionary(dict):
+	print "{"
+	for k,v in dict.iteritems():
+		print "  %s => %s" % (k, v)
+	print "}"
 
 # write the data to the file
 def write_html_to_file(filepath, data):
@@ -27,13 +32,6 @@ def write_html_to_file(filepath, data):
 	# BeautifulSoup basically chucks the original HTML out the window after processing.
 	# Need to prettify it if you want indentation, otherwise it becomes an unreadable mess.
 	# (everything on one line)
-	
-	
-	# print "--- WRITE TO FILE ---"
-	# print type(data)
-	# print "---------------------"
-	
-	
 	
 	# TODO: figure out a better way to handle both lists and single items
 	
@@ -59,11 +57,13 @@ def write_csv(filepath, list):
 		for row in list:
 			w.writerow(row)
 	
-def read_csv(filepath, list):
-	with open('filepath', 'rb') as csvfile:
-		r = csv.reader(csvfile)
-		for row in r:
-			print ', '.join(row)
+def read_csv(filepath):
+	f = open(filepath, 'rb')
+	r = csv.reader(f)
+	out = [row for row in r]
+	f.close
+	
+	return out
 
 # remove duplicates and keep order (in ruby this is Array#uniq)
 # src: http://stackoverflow.com/questions/479897/how-to-remove-duplicates-from-python-list-and-keep-order
@@ -90,23 +90,83 @@ def get_soup_from_file(filepath):
 	
 	return soup
 
-def fix_singleton_tags(input_file, output_file):
+def fix_singleton_tags(tag_object):
+	# TODO: create intermediate files HERE, as a debug procedure
+	
+	input_file   = "./course.html"
+	intermediate = "./course_processed.html"
+	output_file  = "./course_processed_bs4.html"
+	
+	# TODO: eliminate intermediate files, and just perform transform in-memory
+	
+	# NOTE: write 3 files:
+	# 	raw input parsed by BS4
+	# 	input with replacement
+	# 	replaced code that was run through BS4 a second time (to make sure replacement worked)
+	
+	# NOTE: writing to file and reading back eliminates potential weirdness of having a list as input, instead of a single tag, but I think that should never actually happen?
+	
+	
+	# html tree to text file
+	write_html_to_file(input_file, tag_object)
+	
+	# text file to data
 	f = open(input_file,'r')
 	data = f.read()
 	f.close()
 	
-	new_data = data
-	for tag in ["hr", "br"]: # list your singletons here, and fix them all
-		new_data = new_data.replace("</%s>" % (tag),"")
-		new_data = new_data.replace("<%s>" % (tag),"<%s />" % (tag))
+	# replacement of malformed tags, in memory
+	singletons = ["hr", "br"] # list your singletons here, and fix them all
 	
-	f = open(output_file,'w')
+	new_data = data # need this, because of mulitple iterations of loop
+	for tag in singletons: 
+		new_data = new_data.replace("</%s>" % (tag), ""
+		                  ).replace( "<%s>" % (tag), "<%s />" % (tag)
+		                  )
+	
+	# write edited file back to disk
+	f = open(intermediate,'w')
 	f.write(new_data)
 	f.close()
+	
+	# load edited file, and return new subtree
+	soup = get_soup_from_file(intermediate)
+	tag_object = soup.contents[0]
+	write_html_to_file(output_file , tag_object)
+	
+	return tag_object
 
-def find_possible_degrees(url):
+def find_possible_degrees(url, target_fields):
 	soup = get_soup(url)
+	
+	# --- the list of programs is the last list on the page
+	segment = soup.select("ul")[-1]
+	write_html_to_file("./degree_list.html", segment)
+	
+	# --- get the relevant string names, and the links to the requirements pages
+	degrees = [x for x in segment.children if isinstance(x, bs4.element.Tag)]
+	degrees = [(x.a.string.lstrip(), x.a["href"]) for x in degrees]
+	# print degrees
+	
+	# --- convert to dictionary
+	degrees = dict(degrees)
+	# print degrees
+	
+	# --- figure out what degrees you are looking for
+	# includy any degree in the catalog if
+	# it includes at least one of the query sequences in the "target_fields" list
+	fields = [x for x in degrees.iterkeys() if any([y for y in target_fields if y in x])]
+	# print fields
+	
+	# --- return a dictionary with only the relevant degrees inside
+	return dict( [ (x, "http://catalog.gmu.edu/" + degrees[x]) for x in fields ] )
+	
 
+
+
+# given a url to the page in the catalog that lists all the requirements for a course,
+# extract tuples of the form (course ID, description, url_frament)
+# 'url_fragement' is a relative link from the catalog page, showing where to get specific info
 def required_courses(url):
 	# NOTE: beautiful soup (python) always returns a list from queries, 
 	#       as opposed to nokogiri (ruby) which will return a single item
@@ -237,17 +297,19 @@ def required_courses(url):
 	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
 	return data
 
-
-
-
-
-
 # given a "link" from the course overview page, get an actual HTML link
 # html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
 def extract_link(html_anchor_node):
 	course_title = html_anchor_node.contents[0]
 	description  = ""
-	parts = course_title.split(" - ")
+	parts = course_title.encode('utf8' # operation fails if you skip the encode step
+	                   ).replace(" - ", " - " # replace em-dash (long one) with en-dash (ASCII)
+	                   ).split(" - ")
+	# NOTE: I think this may convert the string to ASCII? that could have serious side-effects
+	# TODO: look more into how .encode() works
+	# 
+	# to be perfectly clear, at the end of this, "parts" appears to no longer be a unicode string (not printed as u'foo' when printng, but rather just 'foo')
+	
 	if len(parts) == 2:
 		course_title = parts[0]
 		description  = parts[1]
@@ -306,7 +368,11 @@ def extract_link(html_anchor_node):
 # def extract_acalogPopup():
 
 
-def get_dependencies(catalog_url_fragment):
+
+
+
+# extract the info out of details page from the catalog
+def course_info(catalog_url_fragment):
 	url = "http://catalog.gmu.edu/" + catalog_url_fragment
 	
 	# <strong>Prerequisite(s):</strong>
@@ -322,27 +388,19 @@ def get_dependencies(catalog_url_fragment):
 	soup = get_soup(url)
 	chunk = soup.select("td.block_content_popup")[0]
 	
-	print type(chunk)
 	filepath = "./course.html"
 	write_html_to_file(filepath, chunk)
+	
+	# BS4 does not understand that <br> == <br />
+	# and so tries to fix the open <br> by inserting </br> tags (which are not real HTMl tags)
+	chunk = fix_singleton_tags(chunk)
+	
+	
 	# table      <-- skip this
 	# h1         <-- name of course again
 	# * data you actually care about (some formatting markup, no semantic tree-like structure)
 	# p > br     <-- end of meaningful section
 	# some links to the catalog
-	
-	# TODO: need to pre-process this file, in order to replace <br> with <br /> and then re-load that. BS4 not properly processing <br> tags, and it's making things very difficult...
-	# BS4 misinterprets the <br> tag
-	# it is generally assumed that <br> == <br />, but BS4 seems fairly strict about things
-	
-	input_file  = filepath
-	output_file = "./course_processed.html"
-	fix_singleton_tags(input_file, output_file)
-	
-	
-	soup = get_soup_from_file(output_file)
-	chunk = soup.select("td.block_content_popup")[0]
-	write_html_to_file("./course_processed_bs4.html", chunk)
 	
 	# [0] nothing
 	# [1] navigation
@@ -350,10 +408,6 @@ def get_dependencies(catalog_url_fragment):
 	# [3] h1
 	# [4] text after the h1 (mixed content) ex: "Credits: 2"
 	# 
-	
-	
-	print type(chunk)
-	print len(chunk.contents)
 	
 	# <strong>Corequisite(s):</strong>
 	# CS 112.
@@ -363,83 +417,161 @@ def get_dependencies(catalog_url_fragment):
 	# content
 	# <br>
 	
+	# NOTE: regaurdless of the number of "lines", BS4 should parse all of the plain text in between the <strong></strong> and <br/> as one line. No need to check for the possibilty of mulitple lines.
 	
+	
+	
+	
+	# figure out where the interesting section is
+	start_i = 0
+	end_i   = -1
+	for i, token in enumerate(chunk.contents):
+		if token.name == "h1":
+			start_i = i
+		if token.name == "div" and token["style"] == "float: right":
+			end_i = i
+			break
+	
+	
+	
+	# step through the interesting section, and extract valuable information
 	target_indecies = set()
 	dictionary = {}
 	
-	
 	key   = None
 	value = None
-	for i, token in enumerate(chunk.contents):
+	
+	segment = chunk.contents[start_i:end_i]
+	
+	
+	dictionary["Title"]      = segment[0].contents[0].strip() # <h1>
+	dictionary["Credits"]    = segment[1].strip()
+	dictionary["Attempts"]   = segment[3].strip()
+	dictionary["Department"] = segment[6].contents[0].strip() # <a>, href dept. page in the catalog
+	
+	
+	# for description, start after the <hr> following an invisible <span></span>
+	# and go until first <strong>
+	# (this part may include mulitple lines, separated by <br/> tags)
+	
+	# itertools.takewhile explained here
+	# src: http://stackoverflow.com/questions/9572833/break-list-comprehension
+	
+	# consume until contition to generate list
+	description = list(itertools.takewhile(
+	                lambda token: token.name != "strong", segment[11:len(segment)])
+	              )
+	# select only elements that are strings
+	description = [x for x in description if isinstance(x, bs4.element.NavigableString)]
+	# join, and then strip surrounding whitespace (keep internal spacing)
+	description = "".join(description).strip()
+	
+	dictionary["Description"] = description
+	
+	for i, token in enumerate(segment):
 		# print "%d >> %s" % (i, token)
 		# NOTE: at this point, each token should be either a tag, blank line, or plain text
 		
 		# print type(token)
-			# <class 'bs4.element.NavigableString'>
-			# <class 'bs4.element.Tag'>
-		# token is bs4.element.NavigableString  # exactly this class
-		# isinstance(token, bs4.element.Tag)    # any descendent class
+		
+		# NOTE: this is how you check types in python
+		# 	token is bs4.element.NavigableString   # exactly this class
+		# 	isinstance(token, bs4.element.Tag)     # any descendent class
 		if isinstance(token, bs4.element.Tag):
-			# print token.name
 			if token.name == "strong":
 				target_indecies.add(i)
 				
-				out = token.contents[0].strip()
-				unicode_string = out.encode('utf8')
-				print unicode_string
-				
-				key = unicode_string
+				key = token.contents[0].strip().rstrip(':')
 				# yield key
-		if isinstance(token, bs4.element.NavigableString):
+		elif isinstance(token, bs4.element.NavigableString):
 			if (i-1) in target_indecies:
-				out = token.strip()
-				unicode_string = out.encode('utf8')
-				print unicode_string
-				
-				value = unicode_string
+				value = token.strip()
 				# yield value
-		# NOTE: CS 330 prints with errors, even when converting unicode
-		# 
-		# ex) Systems Engineering Bachelorâs programs
+		else:
+			print "uhhh what? something has gone wrong"
 		
 		if key and value:
-			# print "yes"
-			print "k:v => %s, %s" % (key, value)
-			print "====="
+			# print "%s => %s" % (key, value)
 			dictionary[key] = value
 			key = None
 			value = None
-			# TODO: strip the trailing ":" (semicolon) off the end of the key
-	
-	print dictionary
+		
+	# print dictionary
+	print_dictionary(dictionary)
+	# NOTE: remember that all fields in this dictionary are unicode strings, even the numbers.
+	# TODO: consider converting the numerical fields to actual numbers
 	
 	# TODO: consider using "yield" instead of returning a Dictionary for more flexibility
+
+
+# get a list of classes using the catalog search
+# ex) "BIOL", "CS", etc
+def search_by_department(dept_code):
+	# use this url to search for courses
+	# may return mulitple pages of results, but should be pretty clear
+	url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=" + dept_code + "&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter"
+	soup = get_soup(url)
+	print url
+	
+	tag = soup.select("td.block_content_outer table")[3]
+	write_html_to_file("./search.html", tag)
+	
+	tr_list = tag.select("tr")[2:-1]
+	# write_html_to_file("./search_row.html", tag_list)
 	
 	
-	# TODO: extract credits, number of attempts, and deparment as well
-	# (these categories do not use the <strong> tag system)
 	
-
-
+	tr_list = list(itertools.takewhile(
+	                lambda tr: isinstance(tr.a, bs4.element.Tag), tr_list)
+	              )
+	course_listing = [extract_link(tr.a) for tr in tr_list]
+	# NOTE: extract link is failing to properly separate course title from the short description, because for some reason the spaces are getting mangled.
+	# ex)  BIOL 103Â -Â Introductory Biology I
+	# output:   BIOL 103Â -Â Introductory Biology I
+	# expected: BIOL 103  -  Introductory Biology I
 	
+	# an noted in one article,
+	# it is likely this is a unicode problem. the character should most likely appear as an em-dash, but it is getting mangled.
+	# src: https://markmcb.com/2011/11/07/replacing-ae%E2%80%9C-ae%E2%84%A2-aeoe-etc-with-utf-8-characters-in-ruby-on-rails/
+	
+	# looks like maybe python just doesn't handle unicode very well?
+	# src: http://stackoverflow.com/questions/19528853/python-removing-particular-character-u-u2610-from-string
+	
+	
+	# TODO: make more robust by pulling from all pages in search, instead of just the first
+	# TODO: allow filtering of results to limit to specific course number range (ie, you only want the undegrad courses)
+	print course_listing
 
-# TODO: now that you have the links to each individual course, for one course, extract dependency information.
-	# prerequisites
-	# co requisites
-	# certain number of courses required before taking
-	# requirement to take at a certain time (duing first semester, before Junior year, etc)
-	# 
-	# eventually want to understand "systemic requirements" like that certain classes are only offered in Fall / only in Spring etc 
-# TODO: store all of this information in some easily accessible format
+
+
+# ==== main ====
+url = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
+degree_dict = find_possible_degrees(url, [
+						"Computer Science",
+						"Information Technology",
+						"Electrical Engineering",
+						"Biology",
+						"Psychology"
+					])
+print_dictionary(degree_dict)
+
+filepath = "./degrees_offered.txt"
+file = open(filepath, "w")
+
+for k in sorted(degree_dict.iterkeys()):
+	file.write(k.encode('utf8'))
+	file.write("\n")
+
+file.close
 
 
 
+# url = degree_dict["Computer Science, BS"])
+# url = degree_dict["Applied Computer Science, BS"]
+# url = degree_dict["Biology, BA"]
+# url = degree_dict["Biology, BS"]
+url = degree_dict["Psychology, BA"]
 
-
-# main
-url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28260&returnto=6270" # CS BS
-# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28210&returnto=6270" # biol BA
-# url = "http://catalog.gmu.edu/preview_program.php?catoid=29&poid=28492&returnto=6270" # Psych BA
 course_list = required_courses(url)
 
 
@@ -451,13 +583,26 @@ course_list = required_courses(url)
 
 
 write_csv("./required_courses.csv", course_list)
+# course_list = read_csv("./required_courses.csv")
 
 
 name, desc, url_fragment = course_list[0]
-get_dependencies(url_fragment)
+print name
+course_info(url_fragment)
 
 
-# get_dependencies("preview_course.php?catoid=29&coid=302788&print")
+print "CS 330"
+course_info("preview_course.php?catoid=29&coid=302788&print")
+
+print "STAT 344"
+course_info("preview_course.php?catoid=29&coid=306778&print")
+
+print "PSYC 320"
+course_info("preview_course.php?catoid=29&coid=306130&print")
+
+
+search_by_department("BIOL")
+
 
 
 
@@ -468,3 +613,14 @@ get_dependencies(url_fragment)
 # another pass to figure out the program requirements?
 # higher-level dependecies than just what course requires what.
 # Need to understand that you need a certain number of courses from particular categories.
+
+
+
+# TODO: now that you have the links to each individual course, for one course, extract dependency information.
+	# prerequisites
+	# co requisites
+	# certain number of courses required before taking
+	# requirement to take at a certain time (duing first semester, before Junior year, etc)
+	# 
+	# eventually want to understand "systemic requirements" like that certain classes are only offered in Fall / only in Spring etc 
+# TODO: store all of this information in some easily accessible format
