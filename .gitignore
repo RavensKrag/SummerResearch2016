@@ -60,3 +60,11 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+
+
+# === Personal ignores
+# Ignore automatic cache
+# TODO: move all these files to some temporary directory
+catalog_scraper/*.html
+catalog_scraper/*.csv

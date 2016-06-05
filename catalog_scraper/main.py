@@ -302,7 +302,14 @@ def required_courses(url):
 def extract_link(html_anchor_node):
 	course_title = html_anchor_node.contents[0]
 	description  = ""
-	parts = course_title.split(" - ")
+	parts = course_title.encode('utf8' # operation fails if you skip the encode step
+	                   ).replace(" - ", " - " # replace em-dash (long one) with en-dash (ASCII)
+	                   ).split(" - ")
+	# NOTE: I think this may convert the string to ASCII? that could have serious side-effects
+	# TODO: look more into how .encode() works
+	# 
+	# to be perfectly clear, at the end of this, "parts" appears to no longer be a unicode string (not printed as u'foo' when printng, but rather just 'foo')
+	
 	if len(parts) == 2:
 		course_title = parts[0]
 		description  = parts[1]
@@ -495,10 +502,46 @@ def course_info(catalog_url_fragment):
 	# TODO: consider converting the numerical fields to actual numbers
 	
 	# TODO: consider using "yield" instead of returning a Dictionary for more flexibility
+
+
+# get a list of classes using the catalog search
+# ex) "BIOL", "CS", etc
+def search_by_department(dept_code):
+	# use this url to search for courses
+	# may return mulitple pages of results, but should be pretty clear
+	url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=" + dept_code + "&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter"
+	soup = get_soup(url)
+	print url
+	
+	tag = soup.select("td.block_content_outer table")[3]
+	write_html_to_file("./search.html", tag)
+	
+	tr_list = tag.select("tr")[2:-1]
+	# write_html_to_file("./search_row.html", tag_list)
 	
 	
 	
+	tr_list = list(itertools.takewhile(
+	                lambda tr: isinstance(tr.a, bs4.element.Tag), tr_list)
+	              )
+	course_listing = [extract_link(tr.a) for tr in tr_list]
+	# NOTE: extract link is failing to properly separate course title from the short description, because for some reason the spaces are getting mangled.
+	# ex)  BIOL 103Â -Â Introductory Biology I
+	# output:   BIOL 103Â -Â Introductory Biology I
+	# expected: BIOL 103  -  Introductory Biology I
 	
+	# an noted in one article,
+	# it is likely this is a unicode problem. the character should most likely appear as an em-dash, but it is getting mangled.
+	# src: https://markmcb.com/2011/11/07/replacing-ae%E2%80%9C-ae%E2%84%A2-aeoe-etc-with-utf-8-characters-in-ruby-on-rails/
+	
+	# looks like maybe python just doesn't handle unicode very well?
+	# src: http://stackoverflow.com/questions/19528853/python-removing-particular-character-u-u2610-from-string
+	
+	
+	# TODO: make more robust by pulling from all pages in search, instead of just the first
+	# TODO: allow filtering of results to limit to specific course number range (ie, you only want the undegrad courses)
+	print course_listing
+
 
 
 # ==== main ====
@@ -558,7 +601,7 @@ print "PSYC 320"
 course_info("preview_course.php?catoid=29&coid=306130&print")
 
 
-
+search_by_department("BIOL")
 
 
 
