@@ -17,6 +17,10 @@ import csv
 
 
 
+# ===
+# === Generalizable helper functions
+# === (doesn't pertain to just this project)
+# ===
 
 # ruby-style pretty printing of dictionary
 def print_dictionary(dict):
@@ -70,6 +74,18 @@ def read_csv(filepath):
 def uniq(input_list):
 	return list(map(operator.itemgetter(0), itertools.groupby(input_list)))
 
+
+
+
+
+
+
+
+
+
+# ===
+# === Manage HTML stuff
+# ===
 
 def get_soup(url):
 	r = requests.get(url)
@@ -136,6 +152,102 @@ def fix_singleton_tags(tag_object):
 	
 	return tag_object
 
+# given a "link" from the course overview page, get an actual HTML link
+# html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
+def extract_link(html_anchor_node):
+	course_title = html_anchor_node.contents[0]
+	description  = ""
+	parts = course_title.encode('utf8' # operation fails if you skip the encode step
+	                   ).replace(" - ", " - " # replace em-dash (long one) with en-dash (ASCII)
+	                   ).split(" - ")
+	# NOTE: I think this may convert the string to ASCII? that could have serious side-effects
+	# TODO: look more into how .encode() works
+	# 
+	# to be perfectly clear, at the end of this, "parts" appears to no longer be a unicode string (not printed as u'foo' when printng, but rather just 'foo')
+	
+	# NOTE: something seems to be mangling the em-dash found in some pages on the Catalog
+	# ex)
+	# output:   BIOL 103Â -Â Introductory Biology I
+	# expected: BIOL 103  -  Introductory Biology I
+	# (the bottom example here actually uses an en-dash ASCII character)
+	
+	# an noted in one article,
+	# it is likely this is a unicode problem. the character should most likely appear as an em-dash, but it is getting mangled.
+	# src: https://markmcb.com/2011/11/07/replacing-ae%E2%80%9C-ae%E2%84%A2-aeoe-etc-with-utf-8-characters-in-ruby-on-rails/
+	
+	# looks like maybe python just doesn't handle unicode very well?
+	# src: http://stackoverflow.com/questions/19528853/python-removing-particular-character-u-u2610-from-string
+	
+	
+	if len(parts) == 2:
+		course_title = parts[0]
+		description  = parts[1]
+	else:
+		course_title = parts[0]
+		
+	# print course_title
+	# NOTE: some times the course title is given, and sometimes it is not
+	# ex) CS 367 - Computer Systems and Programming
+	#       vs
+	#     ENGH 302
+	
+	
+	# print type(html_anchor_node)
+	# print html_anchor_node.name
+	script = html_anchor_node['onclick']
+	# print script
+	
+	
+	# there are two formats:
+	# showCourse()
+	# acalogPopup()
+	# 
+	# showCourse('29', '302347',this, 'a:2:{s:8:~location~;s:7:~program~;s:4:~core~;s:6:~245513~;}'); return false;
+	# acalogPopup('preview_course.php?catoid=29&coid=318028&print', '3', 770, 530, 'yes');return false;
+	
+	regexp_a = r"showCourse\('(.+?)'\, '(.+?)',this,"
+	regexp_b = r"acalogPopup\('(.+?)'.*"
+	url = ""
+	if "showCourse" in script:
+		# a = 29
+		# b = 302347
+		
+		match = re.match(regexp_a, script)
+		a = match.group(1) # TODO: convert both matches to actual numbers maybe?
+		b = match.group(2) #       idk, just going to convert back to string and use in URL again
+		# print [a, b]
+		
+		url = "preview_course.php?catoid=%s&coid=%s&print" % (a,b)
+		# print url
+		
+	elif "acalogPopup" in script:
+		match = re.match(regexp_b, script)
+		a = match.group(1)
+		# print a
+		url = a
+	else
+		print "WARNING: unknown link format detected: "
+		print script
+	
+	# print "==="
+	
+	return (course_title, description, url)
+
+
+# def extract_showCourse():
+	
+
+# def extract_acalogPopup():
+
+
+
+
+
+
+# ===
+# === Get stuff done
+# ===
+
 def find_possible_degrees(url, target_fields):
 	soup = get_soup(url)
 	
@@ -160,8 +272,6 @@ def find_possible_degrees(url, target_fields):
 	
 	# --- return a dictionary with only the relevant degrees inside
 	return dict( [ (x, "http://catalog.gmu.edu/" + degrees[x]) for x in fields ] )
-	
-
 
 
 # given a url to the page in the catalog that lists all the requirements for a course,
@@ -296,93 +406,6 @@ def required_courses(url):
 	
 	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
 	return data
-
-# given a "link" from the course overview page, get an actual HTML link
-# html_anchor_node: a BS4 node object that describes the <a> tag with the link data in it
-def extract_link(html_anchor_node):
-	course_title = html_anchor_node.contents[0]
-	description  = ""
-	parts = course_title.encode('utf8' # operation fails if you skip the encode step
-	                   ).replace(" - ", " - " # replace em-dash (long one) with en-dash (ASCII)
-	                   ).split(" - ")
-	# NOTE: I think this may convert the string to ASCII? that could have serious side-effects
-	# TODO: look more into how .encode() works
-	# 
-	# to be perfectly clear, at the end of this, "parts" appears to no longer be a unicode string (not printed as u'foo' when printng, but rather just 'foo')
-	
-	# NOTE: something seems to be mangling the em-dash found in some pages on the Catalog
-	# ex)
-	# output:   BIOL 103Â -Â Introductory Biology I
-	# expected: BIOL 103  -  Introductory Biology I
-	# (the bottom example here actually uses an en-dash ASCII character)
-	
-	# an noted in one article,
-	# it is likely this is a unicode problem. the character should most likely appear as an em-dash, but it is getting mangled.
-	# src: https://markmcb.com/2011/11/07/replacing-ae%E2%80%9C-ae%E2%84%A2-aeoe-etc-with-utf-8-characters-in-ruby-on-rails/
-	
-	# looks like maybe python just doesn't handle unicode very well?
-	# src: http://stackoverflow.com/questions/19528853/python-removing-particular-character-u-u2610-from-string
-	
-	
-	if len(parts) == 2:
-		course_title = parts[0]
-		description  = parts[1]
-	else:
-		course_title = parts[0]
-		
-	# print course_title
-	# NOTE: some times the course title is given, and sometimes it is not
-	# ex) CS 367 - Computer Systems and Programming
-	#       vs
-	#     ENGH 302
-	
-	
-	# print type(html_anchor_node)
-	# print html_anchor_node.name
-	script = html_anchor_node['onclick']
-	# print script
-	
-	
-	# there are two formats:
-	# showCourse()
-	# acalogPopup()
-	# 
-	# showCourse('29', '302347',this, 'a:2:{s:8:~location~;s:7:~program~;s:4:~core~;s:6:~245513~;}'); return false;
-	# acalogPopup('preview_course.php?catoid=29&coid=318028&print', '3', 770, 530, 'yes');return false;
-	
-	regexp_a = r"showCourse\('(.+?)'\, '(.+?)',this,"
-	regexp_b = r"acalogPopup\('(.+?)'.*"
-	url = ""
-	if "showCourse" in script:
-		# a = 29
-		# b = 302347
-		
-		match = re.match(regexp_a, script)
-		a = match.group(1) # TODO: convert both matches to actual numbers maybe?
-		b = match.group(2) #       idk, just going to convert back to string and use in URL again
-		# print [a, b]
-		
-		url = "preview_course.php?catoid=%s&coid=%s&print" % (a,b)
-		# print url
-		
-	elif "acalogPopup" in script:
-		match = re.match(regexp_b, script)
-		a = match.group(1)
-		# print a
-		url = a
-	
-	# print "==="
-	
-	return (course_title, description, url)
-
-
-# def extract_showCourse():
-	
-
-# def extract_acalogPopup():
-
-
-
 
 
 # extract the info out of details page from the catalog
@@ -546,6 +569,9 @@ def search_by_department(dept_code):
 	# TODO: allow filtering of results to limit to specific course number range (ie, you only want the undegrad courses)
 	
 	return course_listing
+
+
+
 
 
 
