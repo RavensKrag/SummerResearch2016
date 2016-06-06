@@ -664,6 +664,9 @@ def get_info(storage, dept, number):
 dept, number = "CS 101".split()
 get_info(course_dict, dept, number)
 
+# I mean, course names are just 2-4 capital letters, and a 3-digit number
+# you could probably scan with regex and pull that out pretty easily?
+
 
 
 
