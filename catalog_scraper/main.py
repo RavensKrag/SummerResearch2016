@@ -29,6 +29,7 @@ class Foo(object):
 		self.storage = dict()
 	
 	
+	# dependencies: none
 	# get possible degree program requrement lists
 	def foo1(self):
 		url = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
@@ -40,17 +41,18 @@ class Foo(object):
 								"Psychology"
 							])
 		# print_dictionary(degree_dict)
-
+		
 		filepath = "./tmp/degrees_offered.txt"
 		file = open(filepath, "w")
 
 		for k in sorted(self.degree_dict.iterkeys()):
 			file.write(k.encode('utf8'))
 			file.write("\n")
-
+		
 		file.close
 	
 	
+	# dependencies: foo1
 	# get the list of courses for one program, based on it's name
 	def foo2(self):
 		# url = self.degree_dict["Computer Science, BS"])
@@ -78,6 +80,7 @@ class Foo(object):
 		util.course_info(url_fragment)
 	
 	
+	# dependencies: foo1
 	# test getting specific course info, based on URL fragment
 	def foo3(self):
 		print "CS 330"
@@ -89,14 +92,20 @@ class Foo(object):
 		print "PSYC 320"
 		util.course_info("preview_course.php?catoid=29&coid=306130&print")
 	
+	# dependencies: none
+	def foo5(self, list_of_deparments):
+		self.course_dict = dict()
+		
+		for dept in list_of_deparments:
+			self.course_dict[dept] = util.search_by_department(dept)
+		
+		# self.course_dict = dict( [ (dept, util.search_by_department(dept)) for dept in list_of_deparments ] )
 	
+	
+	# dependencies: foo5
 	# pull down list of courses by seaching by ID, and then pull down specifics
 	def foo4(self):
-		self.course_dict = {
-			"CS":   util.search_by_department("CS"),
-			"BIOL": util.search_by_department("BIOL"),
-			"PSYC": util.search_by_department("PSYC")
-		}
+		self.foo5( ["CS", "BIOL", "PSYC"] )
 		
 		print self.course_dict["CS"][0]
 		
@@ -130,9 +139,9 @@ class Foo(object):
 
 x = Foo()
 
-x.foo1()
-x.foo2()
-x.foo3()
+# x.foo1()
+# x.foo2()
+# x.foo3()
 x.foo4()
 
 
