@@ -93,9 +93,9 @@ def get_soup_from_file(filepath):
 def fix_singleton_tags(tag_object):
 	# TODO: create intermediate files HERE, as a debug procedure
 	
-	input_file   = "./course.html"
-	intermediate = "./course_processed.html"
-	output_file  = "./course_processed_bs4.html"
+	input_file   = "./tmp/course.html"
+	intermediate = "./tmp/course_processed.html"
+	output_file  = "./tmp/course_processed_bs4.html"
 	
 	# TODO: eliminate intermediate files, and just perform transform in-memory
 	
@@ -141,7 +141,7 @@ def find_possible_degrees(url, target_fields):
 	
 	# --- the list of programs is the last list on the page
 	segment = soup.select("ul")[-1]
-	write_html_to_file("./degree_list.html", segment)
+	write_html_to_file("./tmp/degree_list.html", segment)
 	
 	# --- get the relevant string names, and the links to the requirements pages
 	degrees = [x for x in segment.children if isinstance(x, bs4.element.Tag)]
@@ -206,7 +206,7 @@ def required_courses(url):
 		# description
 	# are all at the same level of the tree.
 	
-	write_html_to_file("./segment.html", main_table)
+	write_html_to_file("./tmp/segment.html", main_table)
 	
 	
 	
@@ -223,7 +223,7 @@ def required_courses(url):
 	
 	
 	# should contain the actual course info
-	write_html_to_file("requirements.html", requirements)
+	write_html_to_file("./tmp/requirements.html", requirements)
 	
 	
 	
@@ -278,7 +278,7 @@ def required_courses(url):
 	# python: arry[0:4] # inclusive of bottom end, exclusive of top end
 	fragment = list(requirements.children)[(a+1):b]
 	
-	write_html_to_file("fragment.html", fragment)
+	write_html_to_file("./tmp/fragment.html", fragment)
 	
 	
 	
@@ -402,7 +402,7 @@ def course_info(catalog_url_fragment):
 	soup = get_soup(url)
 	chunk = soup.select("td.block_content_popup")[0]
 	
-	filepath = "./course.html"
+	filepath = "./tmp/course.html"
 	write_html_to_file(filepath, chunk)
 	
 	# BS4 does not understand that <br> == <br />
@@ -529,10 +529,10 @@ def search_by_department(dept_code):
 	# print url
 	
 	tag = soup.select("td.block_content_outer table")[3]
-	write_html_to_file("./search.html", tag)
+	write_html_to_file("./tmp/search.html", tag)
 	
 	tr_list = tag.select("tr")[2:-1]
-	# write_html_to_file("./search_row.html", tag_list)
+	# write_html_to_file("./tmp/search_row.html", tag_list)
 	
 	
 	
@@ -560,7 +560,7 @@ degree_dict = find_possible_degrees(url, [
 					])
 # print_dictionary(degree_dict)
 
-filepath = "./degrees_offered.txt"
+filepath = "./tmp/degrees_offered.txt"
 file = open(filepath, "w")
 
 for k in sorted(degree_dict.iterkeys()):
@@ -587,7 +587,7 @@ course_list = required_courses(url)
 # NOTE: this may not be necessary if the selection filter on links is improved
 
 
-write_csv("./required_courses.csv", course_list)
+write_csv("./tmp/required_courses.csv", course_list)
 # course_list = read_csv("./required_courses.csv")
 
 
