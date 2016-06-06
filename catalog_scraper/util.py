@@ -274,10 +274,7 @@ def find_possible_degrees(url, target_fields):
 	return dict( [ (x, "http://catalog.gmu.edu/" + degrees[x]) for x in fields ] )
 
 
-# given a url to the page in the catalog that lists all the requirements for a course,
-# extract tuples of the form (course ID, description, url_frament)
-# 'url_fragement' is a relative link from the catalog page, showing where to get specific info
-def required_courses(url):
+def requirements_subtree(url):
 	# NOTE: beautiful soup (python) always returns a list from queries, 
 	#       as opposed to nokogiri (ruby) which will return a single item
 	#       if there is only one item in the list. That's why BS4 requires
@@ -390,7 +387,37 @@ def required_courses(url):
 	
 	write_html_to_file("./tmp/fragment.html", fragment)
 	
+	return fragment
+
+
+# given a url to the page in the catalog that lists all the requirements for a course,
+# extract tuples of the form (course ID, description, url_frament)
+# 'url_fragement' is a relative link from the catalog page, showing where to get specific info
+# 
+# THIS IS JUST A BROAD-SCALE TEST
+# function to actually do this properly is below: "degree_requirements()"
+def required_courses(url):
+	fragment = requirements_subtree(url)
 	
+	# TODO: need to improve this selector. catching some false positives.
+	# wait, variable 'fragment' is a list...
+	
+	links = [x.findAll("a",{"onclick":True}) for x in fragment]
+	
+	# NOTE: splat operator works in Python too, apparently
+	# for a in itertools.chain(*links):
+	# 	print type(a)
+	# 	title, url = extract_link(a)
+	# 	print "%s, %s" % (title, url)
+	# 	print "================="
+	
+	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
+	return data
+
+
+# 
+def degree_requirements(url):
+	fragment = requirements_subtree(url)
 	
 	# TODO: need to improve this selector. catching some false positives.
 	# wait, variable 'fragment' is a list...

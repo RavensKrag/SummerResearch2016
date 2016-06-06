@@ -55,11 +55,11 @@ class Foo(object):
 	# dependencies: foo1
 	# get the list of courses for one program, based on it's name
 	def foo2(self):
-		# url = self.degree_dict["Computer Science, BS"])
+		url = self.degree_dict["Computer Science, BS"]
 		# url = self.degree_dict["Applied Computer Science, BS"]
 		# url = self.degree_dict["Biology, BA"]
 		# url = self.degree_dict["Biology, BS"]
-		url = self.degree_dict["Psychology, BA"]
+		# url = self.degree_dict["Psychology, BA"]
 		
 		course_list = util.required_courses(url)
 		
@@ -110,8 +110,6 @@ class Foo(object):
 		print self.course_dict["CS"][0]
 		
 		
-		
-		
 		# list comprehension to get the first item that matches critera in list
 		# really want a differet way of doing this...
 		# like, why is the word "next"?
@@ -130,6 +128,18 @@ class Foo(object):
 		# you could probably scan with regex and pull that out pretty easily?
 	
 	
+	# dependencies: ???
+	def foo6(self):
+		url = self.degree_dict["Computer Science, BS"]
+		# url = self.degree_dict["Applied Computer Science, BS"]
+		# url = self.degree_dict["Biology, BA"]
+		# url = self.degree_dict["Biology, BS"]
+		# url = self.degree_dict["Psychology, BA"]
+		
+		requirements = util.degree_requirements(url)
+		
+		
+	
 	# --- helper methods
 	def get_info(self, dept, number):
 		course_page = next(x[2] for x in self.course_dict[dept] if number in x[0])
@@ -139,10 +149,10 @@ class Foo(object):
 
 x = Foo()
 
-# x.foo1()
-# x.foo2()
+x.foo1()
+x.foo2()
 # x.foo3()
-x.foo4()
+# x.foo4()
 
 
 
