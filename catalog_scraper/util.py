@@ -41,7 +41,7 @@ def write_html_to_file(filepath, data):
 	
 	# must encode string to unicode, or attempts to write ASCII which is bad
 	if isinstance(data, list):
-		for x in list(data):
+		for x in itertools.chain.from_iterable(data):
 			foo = x.prettify()
 			unicode_string = foo.encode('utf8')
 			file.write(unicode_string)
