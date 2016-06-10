@@ -157,10 +157,19 @@ class Foo(object):
 		# sometimes you see a <strong> sometimes you see a <strong><u> which is really bad...
 	
 	# dependencies: foo1
-	def foo7(self):
+	def foo7(self, program_name):
+		return []
+	
+	# backend dependency tree construction
+	def foo8(self, list_of_courses):
 		pass
 	
-	def foo8(self):
+	# query
+	def foo9(self, class_dependencies, target_course):
+		pass
+	
+	# visualization
+	def foo10(self, class_dependencies, output_filepath):
 		pass
 	
 	
@@ -204,6 +213,7 @@ def pathway3(x):
 	x.foo6()
 
 def pathway4(x):
+	# pull down a bunch of data
 	x.foo1([
 		"Computer Science",
 		"Information Technology",
@@ -212,8 +222,24 @@ def pathway4(x):
 		"Psychology"
 	])
 	x.foo5( ["CS", "BIOL", "PSYC"] )
-	x.foo7()
-	x.foo8()
+	
+	
+	# take one degree program, and walk the dependencies for all courses in the degree
+	course_list = x.foo7("Computer Science, BS")  # get all relevant courses
+	class_dependencies = x.foo8(course_list)      # construct all dependencies
+	
+	output_filepath = ""
+	x.foo10(class_dependencies, output_filepath)  # visualize the dependency graph
+	
+	
+	# query: what is the chain of courses that lead up to this course? 
+	x.foo9(class_dependencies, "CS 465")
+	# => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
+	
+	# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
+	# NOTE: "ECE 301" is the old name, IIRC
+
+
 
 # pathway1(x)
 # pathway2(x)
