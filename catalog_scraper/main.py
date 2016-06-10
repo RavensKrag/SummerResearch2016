@@ -31,15 +31,9 @@ class Foo(object):
 	
 	# dependencies: none
 	# get possible degree program requrement lists
-	def foo1(self):
+	def foo1(self, list_of_degrees):
 		url = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
-		self.degree_dict = util.find_possible_degrees(url, [
-								"Computer Science",
-								"Information Technology",
-								"Electrical Engineering",
-								"Biology",
-								"Psychology"
-							])
+		self.degree_dict = util.find_possible_degrees(url, list_of_degrees)
 		# print_dictionary(degree_dict)
 		
 		filepath = "./tmp/degrees_offered.txt"
@@ -82,6 +76,7 @@ class Foo(object):
 	
 	# dependencies: foo1
 	# test getting specific course info, based on URL fragment
+	# (special cases of methodogly from foo2)
 	def foo3(self):
 		print "CS 330"
 		util.course_info("preview_course.php?catoid=29&coid=302788&print")
@@ -160,7 +155,13 @@ class Foo(object):
 		
 		
 		# sometimes you see a <strong> sometimes you see a <strong><u> which is really bad...
-		
+	
+	# dependencies: foo1
+	def foo7(self):
+		pass
+	
+	def foo8(self):
+		pass
 	
 	
 	# --- helper methods
@@ -172,13 +173,55 @@ class Foo(object):
 # ====================
 
 
+
+
 x = Foo()
 
-x.foo1()
-# x.foo2()
-# x.foo3()
-# x.foo4()
-x.foo6()
+
+def pathway1(x):
+	x.foo1([
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	])
+	x.foo2()
+	x.foo3()
+	
+def pathway2(x):
+	x.foo5( ["CS", "BIOL", "PSYC"] )
+	x.foo4()
+
+def pathway3(x):
+	x.foo1([
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	])
+	x.foo6()
+
+def pathway4(x):
+	x.foo1([
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	])
+	x.foo5( ["CS", "BIOL", "PSYC"] )
+	x.foo7()
+	x.foo8()
+
+# pathway1(x)
+# pathway2(x)
+# pathway3(x)
+pathway4(x)
+	
+
+
 
 
 
