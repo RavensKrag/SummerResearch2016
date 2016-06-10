@@ -415,7 +415,8 @@ def required_courses(url):
 	return data
 
 
-# 
+# THIS ONE IS WHAT YOU WANT
+# actually doing this properly this time
 def degree_requirements(url):
 	fragment = requirements_subtree(url)
 	
@@ -431,7 +432,7 @@ def degree_requirements(url):
 	# 	print "%s, %s" % (title, url)
 	# 	print "================="
 	
-	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain(*links)]
+	data = [extract_link(anchor_tag) for anchor_tag in itertools.chain.from_iterable(links)]
 	return data
 
 

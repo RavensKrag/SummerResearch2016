@@ -128,7 +128,7 @@ class Foo(object):
 		# you could probably scan with regex and pull that out pretty easily?
 	
 	
-	# dependencies: ???
+	# dependencies: foo1
 	def foo6(self):
 		url = self.degree_dict["Computer Science, BS"]
 		# url = self.degree_dict["Applied Computer Science, BS"]
@@ -136,11 +136,36 @@ class Foo(object):
 		# url = self.degree_dict["Biology, BS"]
 		# url = self.degree_dict["Psychology, BA"]
 		
-		requirements = util.degree_requirements(url)
 		
+		# find a bunch of tags to collect,
+		# and then print those tags to file, preserving the order from the document
+		fragment = util.requirements_subtree(url)
+		print len(fragment)
+		
+		x = []
+		x += [x.select("p") for x in fragment]
+		x += [x.select( ", ".join( ["h%d" % (i) for i in range(1,12)] ) ) for x in fragment]
+		
+		
+		collection = set({})
+		for tag in itertools.chain.from_iterable(x):
+			collection.add(tag)
+		
+		
+		x = [ [child for child in head.descendants if child in collection] for head in fragment]
+		
+		print x
+		
+		util.write_html_to_file("./tmp/human.html", x)
+		
+		
+		# sometimes you see a <strong> sometimes you see a <strong><u> which is really bad...
 		
 	
+	
 	# --- helper methods
+	
+	# dependencies: foo5
 	def get_info(self, dept, number):
 		course_page = next(x[2] for x in self.course_dict[dept] if number in x[0])
 		return util.course_info(course_page)
@@ -150,9 +175,10 @@ class Foo(object):
 x = Foo()
 
 x.foo1()
-x.foo2()
+# x.foo2()
 # x.foo3()
 # x.foo4()
+x.foo6()
 
 
 
