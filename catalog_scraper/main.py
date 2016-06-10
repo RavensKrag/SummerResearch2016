@@ -154,7 +154,15 @@ class Foo(object):
 		# sometimes you see a <strong> sometimes you see a <strong><u> which is really bad...
 	
 	# dependencies: foo1
+	# precursors: foo6, util.required_courses, util.degree_requirements
 	def foo7(self, program_name):
+		url = self.degree_dict[program_name]
+		
+		
+		# fragment = util.requirements_subtree(url)
+		
+		util.degree_requirements(url)
+		
 		return []
 	
 	# backend dependency tree construction
