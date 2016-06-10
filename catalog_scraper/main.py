@@ -99,11 +99,8 @@ class Foo(object):
 	
 	# dependencies: foo5
 	# pull down list of courses by seaching by ID, and then pull down specifics
-	def foo4(self):
-		self.foo5( ["CS", "BIOL", "PSYC"] )
-		
+	def foo4(self):		
 		print self.course_dict["CS"][0]
-		
 		
 		# list comprehension to get the first item that matches critera in list
 		# really want a differet way of doing this...
