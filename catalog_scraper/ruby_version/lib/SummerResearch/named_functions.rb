@@ -121,16 +121,19 @@ def degree_requirements(url)
 		# onclick_scripts.each do |script|
 		# end
 		
-		get_all_weird_link_urls(node) # returns three values
+		get_all_weird_link_urls(node)
 	end
 	
-	return out.flatten(1) # collapse the outer lists, but not the inner sections
+	return out.flatten
 end
+
+
+CatalogLink = Struct.new("CatalogLink", :id, :description, :url)
 
 def get_all_weird_link_urls(node)
 	# ------
 	node.xpath('.//a[@onclick]')
-	             .collect{  |link_node|  unpack_catalog_link(link_node)  }
+	    .collect{  |link_node|  unpack_catalog_link(link_node)  }
 	# ------
 end
 
@@ -138,12 +141,12 @@ def unpack_catalog_link(node)
 	text = node.inner_text
 	text.gsub!(" - ", " - ") # replace em-dash (long one) with en-dash (ASCII)
 	
-	course_title, description = text.split(" - ")
+	id, description = text.split(" - ")
 	
 	url = extract_link(node['onclick'])
 	
 	
-	return [course_title, description, url]
+	return CatalogLink.new(id, description, url)
 end
 
 def extract_link(script)
@@ -383,7 +386,7 @@ def search_by_department(dept_code)
 	tr_list = node.css('tr')[2..-1]
 	
 	# tr_list.each{|x| puts x.class }
-	return tr_list.collect{  |x| get_all_weird_link_urls(x)  }
+	return tr_list.collect{  |x| get_all_weird_link_urls(x)  }.flatten
 end
 
 

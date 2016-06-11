@@ -108,10 +108,10 @@ def pathway1(x)
 end
 
 def pathway2(x)
-	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
+	# deparments = ["CS", "BIOL", "CHEM", "PSYC"]
+	# x.foo5(deparments)
 	
-	# x.foo5(["CS"])
+	x.foo5(["CS"])
 	
-	x.foo5(deparments)
 	x.foo4()
 end

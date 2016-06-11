@@ -58,10 +58,10 @@ class Main
 	
 	# dependencies: foo2 (2 => 1)
 	def foo11(course_list)
-		name, desc, url_fragment = course_list[0]
-		puts name
+		course = course_list[0]
+		puts course.id
 		
-		info = SummerResearch.course_info(url_fragment)
+		info = SummerResearch.course_info(course.url)
 		Utilities.write_to_file('./course_info.yaml', info.to_yaml)
 		
 		
@@ -80,6 +80,7 @@ class Main
 			puts name
 			info = SummerResearch.course_info(url)
 			print info.to_yaml
+			puts "========="
 		end
 	end
 	
@@ -95,27 +96,15 @@ class Main
 	# dependencies: foo5
 	# check the cache for info on a particular course
 	def foo4
-		print @course_dict["CS"][0]
+		# p @course_hash["CS"]
+		Utilities.write_to_file('./courses.yaml', @course_hash.to_yaml)
 		
-		@course_dict["CS"].find{  |x| x[0].include?  }
+		course_id = "CS 101"
 		
-		# list comprehension to get the first item that matches critera in list
-		# really want a differet way of doing this...
-		# like, why is the word "next"?
-		# 
-		# http://stackoverflow.com/questions/9542738/python-find-in-list
-		# http://stackoverflow.com/questions/9868653/find-first-list-item-that-matches-criteria
-		course_page = next(x[2] for x in @course_dict["CS"] if "101" in x[0])
-		# remember that the tuple is (course id, short desc, link)
-		print course_page
+		dept, number = course_id.split
+		course = @course_hash[dept].find{  |x| x.id.include? number }
 		
-		
-		dept, number = course_id.split()
-		
-		@course_dict[dept].find{|x| x.include? number }
-		course_page = next(x[2] for x in @course_dict[dept] if number in x[0])
-		
-		return util.course_info(course_page)
+		return SummerResearch.course_info(course.url)
 	end
 	
 	def foo6
@@ -150,11 +139,11 @@ class Main
 	# dependencies: foo5
 	# course ID = DEPT ### (ex: CHEM 313)
 	def get_info(course_id)
-		dept, number = course_id.split()
+		# dept, number = course_id.split()
 		
-		@course_dict[dept].find{|x| x.include? number }
-		course_page = next(x[2] for x in @course_dict[dept] if number in x[0])
-		return util.course_info(course_page)
+		# @course_dict[dept].find{|x| x.include? number }
+		# course_page = next(x[2] for x in @course_dict[dept] if number in x[0])
+		# return util.course_info(course_page)
 	end
 end
 
