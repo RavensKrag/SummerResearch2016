@@ -1,3 +1,15 @@
+# libraries
+import requests
+import bs4
+from bs4 import BeautifulSoup
+
+import re
+
+import itertools
+import operator
+import csv
+
+# files
 import util
 
 class Foo(object):
@@ -89,8 +101,7 @@ class Foo(object):
 		print course_page
 		
 		
-		dept, number = "CS 101".split()
-		self.get_info(dept, number)
+		self.get_info("CS 101")
 		
 		# I mean, course names are just 2-4 capital letters, and a 3-digit number
 		# you could probably scan with regex and pull that out pretty easily?
@@ -129,21 +140,81 @@ class Foo(object):
 		
 		# sometimes you see a <strong> sometimes you see a <strong><u> which is really bad...
 	
+	
+	
+	
 	# dependencies: foo1
-	# precursors: foo6, util.required_courses, util.degree_requirements
+	# precursors: foo6, util.required_courses, util.degree_requirements, foo2
 	def foo7(self, program_name):
 		url = self.degree_dict[program_name]
 		
+		# util.degree_requirements(url)
 		
-		# fragment = util.requirements_subtree(url)
+		# TODO: consider moving this code back under util.degree_requirements if it does not use any of shared state, but keep it here for now for ease of writing
 		
-		util.degree_requirements(url)
 		
-		return []
+		fragment = util.requirements_subtree(url)
+		
+		# TODO: need to improve this selector. catching some false positives.
+		# wait, variable 'fragment' is a list...
+		links = [x.findAll("a",{"onclick":True}) for x in fragment]
+		
+		
+		course_list = [util.extract_link(anchor_tag) for anchor_tag in itertools.chain.from_iterable(links)]
+		
+		
+		
+		# TODO: remove dupicate entries in the list of courses
+			# not just as simple as removing duplicates from list
+			# need to remove when two tuples have the same first element
+			# also - want to keep original ordering
+		# NOTE: this may not be necessary if the selection filter on links is improved
+		
+		
+		util.write_csv("./tmp/required_courses.csv", course_list)
+		
+		
+		
+		
+		self.get_info("CHEM 313")
+		# return [course_list[0]]
+		
+		sample = [
+			(
+				"CS 101",
+				"Preview of Computer Science",
+				"preview_course.php?catoid=29&coid=302776&print"
+			),
+			(
+				"CS 465",
+				"Computer Systems Architecture",
+				"preview_course.php?catoid=29&coid=302800&print"
+			),
+			(
+				"CS 475",
+				"Concurrent and Distributed Systems",
+				"preview_course.php?catoid=29&coid=302803&print"
+
+			),
+			
+		]
+		return sample
 	
-	# backend dependency tree construction
+	# Backend dependency graph construction.
+	# given a list of courses, figure out all of the dependencies
 	def foo8(self, list_of_courses):
-		pass
+		# course_list = util.read_csv("./tmp/required_courses.csv")
+		
+		out = dict()
+		
+		for course in list_of_courses:
+			name, desc, url_fragment = course
+			
+			dependencies = []
+			print self.get_dependencies(course)
+			out[name] = dependencies
+		
+		return out
 	
 	# query
 	def foo9(self, class_dependencies, target_course):
@@ -157,7 +228,69 @@ class Foo(object):
 	# --- helper methods
 	
 	# dependencies: foo5
-	def get_info(self, dept, number):
+	# course ID = DEPT ### (ex: CHEM 313)
+	def get_info(self, course_id):
+		dept, number = course_id.split()
+		
 		course_page = next(x[2] for x in self.course_dict[dept] if number in x[0])
 		return util.course_info(course_page)
+	
+	def get_dependencies(self, course_tuple):
+		name, desc, url_fragment = course_tuple
+		
+		print name
+		info = util.course_info(url_fragment) # NOTE: this prints out the data it has scraped
+		
+		# TODO: separate prerequisites from corequisites
+		dependencies = []
+		
+		# NOTE: python throws error rather than returning nil when key not found in dict
+		# KeyError: 'Prerequisite(s)'
+		a = ""
+		try:
+			a = info["Prerequisite(s)"]
+		except KeyError:
+			pass
+		
+		b = ""
+		try:
+			b = info["Corequisite(s)"]
+		except KeyError:
+			pass
+		
+		
+		# NOTE: in the case of mulitple prerequsites from the same department, ommit the department code for subsequent elements.
+		# ex) CS 310 and 367
+		
+		# NOTE: Mason Core courses have some other format, as they are not actually individual courses, but IDs that reference a SET of courses.
+		regex = r"(\s*?)((\w+) (\d\d\d)(.*?)(\d\d\d)*)+?"
+		if a != "":
+			match = re.findall(regex, info["Prerequisite(s)"])
+			print "=== regex"
+			print len(match)
+			print match
+			# print match.group(1)
+			# print match.group(2)
+			# print match.group(3)
+			# print match.group(4)
+			print "========="
+		
+		if b != "":
+			match = re.findall(regex, info["Corequisite(s)"])
+			print "=== regex"
+			print len(match)
+			print match
+			# print match.group(1)
+			# print match.group(2)
+			# print match.group(3)
+			# print match.group(4)
+			print "========="
+		
+		# re.match(r"(.+?)((\w*) (\d\d\d))*", "Grade of C or better in CS 367.").group(2)
+		
+		print name
+		print "Prerequisites: %s" % (a)
+		print "Corequisites:  %s" % (b)
+		
+		return " ".join([a,b]).strip()
 # ====================

@@ -6,22 +6,7 @@
 # (very similar to 'gem' in Ruby)
 
 
-# libraries
-import requests
-import bs4
-from bs4 import BeautifulSoup
-
-import re
-
-import itertools
-import operator
-import csv
-
-# files
-# import util # (loaded by "runner")
 import runner as Run
-
-
 
 
 # ==== main ====
@@ -62,8 +47,17 @@ def pathway4(x):
 		"Biology",
 		"Psychology"
 	])
-	x.foo5( ["CS", "BIOL", "PSYC"] )
+	x.foo5( ["CS", "BIOL", "CHEM", "PSYC"] )
+	# TODO: cache 1 and 5 to speed up evaluation
 	
+	
+	[
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
 	
 	# take one degree program, and walk the dependencies for all courses in the degree
 	course_list = x.foo7("Computer Science, BS")  # get all relevant courses

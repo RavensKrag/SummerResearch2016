@@ -567,6 +567,7 @@ def course_info(catalog_url_fragment):
 	# TODO: consider converting the numerical fields to actual numbers
 	
 	# TODO: consider using "yield" instead of returning a Dictionary for more flexibility
+	return dictionary
 
 
 # get a list of classes using the catalog search
