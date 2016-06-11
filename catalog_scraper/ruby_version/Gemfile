@@ -1,0 +1,11 @@
+source 'https://rubygems.org'
+
+gem 'require_all'
+
+gem 'curb'
+gem 'nokogiri'
+
+gem 'roo'
+
+gem 'oauth'
+gem 'json'

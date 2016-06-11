@@ -1,0 +1,30 @@
+module SummerResearch
+	module Utilities
+		class << self
+
+
+DATA_DIR = File.join(PATH_TO_ROOT, 'bin', 'data')
+
+# helpers
+def write_to_file(relative_filepath, data)
+	filepath = File.expand_path(relative_filepath, DATA_DIR)
+	File.open(filepath, 'w') do |f|
+		f.puts data
+	end
+end
+
+def write_csv(relative_filepath, data)
+	filepath = File.expand_path(relative_filepath, DATA_DIR)
+	
+	CSV.open(filepath, 'w') do |csv|
+		data.each do |x|
+			csv << x
+		end
+	end
+end
+
+
+
+end
+end
+end

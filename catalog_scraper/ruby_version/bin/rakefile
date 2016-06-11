@@ -1,0 +1,117 @@
+# encoding: utf-8
+
+# gems
+require 'rubygems'
+
+require 'rake'
+require 'rake/clean'
+
+require 'bundler/setup'
+require 'require_all'
+
+# constants
+PATH_TO_FILE = File.expand_path(File.dirname(__FILE__))
+
+# -- file hierarchy --
+		# ROOT
+		# 	this directory
+		# 		this file
+
+# Must expand '..' shortcut into a proper path. But that results in a shorter string.
+PATH_TO_ROOT = File.expand_path '../..', __FILE__
+
+
+
+
+
+
+task :load_dependencies do
+	# gems
+	require 'open-uri'
+	require 'nokogiri'
+	require 'yaml'
+	require 'csv'
+	
+	# files
+	Dir.chdir PATH_TO_ROOT do
+		require_all './lib/SummerResearch'
+	end
+end
+
+task :load_main do
+	require './main'
+end
+
+
+task :default => :run
+
+# run the program
+task :run => [:load_dependencies, :load_main] do
+	x = SummerResearch::Main.new
+	
+	
+	# consider different forms of caching
+	# -- instance variable: cache for the session
+	# -- save to disk: cache for multiple sessions
+	
+	[
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	
+	# pathway0
+	# pathway1(x)
+	pathway2(x)
+end
+
+
+def pathway0
+	# === scrape the list of avaiable courses from the Catalog, searching for particular things
+	programs_of_study = search_programs_of_study [
+							"Computer Science",
+							"Information Technology",
+							"Electrical Engineering",
+							"Biology",
+							"Psychology"
+						]
+	puts "programs of study: #{programs_of_study.size}"
+	puts ""
+	
+	
+	
+	
+	# === scrape program of study page to get list of required courses
+	
+	# degree_requirements(programs_of_study["Computer Science, BS"])
+	# degree_requirements(programs_of_study["Applied Computer Science, BS"])
+	degree_requirements(programs_of_study["Biology, BA"])
+	# degree_requirements(programs_of_study["Biology, BS"])
+end
+
+def pathway1(x)
+	x.foo1 [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	courses = x.foo2("Computer Science, BS")
+	x.foo11(courses)
+	
+	
+	x.foo3()
+end
+
+def pathway2(x)
+	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
+	
+	# x.foo5(["CS"])
+	
+	x.foo5(deparments)
+	x.foo4()
+end
