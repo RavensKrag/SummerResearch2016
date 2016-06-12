@@ -8,7 +8,8 @@ DATA_DIR = File.join(PATH_TO_ROOT, 'bin', 'data')
 
 class Main
 	def initialize
-		@degree_hash = nil
+		@degrees = Hash.new
+		@courses = Hash.new
 	end
 	
 	
@@ -17,23 +18,23 @@ class Main
 	# get possible degree program requrement lists
 	def foo1(list_of_degrees)
 		url = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
-		@degree_hash = SummerResearch.search_programs_of_study(url, list_of_degrees)
+		@degrees = SummerResearch.search_programs_of_study(url, list_of_degrees)
 		
-		count = @degree_hash.keys.size
+		count = @degrees.keys.size
 		puts "#{count} programs found for search query."
 		
 		filepath = File.expand_path("./programs_of_study.yaml", DATA_DIR)
 		puts "Writing to file '#{filepath}'"
 		
 		File.open(filepath, 'w') do |f|
-			f.puts @degree_hash.to_yaml
+			f.puts @degrees.to_yaml
 		end
 	end
 		
 	# dependencies: foo1
 	# get the list of courses for one program, based on its name
 	def foo2(degree_name)
-		url = @degree_hash[degree_name]
+		url = @degrees[degree_name]
 		# url = self.degree_dict["Applied Computer Science, BS"]
 		# url = self.degree_dict["Biology, BA"]
 		# url = self.degree_dict["Biology, BS"]
@@ -86,18 +87,18 @@ class Main
 	
 	# dependencies: none
 	def foo5(list_of_deparments)
-		@course_hash = Hash.new
+		@courses = Hash.new
 		
 		list_of_deparments.each do |dept|
-			@course_hash[dept] = SummerResearch.search_by_department(dept)
+			@courses[dept] = SummerResearch.search_by_department(dept)
 		end
 	end
 	
 	# dependencies: foo5
 	# check the cache for info on a particular course
 	def foo4
-		# p @course_hash["CS"]
-		Utilities.write_to_file('./courses.yaml', @course_hash.to_yaml)
+		# p @courses["CS"]
+		Utilities.write_to_file('./courses.yaml', @courses.to_yaml)
 		
 		course_id = "CS 101"
 		# TODO: figure out what the anatomy of a course is
@@ -108,18 +109,18 @@ class Main
 		# --- these are all different things
 		
 		dept, number = course_id.split
-		course = @course_hash[dept].find{  |x| x.id.include? number }
+		course = @courses[dept].find{  |x| x.id.include? number }
 		
 		return SummerResearch.course_info(course.url)
 	end
 	
 	# dependencies: foo1
 	def foo6
-		url = @degree_hash["Computer Science, BS"]
-		# url = @degree_hash["Applied Computer Science, BS"]
-		# url = @degree_hash["Biology, BA"]
-		# url = @degree_hash["Biology, BS"]
-		# url = @degree_hash["Psychology, BA"]
+		url = @degrees["Computer Science, BS"]
+		# url = @degrees["Applied Computer Science, BS"]
+		# url = @degrees["Biology, BA"]
+		# url = @degrees["Biology, BS"]
+		# url = @degrees["Psychology, BA"]
 		
 		
 		# find a bunch of tags to collect,
@@ -149,7 +150,7 @@ class Main
 	# dependencies: foo1
 	# precursors: foo6, SummerResearch.required_courses, SummerResearch.degree_requirements, foo2
 	def foo7(program_name)
-		url = @degree_hash[program_name]
+		url = @degrees[program_name]
 		
 		# util.degree_requirements(url)
 		
