@@ -65,7 +65,9 @@ task :run => [:load_dependencies, :load_main] do
 	
 	# pathway0
 	# pathway1(x)
-	pathway2(x)
+	# pathway2(x)
+	# pathway3(x)
+	pathway4(x)
 end
 
 
@@ -108,10 +110,59 @@ def pathway1(x)
 end
 
 def pathway2(x)
-	# deparments = ["CS", "BIOL", "CHEM", "PSYC"]
-	# x.foo5(deparments)
+	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
+	x.foo5(deparments)
 	
-	x.foo5(["CS"])
+	# x.foo5(["CS"])
 	
 	x.foo4()
 end
+
+def pathway3(x)
+	x.foo1([
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	])
+	x.foo6() # NOTE: foo6 not yet properly ported
+end
+
+def pathway4(x)
+	# pull down a bunch of data
+	x.foo1([
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	])
+	x.foo5( ["CS", "BIOL", "CHEM", "PSYC"] )
+	# TODO: cache 1 and 5 to speed up evaluation
+	
+	
+	[
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	# take one degree program, and walk the dependencies for all courses in the degree
+	course_list = x.foo7("Computer Science, BS")  # get all relevant courses
+	class_dependencies = x.foo8(course_list)      # construct all dependencies
+	
+	output_filepath = ""
+	x.foo10(class_dependencies, output_filepath)  # visualize the dependency graph
+	
+	
+	# query: what is the chain of courses that lead up to this course? 
+	x.foo9(class_dependencies, "CS 465")
+	# => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
+	
+	# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
+	# NOTE: "ECE 301" is the old name, IIRC
+end
+

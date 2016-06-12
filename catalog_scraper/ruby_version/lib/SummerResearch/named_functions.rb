@@ -1,8 +1,27 @@
 module SummerResearch
+
+	CatalogLink = Struct.new("CatalogLink", :id, :description, :url)
+
 	class << self
 
 
 def degree_requirements(url)
+	fragment = requirements_subtree(url)
+	
+	out = 
+	fragment.collect do |node|
+		# puts node.class
+		# onclick_scripts = node.xpath('.//a[@onclick]').collect{  |link| link['onclick']  }
+		# onclick_scripts.each do |script|
+		# end
+		
+		get_all_weird_link_urls(node)
+	end
+	
+	return out.flatten
+end
+
+def requirements_subtree(url)
 	xml = Nokogiri::HTML(open(url))
 	
 	top        = xml.css('table.block_n2_and_content')
@@ -81,7 +100,7 @@ def degree_requirements(url)
 	# requirements.children => [some whitespace at top of file, outer div]
 	# css: outer div > actual content
 	list = requirements.children[1].children
-	puts list.size
+	# puts list.size
 	
 	# list.each_with_index do |node, i|
 	# 	puts node.class
@@ -100,6 +119,8 @@ def degree_requirements(url)
 	fragment = list[i_start..i_end]
 		Utilities.write_to_file("./fragment.html", fragment)
 	
+	return fragment
+	
 	
 	# different end markers for different departments
 	# (note that Psych BA uses "Total: " to show subtotals)
@@ -112,23 +133,9 @@ def degree_requirements(url)
 	# Psych BA    "Degree Total: Minimum 120 credits"   (?..?)
 	
 	# NOTE: section headings for "Mason Core" and "BA Requirements" may vary
-	
-	
-	out = 
-	fragment.collect do |node|
-		# puts node.class
-		# onclick_scripts = node.xpath('.//a[@onclick]').collect{  |link| link['onclick']  }
-		# onclick_scripts.each do |script|
-		# end
-		
-		get_all_weird_link_urls(node)
-	end
-	
-	return out.flatten
 end
 
 
-CatalogLink = Struct.new("CatalogLink", :id, :description, :url)
 
 def get_all_weird_link_urls(node)
 	# ------
