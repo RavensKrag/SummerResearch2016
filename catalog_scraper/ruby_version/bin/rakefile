@@ -75,8 +75,8 @@ task :all => [
 
 
 
-
-task :pathway00 => :setup do
+# 1
+task :pathwayA => :setup do
 	puts "=== setup data"
 	# search for relevant programs of study
 	# (required to run #foo2)
@@ -89,7 +89,8 @@ task :pathway00 => :setup do
 	]
 end
 
-task :pathway01 => :setup do
+# 5
+task :pathwayB => :setup do
 	# search catalog for even more data?
 	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
 	@env.foo5(deparments)
@@ -98,7 +99,7 @@ end
 
 
 # 1 2 3
-task :pathway1 => :pathway00 do
+task :pathway1 => :pathwayA do
 	courses = @env.foo2("Computer Science, BS")
 	
 	@env.foo3()
@@ -111,12 +112,12 @@ task :pathway2 => :setup do
 end
 
 # 1 6
-task :pathway3 => :pathway00 do
+task :pathway3 => :pathwayA do
 	@env.foo6() # NOTE: foo6 not yet properly ported
 end
 
 # 1 5 7 8 10 9
-task :pathway4 => [:pathway00, :pathway01] do
+task :pathway4 => [:pathwayA, :pathwayB] do
 	# TODO: cache 1 and 5 to speed up evaluation
 	
 	
@@ -148,7 +149,7 @@ task :pathway4 => [:pathway00, :pathway01] do
 end
 
 # 1 2 13
-task :pathway5 => :pathway00 do
+task :pathway5 => :pathwayA do
 	courses = @env.foo2("Computer Science, BS")
 	
 	
@@ -159,7 +160,7 @@ end
 # test course parsing with a couple of key examples
 # (TODO: take extra data from foo3 and move into foo12 for more variety of data)
 # 1 2 12 13
-task :pathway6 => :pathway00 do
+task :pathway6 => :pathwayA do
 	courses = @env.foo2("Computer Science, BS")
 	
 	
@@ -170,7 +171,7 @@ task :pathway6 => :pathway00 do
 end
 
 # 1 2 11
-task :pathway7 => :pathway00 do	
+task :pathway7 => :pathwayA do	
 	puts "=== cycle through majors..."
 	
 	majors = [
