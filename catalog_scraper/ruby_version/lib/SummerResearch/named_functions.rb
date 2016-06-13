@@ -329,6 +329,10 @@ def course_info(url)
 	
 	# ===== parse the body
 	
+	# NOTE: Assuming that the entire body is flat. The <hr> lies at the same level of the HTML tree as the bolded elements indicated by <strong></strong>
+		# At least in the case of EVPP 110, this is not the case. Other cases that break the "pattern" may also exist.
+	
+	
 	# for description, start after the <hr> following an invisible <span></span>
 	# and go until first <strong>
 	# (this part may include mulitple lines, separated by <br/> tags)

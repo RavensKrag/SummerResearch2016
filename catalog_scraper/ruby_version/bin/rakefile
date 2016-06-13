@@ -67,7 +67,9 @@ task :run => [:load_dependencies, :load_main] do
 	# pathway1(x)
 	# pathway2(x)
 	# pathway3(x)
-	pathway4(x)
+	# pathway4(x)
+	# pathway5(x)
+	pathway6(x)
 end
 
 
@@ -94,6 +96,7 @@ def pathway0
 	# degree_requirements(programs_of_study["Biology, BS"])
 end
 
+# 1 2 3
 def pathway1(x)
 	x.foo1 [
 		"Computer Science",
@@ -103,12 +106,11 @@ def pathway1(x)
 		"Psychology"
 	]
 	courses = x.foo2("Computer Science, BS")
-	x.foo11(courses)
-	
 	
 	x.foo3()
 end
 
+# 5 4
 def pathway2(x)
 	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
 	x.foo5(deparments)
@@ -118,6 +120,7 @@ def pathway2(x)
 	x.foo4()
 end
 
+# 1 6
 def pathway3(x)
 	x.foo1([
 		"Computer Science",
@@ -129,7 +132,9 @@ def pathway3(x)
 	x.foo6() # NOTE: foo6 not yet properly ported
 end
 
+# 1 5 7 8 10 9
 def pathway4(x)
+	puts "=== setup data"
 	# pull down a bunch of data
 	x.foo1([
 		"Computer Science",
@@ -141,6 +146,9 @@ def pathway4(x)
 	x.foo5( ["CS", "BIOL", "CHEM", "PSYC"] )
 	# TODO: cache 1 and 5 to speed up evaluation
 	
+	
+	
+	puts "=== run processing"
 	
 	[
 		"Computer Science, BS",
@@ -164,5 +172,43 @@ def pathway4(x)
 	
 	# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
 	# NOTE: "ECE 301" is the old name, IIRC
+end
+
+# 1 2 11
+def pathway5(x)
+	puts "=== setup data"
+	
+	x.foo1 [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	courses = x.foo2("Computer Science, BS")
+	
+	
+	puts "=== run processing"
+	course_data = x.foo13(courses)
+end
+
+# 1 2 12 13
+def pathway6(x)
+	puts "=== setup data"
+	
+	x.foo1 [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	courses = x.foo2("Computer Science, BS")
+	
+	
+	puts "=== run processing"
+	
+	courses = x.foo12()
+	course_data = x.foo13(courses)
 end
 

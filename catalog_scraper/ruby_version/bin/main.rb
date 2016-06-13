@@ -57,18 +57,6 @@ class Main
 		return course_list
 	end
 	
-	# dependencies: foo2 (2 => 1)
-	def foo11(course_list)
-		course = course_list[0]
-		# puts course.id
-		
-		info = SummerResearch.course_info(course.url)
-		Utilities.write_to_file('./course_info.yaml', info.to_yaml)
-		
-		
-		return nil
-	end
-	
 	# Test SummerResearch.course_info on various URLs with different sorts of attributes
 	# NOTE: not all courses specify all attributes. 
 	#   ex) If there are no corequisites, the field is omitted
@@ -165,7 +153,6 @@ class Main
 		
 		
 		
-		
 		# TODO: remove dupicate entries in the list of courses
 			# not just as simple as removing duplicates from list
 			# need to remove when two tuples have the same first element
@@ -177,34 +164,21 @@ class Main
 		
 		
 		
-		
+		return course_list
 		# get_info("CHEM 313")
 		# return [course_list[0]]
 		
-		sample = [
-			[
-				"CS 101",
-				"Preview of Computer Science",
-				"preview_course.php?catoid=29&coid=302776&print"
-			],
-			[
-				"CS 465",
-				"Computer Systems Architecture",
-				"preview_course.php?catoid=29&coid=302800&print"
-			],
-			[
-				"CS 475",
-				"Concurrent and Distributed Systems",
-				"preview_course.php?catoid=29&coid=302803&print"
-
-			]
-		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c) }
-		return sample
+		
 	end
 	
 	# Backend dependency graph construction.
 	# given a list of courses, figure out all of the dependencies
 	def foo8(list_of_courses)
+		list_of_courses.each do |course|
+			# p course
+			puts course.id
+		end
+		
 		# course_list = util.read_csv("./tmp/required_courses.csv")
 		
 		
@@ -227,6 +201,56 @@ class Main
 	
 	# visualization
 	def foo10(class_dependencies, output_filepath)
+		
+	end
+	
+	# Test the CatalogLink struct
+	# 	basically, foo3 == foo12 + foo13
+	# 	but foo12 and foo13 use actually use the Struct
+	# (splitting it this way makes it easy to switch from test data to real data)
+	def foo12()
+		# NOTE: easily get data for this table from the intermediate file required_courses.csv
+		sample = [
+			[
+				"CS 101",
+				"Preview of Computer Science",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302776&print"
+			],
+			[
+				"CS 465",
+				"Computer Systems Architecture",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302800&print"
+			],
+			[
+				"CS 475",
+				"Concurrent and Distributed Systems",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302803&print"
+			],
+			[
+				"EVPP 110",
+				"The Ecosphere: An Introduction to Environmental Science I",
+				"http://catalog.gmu.edu/preview_course.php?catoid29&coid=303982&print"
+			]
+		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c) }
+		return sample
+	end
+	
+	def foo13(course_list)
+		# WARNING: EVPP 110 fails with #course_info because it is not as flat as expected.
+		
+		output_data = 
+			course_list.collect do |course|
+				puts course.id
+				SummerResearch.course_info(course.url)
+			end
+		# p output_data
+		Utilities.write_to_file('./course_info.yaml', output_data.to_yaml)
+		
+		return output_data
+	end
+	
+	
+	def foo11()
 		
 	end
 	
