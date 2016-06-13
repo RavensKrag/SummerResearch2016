@@ -51,6 +51,8 @@ task :run => [:setup] do
 	# consider different forms of caching
 	# -- instance variable: cache for the session
 	# -- save to disk: cache for multiple sessions
+	
+	# TODO: consider promoting pathway4 as the default?
 end
 
 # all root tasks should list this as a dependency
@@ -63,31 +65,10 @@ end
 
 
 
-task :pathway0 => :setup do 
-	# === scrape the list of avaiable courses from the Catalog, searching for particular things
-	programs_of_study = search_programs_of_study [
-							"Computer Science",
-							"Information Technology",
-							"Electrical Engineering",
-							"Biology",
-							"Psychology"
-						]
-	puts "programs of study: #{programs_of_study.size}"
-	puts ""
-	
-	
-	
-	
-	# === scrape program of study page to get list of required courses
-	
-	# degree_requirements(programs_of_study["Computer Science, BS"])
-	# degree_requirements(programs_of_study["Applied Computer Science, BS"])
-	degree_requirements(programs_of_study["Biology, BA"])
-	# degree_requirements(programs_of_study["Biology, BS"])
-end
-
-# 1 2 3
-task :pathway1 => :setup do
+task :pathway00 => :setup do
+	puts "=== setup data"
+	# search for relevant programs of study
+	# (required to run #foo2)
 	@env.foo1 [
 		"Computer Science",
 		"Information Technology",
@@ -95,6 +76,18 @@ task :pathway1 => :setup do
 		"Biology",
 		"Psychology"
 	]
+end
+
+task :pathway01 => :setup do
+	# search catalog for even more data?
+	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
+	@env.foo5(deparments)
+end
+
+
+
+# 1 2 3
+task :pathway1 => :pathway00 do
 	courses = @env.foo2("Computer Science, BS")
 	
 	@env.foo3()
@@ -102,38 +95,17 @@ end
 
 # 5 4
 task :pathway2 => :setup do
-	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
-	@env.foo5(deparments)
-	
-	# @env.foo5(["CS"])
-	
+	@env.foo5(["CS"])	
 	@env.foo4()
 end
 
 # 1 6
-task :pathway3 => :setup do
-	@env.foo1([
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	])
+task :pathway3 => :pathway00 do
 	@env.foo6() # NOTE: foo6 not yet properly ported
 end
 
 # 1 5 7 8 10 9
-task :pathway4 => :setup do
-	puts "=== setup data"
-	# pull down a bunch of data
-	@env.foo1([
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	])
-	@env.foo5( ["CS", "BIOL", "CHEM", "PSYC"] )
+task :pathway4 => [:pathway00, :pathway01] do
 	# TODO: cache 1 and 5 to speed up evaluation
 	
 	
@@ -165,16 +137,7 @@ task :pathway4 => :setup do
 end
 
 # 1 2 13
-task :pathway5 => :setup do
-	puts "=== setup data"
-	
-	@env.foo1 [
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	]
+task :pathway5 => :pathway00 do
 	courses = @env.foo2("Computer Science, BS")
 	
 	
@@ -185,16 +148,7 @@ end
 # test course parsing with a couple of key examples
 # (TODO: take extra data from foo3 and move into foo12 for more variety of data)
 # 1 2 12 13
-task :pathway6 => :setup do
-	puts "=== setup data"
-	
-	@env.foo1 [
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	]
+task :pathway6 => :pathway00 do
 	courses = @env.foo2("Computer Science, BS")
 	
 	
@@ -205,19 +159,7 @@ task :pathway6 => :setup do
 end
 
 # 1 2 11
-task :pathway7 => :setup do
-	puts "=== setup data"
-	
-	@env.foo1 [
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	]
-	
-	
-	
+task :pathway7 => :pathway00 do	
 	puts "=== cycle through majors..."
 	
 	majors = [
