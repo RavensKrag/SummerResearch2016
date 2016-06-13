@@ -171,7 +171,7 @@ def extract_link(script)
 	# oh but wait, this block only gets evaluated if there is a match, so that's rather convienent
 	a = 
 		script.scan(regexp_a).collect do |a,b|
-			"preview_course.php?catoid#{a}&coid=#{b}&print"
+			"preview_course.php?catoid=#{a}&coid=#{b}&print"
 		end
 	
 	b = 
@@ -182,7 +182,7 @@ def extract_link(script)
 	c = 
 		script.scan(regexp_c).collect do |a,b,c,d|
 			# p [a,b,c,d]
-			"preview_course.php?catoid#{a}&coid=#{c}&print"
+			"preview_course.php?catoid=#{a}&coid=#{c}&print"
 		end
 	
 	# two lists joined together, resulting list always has size of 1
