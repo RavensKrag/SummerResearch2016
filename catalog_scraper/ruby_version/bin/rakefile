@@ -57,8 +57,19 @@ end
 
 # all root tasks should list this as a dependency
 task :setup => [:load_dependencies, :load_main] do
-	@env ||= SummerResearch::Main.new
+	puts "=== setup environment"
+	@env = SummerResearch::Main.new
 end
+
+task :all => [
+	:pathway1,
+	:pathway2,
+	:pathway3,
+	:pathway4,
+	:pathway5,
+	:pathway6,
+	:pathway7
+]
 
 
 
