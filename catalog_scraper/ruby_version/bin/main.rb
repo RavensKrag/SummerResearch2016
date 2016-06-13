@@ -250,8 +250,34 @@ class Main
 	end
 	
 	
-	def foo11()
+	# find courses that fail parsing
+	# want to see some examples of the unexpected
+	# 
+	# prints dots to let you know something is happening
+	# only prints out courses that are "weird"
+	def foo11(course_list)
+		flag = true
 		
+		course_list.each do |course|
+			begin
+				SummerResearch.course_info(course.url)
+			rescue StandardError => e
+				if flag
+					puts ""
+					flag = false
+				end
+				
+				puts course.id
+				puts course.description
+				puts course.url
+				# throw e
+			else
+				flag = true
+				print "."
+			end
+		end
+		
+		puts ""
 	end
 	
 	

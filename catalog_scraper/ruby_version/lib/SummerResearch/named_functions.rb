@@ -181,7 +181,13 @@ def extract_link(script)
 	# two lists joined together, resulting list always has size of 1
 	# as show in the the test near the top of this method.
 	results = (x + y)
-	raise "Error: could not find catalog course link inside this script." unless results.size == 1
+	unless results.size == 1
+		raise "Error: could not find catalog course link inside this script.\n" +
+		      "Script dump:\n" +
+		      "===================\n" +
+		      script + "\n" +
+		      "===================\n"
+	end
 	
 	local_link = results.first
 	

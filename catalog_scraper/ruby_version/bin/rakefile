@@ -69,7 +69,8 @@ task :run => [:load_dependencies, :load_main] do
 	# pathway3(x)
 	# pathway4(x)
 	# pathway5(x)
-	pathway6(x)
+	# pathway6(x)
+	pathway7(x)
 end
 
 
@@ -174,7 +175,7 @@ def pathway4(x)
 	# NOTE: "ECE 301" is the old name, IIRC
 end
 
-# 1 2 11
+# 1 2 13
 def pathway5(x)
 	puts "=== setup data"
 	
@@ -192,6 +193,8 @@ def pathway5(x)
 	course_data = x.foo13(courses)
 end
 
+# test course parsing with a couple of key examples
+# (TODO: take extra data from foo3 and move into foo12 for more variety of data)
 # 1 2 12 13
 def pathway6(x)
 	puts "=== setup data"
@@ -212,3 +215,38 @@ def pathway6(x)
 	course_data = x.foo13(courses)
 end
 
+# 1 2 11
+def pathway7(x)
+	puts "=== setup data"
+	
+	x.foo1 [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	
+	
+	
+	puts "=== cycle through majors..."
+	
+	majors = [
+		# "Computer Science, BS",
+			# "Applied Computer Science, BS",
+		# "Biology, BA",
+			# "Biology, BS",
+			"Psychology, BA"
+		# intended ones all got stuck on scripts for links that did not match either of the two expected formats
+	]
+	majors.each do |m|
+		puts "=== Getting info for: #{m}"
+		courses = x.foo2(m)
+		
+		puts "=== analyzing courses... "
+		course_data = x.foo11(courses)
+	end
+	
+	# NOTE: perhaps not all majors work right now? so be careful of that too
+	
+end
