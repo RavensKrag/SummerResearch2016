@@ -231,7 +231,7 @@ class Main
 			[
 				"EVPP 110",
 				"The Ecosphere: An Introduction to Environmental Science I",
-				"http://catalog.gmu.edu/preview_course.php?catoid29&coid=303982&print"
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
 			]
 		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c) }
 		return sample
@@ -257,6 +257,8 @@ class Main
 	# 
 	# prints dots to let you know something is happening
 	# only prints out courses that are "weird"
+	# 
+	# Does basicaly the same thing as foo13, but includes extra code to help report errors.
 	def foo11(course_list)
 		flag = true
 		

@@ -189,11 +189,14 @@ def extract_link(script)
 	# as show in the the test near the top of this method.
 	results = (a + b + c)
 	unless results.size == 1
-		raise "Error: could not find catalog course link inside this script.\n" +
-		      "Script dump:\n" +
-		      "===================\n" +
-		      script + "\n" +
-		      "===================\n"
+		puts "==== Data Dump ===="
+		puts "Script:"
+		puts script
+		puts "Regex Sets:"
+		p results
+		puts "==================="
+		
+		raise "Error: could not find catalog course link inside this script. See data dump above, or stack trace below."
 	end
 	
 	local_link = results.first

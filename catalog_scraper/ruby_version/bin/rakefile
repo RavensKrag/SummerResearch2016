@@ -177,12 +177,11 @@ task :pathway7 => :pathwayA do
 	puts "=== cycle through programs of study..."
 	
 	programs = [
-		# "Computer Science, BS",
-			# "Applied Computer Science, BS",
-		# "Biology, BA",
-			# "Biology, BS",
-			"Psychology, BA"
-		# intended ones all got stuck on scripts for links that did not match either of the two expected formats
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
 	]
 	programs.each do |degree_name|
 		puts "=== Getting info for: #{degree_name}"
@@ -198,6 +197,16 @@ task :pathway7 => :pathwayA do
 	end
 	
 	# NOTE: perhaps not all majors work right now? so be careful of that too
+	
+	
+	
+	# NOTE: the following programs of study only use Type A or Type B catalog links
+		# "Computer Science, BS",
+		# "Biology, BA",
+	# NOTE: the following programs of study are known to list courses with Type C catalog links
+		# "Applied Computer Science, BS",
+		# "Biology, BS",
+		# "Psychology, BA"
 end
 
 
