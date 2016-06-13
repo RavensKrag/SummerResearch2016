@@ -46,35 +46,24 @@ end
 task :default => :run
 
 # run the program
-task :run => [:load_dependencies, :load_main] do
-	x = SummerResearch::Main.new
-	
-	
+task :run => [:setup] do
+	p @env
 	# consider different forms of caching
 	# -- instance variable: cache for the session
 	# -- save to disk: cache for multiple sessions
-	
-	[
-		"Computer Science, BS",
-		"Applied Computer Science, BS",
-		"Biology, BA",
-		"Biology, BS",
-		"Psychology, BA"
-	]
-	
-	
-	# pathway0
-	# pathway1(x)
-	# pathway2(x)
-	# pathway3(x)
-	# pathway4(x)
-	# pathway5(x)
-	# pathway6(x)
-	pathway7(x)
+end
+
+# all root tasks should list this as a dependency
+task :setup => [:load_dependencies, :load_main] do
+	@env ||= SummerResearch::Main.new
 end
 
 
-def pathway0
+
+
+
+
+task :pathway0 => :setup do 
 	# === scrape the list of avaiable courses from the Catalog, searching for particular things
 	programs_of_study = search_programs_of_study [
 							"Computer Science",
@@ -98,53 +87,53 @@ def pathway0
 end
 
 # 1 2 3
-def pathway1(x)
-	x.foo1 [
+task :pathway1 => :setup do
+	@env.foo1 [
 		"Computer Science",
 		"Information Technology",
 		"Electrical Engineering",
 		"Biology",
 		"Psychology"
 	]
-	courses = x.foo2("Computer Science, BS")
+	courses = @env.foo2("Computer Science, BS")
 	
-	x.foo3()
+	@env.foo3()
 end
 
 # 5 4
-def pathway2(x)
+task :pathway2 => :setup do
 	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
-	x.foo5(deparments)
+	@env.foo5(deparments)
 	
-	# x.foo5(["CS"])
+	# @env.foo5(["CS"])
 	
-	x.foo4()
+	@env.foo4()
 end
 
 # 1 6
-def pathway3(x)
-	x.foo1([
+task :pathway3 => :setup do
+	@env.foo1([
 		"Computer Science",
 		"Information Technology",
 		"Electrical Engineering",
 		"Biology",
 		"Psychology"
 	])
-	x.foo6() # NOTE: foo6 not yet properly ported
+	@env.foo6() # NOTE: foo6 not yet properly ported
 end
 
 # 1 5 7 8 10 9
-def pathway4(x)
+task :pathway4 => :setup do
 	puts "=== setup data"
 	# pull down a bunch of data
-	x.foo1([
+	@env.foo1([
 		"Computer Science",
 		"Information Technology",
 		"Electrical Engineering",
 		"Biology",
 		"Psychology"
 	])
-	x.foo5( ["CS", "BIOL", "CHEM", "PSYC"] )
+	@env.foo5( ["CS", "BIOL", "CHEM", "PSYC"] )
 	# TODO: cache 1 and 5 to speed up evaluation
 	
 	
@@ -160,15 +149,15 @@ def pathway4(x)
 	]
 	
 	# take one degree program, and walk the dependencies for all courses in the degree
-	course_list = x.foo7("Computer Science, BS")  # get all relevant courses
-	class_dependencies = x.foo8(course_list)      # construct all dependencies
+	course_list = @env.foo7("Computer Science, BS")  # get all relevant courses
+	class_dependencies = @env.foo8(course_list)      # construct all dependencies
 	
 	output_filepath = ""
-	x.foo10(class_dependencies, output_filepath)  # visualize the dependency graph
+	@env.foo10(class_dependencies, output_filepath)  # visualize the dependency graph
 	
 	
 	# query: what is the chain of courses that lead up to this course? 
-	x.foo9(class_dependencies, "CS 465")
+	@env.foo9(class_dependencies, "CS 465")
 	# => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
 	
 	# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
@@ -176,50 +165,50 @@ def pathway4(x)
 end
 
 # 1 2 13
-def pathway5(x)
+task :pathway5 => :setup do
 	puts "=== setup data"
 	
-	x.foo1 [
+	@env.foo1 [
 		"Computer Science",
 		"Information Technology",
 		"Electrical Engineering",
 		"Biology",
 		"Psychology"
 	]
-	courses = x.foo2("Computer Science, BS")
+	courses = @env.foo2("Computer Science, BS")
 	
 	
 	puts "=== run processing"
-	course_data = x.foo13(courses)
+	course_data = @env.foo13(courses)
 end
 
 # test course parsing with a couple of key examples
 # (TODO: take extra data from foo3 and move into foo12 for more variety of data)
 # 1 2 12 13
-def pathway6(x)
+task :pathway6 => :setup do
 	puts "=== setup data"
 	
-	x.foo1 [
+	@env.foo1 [
 		"Computer Science",
 		"Information Technology",
 		"Electrical Engineering",
 		"Biology",
 		"Psychology"
 	]
-	courses = x.foo2("Computer Science, BS")
+	courses = @env.foo2("Computer Science, BS")
 	
 	
 	puts "=== run processing"
 	
-	courses = x.foo12()
-	course_data = x.foo13(courses)
+	courses = @env.foo12()
+	course_data = @env.foo13(courses)
 end
 
 # 1 2 11
-def pathway7(x)
+task :pathway7 => :setup do
 	puts "=== setup data"
 	
-	x.foo1 [
+	@env.foo1 [
 		"Computer Science",
 		"Information Technology",
 		"Electrical Engineering",
@@ -241,12 +230,23 @@ def pathway7(x)
 	]
 	majors.each do |m|
 		puts "=== Getting info for: #{m}"
-		courses = x.foo2(m)
+		courses = @env.foo2(m)
 		
 		puts "=== analyzing courses... "
-		course_data = x.foo11(courses)
+		course_data = @env.foo11(courses)
 	end
 	
 	# NOTE: perhaps not all majors work right now? so be careful of that too
+end
+
+
+
+
+
+# this is just a template
+# 1 2 3 (list the full foo execution chain?)
+task :pathwayX => :setup do
 	
 end
+
+
