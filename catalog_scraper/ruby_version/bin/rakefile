@@ -170,11 +170,13 @@ task :pathway6 => :pathwayA do
 	course_data = @env.foo13(courses)
 end
 
+# test all courses across various majors to make sure everything runs correctly
+# uses foo11 to detect which courses have odd link formats
 # 1 2 11
 task :pathway7 => :pathwayA do	
-	puts "=== cycle through majors..."
+	puts "=== cycle through programs of study..."
 	
-	majors = [
+	programs = [
 		# "Computer Science, BS",
 			# "Applied Computer Science, BS",
 		# "Biology, BA",
@@ -182,9 +184,14 @@ task :pathway7 => :pathwayA do
 			"Psychology, BA"
 		# intended ones all got stuck on scripts for links that did not match either of the two expected formats
 	]
-	majors.each do |m|
-		puts "=== Getting info for: #{m}"
-		courses = @env.foo2(m)
+	programs.each do |degree_name|
+		puts "=== Getting info for: #{degree_name}"
+		courses = @env.foo2(degree_name)
+		# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
+			# url = @env.degrees[degree_name]
+			# course_list = SummerResearch.degree_requirements(url)
+			# puts "test"
+		# failure occurs inside of SummerResearch.degree_requiremnts
 		
 		puts "=== analyzing courses... "
 		course_data = @env.foo11(courses)

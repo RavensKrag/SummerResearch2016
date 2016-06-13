@@ -159,6 +159,7 @@ end
 def extract_link(script)
 	regexp_a = /showCourse\('(.+?)'\, '(.+?)',this,/
 	regexp_b = /acalogPopup\('(.+?)'.*/
+	regexp_c = /showCatalogData\('(\d+?)'\, '(\d+?)'\, '(\d+?)'\, '(.+?)'/
 	
 	# TEST: checks to see that either one match or the other is found, but not both
 	# puts script.scan(regexp_a).size + script.scan(regexp_b).size == 1
@@ -168,19 +169,25 @@ def extract_link(script)
 	# NOTE: you actually get a different type out, but the interface is exactly the same because of Ruby's ability to implement the array-style access
 	
 	# oh but wait, this block only gets evaluated if there is a match, so that's rather convienent
-	x = 
+	a = 
 		script.scan(regexp_a).collect do |a,b|
 			"preview_course.php?catoid#{a}&coid=#{b}&print"
 		end
 	
-	y = 
+	b = 
 		script.scan(regexp_b).collect do |matches|
 			matches.first
 		end
 	
+	c = 
+		script.scan(regexp_c).collect do |a,b,c,d|
+			# p [a,b,c,d]
+			"preview_course.php?catoid#{a}&coid=#{c}&print"
+		end
+	
 	# two lists joined together, resulting list always has size of 1
 	# as show in the the test near the top of this method.
-	results = (x + y)
+	results = (a + b + c)
 	unless results.size == 1
 		raise "Error: could not find catalog course link inside this script.\n" +
 		      "Script dump:\n" +

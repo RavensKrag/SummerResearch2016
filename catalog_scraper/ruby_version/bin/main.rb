@@ -12,6 +12,8 @@ class Main
 		@courses = Hash.new
 	end
 	
+	attr_reader :degrees
+	
 	
 	
 	# dependencies: none
