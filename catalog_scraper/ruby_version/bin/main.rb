@@ -101,7 +101,7 @@ class Main
 		dept, number = course_id.split
 		course = @courses[dept].find{  |x| x.id.include? number }
 		
-		return SummerResearch.course_info(course.url)
+		return SummerResearch::CourseInfo.new(course).fetch
 	end
 	
 	# dependencies: foo1
@@ -243,7 +243,7 @@ class Main
 		output_data = 
 			course_list.collect do |course|
 				puts course.id
-				SummerResearch.course_info(course.url)
+				SummerResearch::CourseInfo.new(course).fetch
 			end
 		# p output_data
 		Utilities.write_to_file('./course_info.yaml', output_data.to_yaml)
@@ -264,7 +264,7 @@ class Main
 		
 		course_list.each do |course|
 			begin
-				SummerResearch.course_info(course.url)
+				SummerResearch::CourseInfo.new(course).fetch
 			rescue StandardError => e
 				if flag
 					puts ""

@@ -196,6 +196,14 @@ task :pathway7 => :pathwayA do
 		course_data = @env.foo11(courses)
 	end
 	
+	# errors from: SummerResearch::CourseInfo#fetch
+	# two other page formats:
+		# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
+			# ^ seems to be for more recent courses? not really sure why the markup is different
+		# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
+	
+	
+	
 	# NOTE: perhaps not all majors work right now? so be careful of that too
 	
 	
