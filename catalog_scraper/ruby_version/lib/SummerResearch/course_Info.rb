@@ -11,6 +11,10 @@ class CourseInfo
 		@url = course.url
 	end
 	
+	start_sequence   = %w[text table text]
+	TYPE_A_SIGNATURE = start_sequence + %w[h1 text br]
+	TYPE_B_SIGNATURE = start_sequence + %w[h1 p hr text p   p p text p]
+	
 	# get from the online Catalog
 	def fetch
 		# <strong>Prerequisite(s):</strong>
@@ -70,8 +74,42 @@ class CourseInfo
 		
 		header = nil
 		rest   = nil
+		flag   = nil
+		
+		
+		
 		
 		# Type A
+		flag = signature_match?(chunk, TYPE_A_SIGNATURE)
+		
+		if flag
+			puts "=> Type A"
+		else
+		
+		
+		# Type B
+		flag = signature_match?(chunk, TYPE_B_SIGNATURE)
+		
+		if flag
+			puts "=> Type B"
+		end
+		end
+		
+		if flag == false
+			puts "=== Data dump"
+			p chunk.children.collect{|x| x.name}.join(' ')
+			puts "====="
+			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below."
+		end
+		
+		
+		
+		raise
+		
+		
+		
+		# if chunk.children.first()
+		
 		begin 
 			list = chunk.children
 			# puts list.size
@@ -106,8 +144,15 @@ class CourseInfo
 		
 		# Type B
 		begin
-			raise if heading and top and rest
+			# raise if heading and top and rest
 			# skip this block if the values are already set
+			
+			
+			
+			# first string in that last string of 4 is the one you want
+			segment.each do |x|
+				puts x.class
+			end
 			
 			
 			heading = segment
@@ -123,6 +168,10 @@ class CourseInfo
 			# as the actual parsing will fail, and throw an execption.
 		end
 		
+		
+		# Mason Core listing actually uses Type A format,
+		# but it doesn't list even a single "KEY: value" pair,
+		# and then absense of the bold items alone is what throws off the parsing
 		
 		
 		
@@ -177,7 +226,86 @@ class CourseInfo
 	
 	
 	
+	
+	# NOTE: this method is for testing only.
+	# If you want 
+	def test_types
+		# GET THE DATA USING NOKOGIRI
+		xml = Nokogiri::HTML(open(url))
+		chunk = xml.css('td.block_content_popup')
+			Utilities.write_to_file("./course.html", chunk)
+		
+		
+		out = Hash.new
+		
+		
+		
+		
+		# Test the data, and return types
+		
+		header = nil
+		rest   = nil
+		flag   = nil
+		
+		
+		
+		
+		# Type A
+		flag = test_signature_match?(chunk, TYPE_A_SIGNATURE)
+		
+		if flag
+			puts "=> Type A"
+		else
+		
+		
+		# Type B
+		flag = test_signature_match?(chunk, TYPE_B_SIGNATURE)
+		
+		if flag
+			puts "=> Type B"
+		end
+		end
+		
+		if flag == false
+			puts "=> ERROR: Type Not Found"
+			p chunk.children.collect{|x| x.name}.join(' ')
+		end
+		
+		
+		
+		raise
+	end
+	
+	
+	
+	
 	private
+	
+	def signature_match?(chunk, type_signature)
+		# NOTE: Enumerable#all? will short-circuit
+		flag = chunk.children.first(type_signature.size).collect{  |x| x.name  }
+		            .zip(type_signature)
+		            .all? do |child_name, token_type|
+		            	child_name == token_type
+		            end
+		
+		return flag
+	end
+	
+	# Should be exactly the same as #test_signature, but with debug printing enabled
+	# Should be used for testing purposes only
+	def test_signature_match?(chunk, type_signature)
+		puts "----"
+		flag = chunk.children.first(type_signature.size).collect{  |x| x.name  }
+		            .zip(type_signature)
+		            .all? do |child_name, token_type|
+		            	p [child_name, token_type]
+		            	child_name == token_type
+		            end
+		puts "----"
+		
+		return flag
+	end
 	
 	
 	# === Format of interesting sector Type A

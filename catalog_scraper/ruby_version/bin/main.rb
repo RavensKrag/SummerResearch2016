@@ -232,6 +232,11 @@ class Main
 				"EVPP 110",
 				"The Ecosphere: An Introduction to Environmental Science I",
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
+			],
+			[
+				"Mason Core UGU",
+				"Global Understanding",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
 			]
 		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c) }
 		return sample
@@ -265,6 +270,33 @@ class Main
 		course_list.each do |course|
 			begin
 				SummerResearch::CourseInfo.new(course).fetch
+			rescue StandardError => e
+				if flag
+					puts ""
+					flag = false
+				end
+				
+				puts course.id
+				puts course.description
+				puts course.url
+				# throw e
+			else
+				flag = true
+				print "."
+			end
+		end
+		
+		puts ""
+	end
+	
+	# most of the code in this method comes directly from foo11 above
+	# only the method call on CouseInfo has been changed from #fetch to #test_types
+	def foo14(course_list)
+		flag = true
+		
+		course_list.each do |course|
+			begin
+				SummerResearch::CourseInfo.new(course).test_types
 			rescue StandardError => e
 				if flag
 					puts ""

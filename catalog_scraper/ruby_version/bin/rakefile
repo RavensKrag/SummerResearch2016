@@ -159,7 +159,7 @@ end
 
 # test course parsing with a couple of key examples
 # (TODO: take extra data from foo3 and move into foo12 for more variety of data)
-# 1 2 12 13
+# 1 2 12 11
 task :pathway6 => :pathwayA do
 	courses = @env.foo2("Computer Science, BS")
 	
@@ -167,7 +167,20 @@ task :pathway6 => :pathwayA do
 	puts "=== run processing"
 	
 	courses = @env.foo12()
-	course_data = @env.foo13(courses)
+	course_data = @env.foo11(courses)
+end
+
+# test course parsing with a couple of key examples
+# Test for different types of course description pages
+# 1 2 12 14
+task :pathway8 => :pathwayA do
+	courses = @env.foo2("Computer Science, BS")
+	
+	
+	puts "=== run processing"
+	
+	courses = @env.foo12()
+	course_data = @env.foo14(courses)
 end
 
 # test all courses across various majors to make sure everything runs correctly
