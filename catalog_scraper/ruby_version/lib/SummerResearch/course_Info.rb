@@ -74,43 +74,14 @@ class CourseInfo
 		
 		header = nil
 		rest   = nil
-		flag   = nil
 		
 		
 		
-		
-		# Type A
-		flag = signature_match?(chunk, TYPE_A_SIGNATURE)
-		
-		if flag
+		# === Classify Type of Course Info Page
+		# === Based on the type, perform different parsing
+		if    signature_match?(chunk, TYPE_A_SIGNATURE)
 			puts "=> Type A"
-		else
-		
-		
-		# Type B
-		flag = signature_match?(chunk, TYPE_B_SIGNATURE)
-		
-		if flag
-			puts "=> Type B"
-		end
-		end
-		
-		if flag == false
-			puts "=== Data dump"
-			p chunk.children.collect{|x| x.name}.join(' ')
-			puts "====="
-			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below."
-		end
-		
-		
-		
-		raise
-		
-		
-		
-		# if chunk.children.first()
-		
-		begin 
+			
 			list = chunk.children
 			# puts list.size
 			
@@ -132,40 +103,24 @@ class CourseInfo
 			heading = segment[0]
 			top     = segment[1..6]
 			rest    = segment[7..-1]
-		rescue StandardError => e
-			# don't actually do anything,
-			# instead just move on to the next part of the code,
-			# and process as a Type B pattern
-			# 
-			# (This is actually a fairly bad way of doing this, but the general idea of "pattern failed, try the next pattern" is pretty cool)
-		end
-		
-		
-		
-		# Type B
-		begin
-			# raise if heading and top and rest
-			# skip this block if the values are already set
-			
-			
+		elsif signature_match?(chunk, TYPE_B_SIGNATURE)
+			puts "=> Type B"
 			
 			# first string in that last string of 4 is the one you want
+			p segment
 			segment.each do |x|
 				puts x.class
 			end
 			
 			
-			heading = segment
-			top     = segment
-			rest    = segment
-		rescue StandardError => e
-			# actually don't want to do this.
-			# the way I'm handling tranisition between these cases needs work
-			
-			# If there is actually an "error" with the expected data, 
-			# (not the form that was expected)
-			# then that will eventually show up in the code below,
-			# as the actual parsing will fail, and throw an execption.
+			heading = segment[0]
+			top     = segment[1..6]
+			rest    = segment[7..-1]
+		else
+			puts "=== Data dump"
+			p chunk.children.collect{|x| x.name}.join(' ')
+			puts "====="
+			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below."
 		end
 		
 		
@@ -245,34 +200,32 @@ class CourseInfo
 		
 		header = nil
 		rest   = nil
-		flag   = nil
 		
 		
 		
-		
-		# Type A
-		flag = test_signature_match?(chunk, TYPE_A_SIGNATURE)
-		
-		if flag
+		# === Classify Type of Course Info Page
+		# === Based on the type, perform different parsing
+		if    signature_match?(chunk, TYPE_A_SIGNATURE)
 			puts "=> Type A"
-		else
-		
-		
-		# Type B
-		flag = test_signature_match?(chunk, TYPE_B_SIGNATURE)
-		
-		if flag
+		elsif signature_match?(chunk, TYPE_B_SIGNATURE)
 			puts "=> Type B"
-		end
-		end
-		
-		if flag == false
-			puts "=> ERROR: Type Not Found"
+		else
+			puts "=== Data dump"
 			p chunk.children.collect{|x| x.name}.join(' ')
+			puts "====="
+			raise "ERROR: Course info page in an unexpected format.\n" +
+			      "Try comparing match data dump with an existing type signature format.\n"+
+			      "Type signature formats defined in course_info.rb"
+			      "See data dump above, or stack trace below."
 		end
 		
 		
 		
+		# This method must always raise an error, because it is being called from
+		# foo14, which uses the structure of foo11,
+		# which only prints debug info when errors are thrown
+		# (Really want to maintain similarity betwen foo14 and foo11.)
+		# (Will certainly make code easier to maintain in the long-run)
 		raise
 	end
 	
