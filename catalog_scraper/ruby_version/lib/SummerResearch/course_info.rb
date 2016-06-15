@@ -167,30 +167,30 @@ class CourseInfo
 		
 		
 		
-		success_flag = false
-		[
-			# Ordered list of types to check for.
-			# Will attempt to match types higher up on the list, before types lower in the list
-			
-			# NOTE: *** Reorder this list to change search priority ***
+		# Ordered list of types to check for.
+		# Will attempt to match types higher up on the list, before types lower in the list
+		
+		# NOTE: *** Reorder this list to change search priority ***
+		type_search_order = [
 			:type_a,
 			:type_b,
 			:type_c
-		].each do |name|
-			type = hash[name]
-			
-			if signature_match?(segment, type[:signature])
-				# when a matching signature is found,
-				# run the callback, and then do not look for any other potential callbacks
-				type[:callback].call()
+		]
+		# ---
+		success_flag = 
+			type_search_order.any? do |name|
+				type = hash[name]
 				
-				success_flag = true
-				break
+				if signature_match?(segment, type[:signature])
+					# when a matching signature is found,
+					# run the callback, and then do not look for any other potential callbacks
+					type[:callback].call()
+					
+					# pseudo-return for the block
+					true
+				end
 			end
-		end
-		# TODO: use #any? to get the success flag in a more organic way
-		
-		
+		# ---
 		unless success_flag
 			puts "=== Data dump"
 			p chunk.children.collect{|x| x.name}.join(' ')
@@ -275,38 +275,36 @@ class CourseInfo
 			}
 		}
 		
-		success_flag = false
-		[
-			# Ordered list of types to check for.
-			# Will attempt to match types higher up on the list, before types lower in the list
-			
-			# NOTE: *** Reorder this list to change search priority ***
+		
+		p chunk.children.collect{|x| x.name}.join(' ')
+		
+		# Ordered list of types to check for.
+		# Will attempt to match types higher up on the list, before types lower in the list
+		
+		# NOTE: *** Reorder this list to change search priority ***
+		type_search_order = [
 			:type_a,
 			:type_b,
 			:type_c
-		].each do |name|
-			type = hash[name]
-			
-			if test_signature_match?(segment, type[:signature])
-				# when a matching signature is found,
-				# run the callback, and then do not look for any other potential callbacks
-				type[:callback].call()
+		]
+		# ---
+		success_flag = 
+			type_search_order.any? do |name|
+				type = hash[name]
 				
-				success_flag = true
-				break
+				if test_signature_match?(segment, type[:signature])
+					# when a matching signature is found,
+					# run the callback, and then do not look for any other potential callbacks
+					type[:callback].call()
+					
+					# pseudo-return for the block
+					true
+				end
 			end
-		end
-		
-		
-		
+		# ---
 		unless success_flag
-			puts "=== Data dump"
-			p chunk.children.collect{|x| x.name}.join(' ')
-			puts "====="
 			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below."
 		end
-		
-		return self
 		
 		
 		
