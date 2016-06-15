@@ -225,7 +225,9 @@ class CourseInfo
 	end
 	
 	def [](key)
-		raise "ERROR: No data yet. Remember to run #fetch on #{self.class} objects to pull down data from the catalog, before trying to read data."
+		if @storage.nil?
+			raise "ERROR: No data yet. Remember to run #fetch on #{self.class} objects to pull down data from the catalog, before trying to read data."
+		end
 		
 		return @storage[key]
 	end
