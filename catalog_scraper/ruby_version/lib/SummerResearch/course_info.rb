@@ -31,8 +31,6 @@ class CourseInfo
 		
 		# === Set up state variables
 		out = Hash.new
-		header = nil
-		rest   = nil
 		
 		
 		list = chunk.children
@@ -62,7 +60,7 @@ class CourseInfo
 		# 
 		# Each type signature is associated with a different callback for parsing that page layout.
 		# (some minor code duplication, but this structure is very flexible.)
-		hash = {
+		info_page_types = {
 			:type_a => {
 				:signature => %w[h1 text br text br text a span text hr],
 				:callback  => ->(){
@@ -161,8 +159,7 @@ class CourseInfo
 				}
 			}
 		}
-		# TODO: give 'hash' a better variable name
-		# TODO: consider moving 'hash' outside of this method, to dramatically reduce duplication between this method, and the testing variant, #test_types
+		# TODO: consider moving 'info_page_types' outside of this method, to dramatically reduce duplication between this method, and the testing variant, #test_types
 			# (remember that this will alter how data is passed into those lambdas)
 		
 		
@@ -179,7 +176,7 @@ class CourseInfo
 		# ---
 		success_flag = 
 			type_search_order.any? do |name|
-				type = hash[name]
+				type = info_page_types[name]
 				
 				if signature_match?(segment, type[:signature])
 					# when a matching signature is found,
@@ -231,8 +228,6 @@ class CourseInfo
 		
 		# === Set up state variables
 		out = Hash.new
-		header = nil
-		rest   = nil
 		
 		
 		list = chunk.children
