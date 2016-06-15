@@ -24,15 +24,12 @@ class CourseInfo
 		
 		
 		# GET THE DATA USING NOKOGIRI
-		xml = Nokogiri::HTML(open(url))
+		xml = Nokogiri::HTML(open(@url))
 		chunk = xml.css('td.block_content_popup')
 			Utilities.write_to_file("./course.html", chunk)
 		
 		
-		# === Set up state variables
-		out = Hash.new
-		
-		
+		# === figure out where the interesting section is, and store in 'segment' variable
 		list = chunk.children
 		# puts list.size
 		
@@ -65,9 +62,6 @@ class CourseInfo
 				:signature => %w[h1 text br text br text a span text hr],
 				:callback  => ->(){
 					puts "TYPE A"
-					# === figure out where the interesting section is
-					# === extract the interesting section
-					
 					# table      <-- skip this
 					# h1         <-- name of course again
 					# * data you actually care about
@@ -221,15 +215,13 @@ class CourseInfo
 	# If you want 
 	def test_types
 		# GET THE DATA USING NOKOGIRI
-		xml = Nokogiri::HTML(open(url))
+		xml = Nokogiri::HTML(open(@url))
 		chunk = xml.css('td.block_content_popup')
 			Utilities.write_to_file("./course.html", chunk)
 		
 		
-		# === Set up state variables
-		out = Hash.new
 		
-		
+		# === figure out where the interesting section is, and store in 'segment' variable
 		list = chunk.children
 		
 		i_start = list.find_index{  |x| x.name == "h1" }
@@ -247,7 +239,7 @@ class CourseInfo
 		# 
 		# Each type signature is associated with a different callback for parsing that page layout.
 		# (some minor code duplication, but this structure is very flexible.)
-		hash = {
+		info_page_types = {
 			:type_a => {
 				:signature => %w[h1 text br text br text a span text hr],
 				:callback  => ->(){
@@ -285,7 +277,7 @@ class CourseInfo
 		# ---
 		success_flag = 
 			type_search_order.any? do |name|
-				type = hash[name]
+				type = info_page_types[name]
 				
 				if test_signature_match?(segment, type[:signature])
 					# when a matching signature is found,
