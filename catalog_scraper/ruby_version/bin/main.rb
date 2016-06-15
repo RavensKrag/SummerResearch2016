@@ -280,6 +280,19 @@ class Main
 				puts course.description
 				puts course.url
 				# throw e
+				
+				# output the data from the exception
+				# (the program will still continue to run)
+				# (resulting in all errors printed in one place)
+				puts e.message
+				e.backtrace.each do |line|
+					puts "\t" + line
+					# indent the lines of the backtrace.
+					# makes it easier to see things when you start getting multiple errors
+				end
+				puts "=============="
+				puts
+				puts
 			else
 				flag = true
 				print "."
@@ -306,6 +319,8 @@ class Main
 				puts course.id
 				puts course.description
 				puts course.url
+				# puts e.message
+				# puts e.backtrace
 				# throw e
 			else
 				flag = true

@@ -11,9 +11,8 @@ class CourseInfo
 		@url = course.url
 	end
 	
-	start_sequence   = %w[text table text]
-	TYPE_A_SIGNATURE = start_sequence + %w[h1 text br]
-	TYPE_B_SIGNATURE = start_sequence + %w[h1 p hr text p   p p text p]
+	TYPE_A_SIGNATURE = %w[h1 text br]
+	TYPE_B_SIGNATURE = %w[h1 p hr text p   p p text p]
 	
 	# get from the online Catalog
 	def fetch
@@ -39,12 +38,28 @@ class CourseInfo
 		rest   = nil
 		
 		
+		list = chunk.children
+		# puts list.size
 		
+		# list.each do |node|
+		# 	puts node.class
+		# 	if node.class == Nokogiri::XML::Element
+		# 		# p node.name
+		# 		# p node.methods
+		# 		break
+		# 	end
+		# end
+		
+		i_start = list.find_index{  |x| x.name == "h1" }
+		i_end   = list.find_index{  |x| x.name == "div" and x["style"] == "float: right" }
+		
+		
+		segment = list[(i_start..i_end)]
 		
 		
 		# === Classify Type of Course Info Page
 		# === Based on the type, perform different parsing
-		if    signature_match?(chunk.children, TYPE_A_SIGNATURE)
+		if    signature_match?(segment, TYPE_A_SIGNATURE)
 			# === figure out where the interesting section is
 			# === extract the interesting section
 			
@@ -62,24 +77,6 @@ class CourseInfo
 			# [3] h1
 			# [4] text after the h1 (mixed content) ex: "Credits: 2"
 			# 
-			
-			list = chunk.children
-			# puts list.size
-			
-			# list.each do |node|
-			# 	puts node.class
-			# 	if node.class == Nokogiri::XML::Element
-			# 		# p node.name
-			# 		# p node.methods
-			# 		break
-			# 	end
-			# end
-			
-			i_start = list.find_index{  |x| x.name == "h1" }
-			i_end   = list.find_index{  |x| x.name == "div" and x["style"] == "float: right" }
-			
-			
-			segment = list[(i_start..i_end)]
 			
 			# <strong>Corequisite(s):</strong>
 			# CS 112.
@@ -99,21 +96,18 @@ class CourseInfo
 			
 			# TODO: consider that some code from #parse_body may need to move into this section
 			# parse_body() should only contain "universal" code
-		elsif signature_match?(chunk.children, TYPE_B_SIGNATURE)
-			list = chunk.children
-			
-			
-			
+		elsif signature_match?(segment, TYPE_B_SIGNATURE)
 			# first string in that last string of 4 is the one you want
-			p segment
-			segment.each do |x|
-				puts x.class
-			end
 			
+			# p segment.collect{|x| x.name }.join(' ')
+			# => "h1 p hr text p p p text p text br br hr text div"
+			#     0  1 2  3    4 5 6 7    8 9    10 11 12 13   14 
 			
 			heading = segment[0]
-			top     = segment[1..6]
-			rest    = segment[7..-1]
+			top     = segment[1].children
+			rest    = segment[4].children
+			
+			# Utilities.write_to_file("./course_info_type_b", rest)
 		else
 			puts "=== Data dump"
 			p chunk.children.collect{|x| x.name}.join(' ')
@@ -189,27 +183,36 @@ class CourseInfo
 			Utilities.write_to_file("./course.html", chunk)
 		
 		
-		out = Hash.new
+		
 		
 		
 		
 		
 		# Test the data, and return types
-		
+		out = Hash.new
 		header = nil
 		rest   = nil
+		
+		
+		list = chunk.children
+		
+		i_start = list.find_index{  |x| x.name == "h1" }
+		i_end   = list.find_index{  |x| x.name == "div" and x["style"] == "float: right" }
+		
+		
+		segment = list[(i_start..i_end)]
 		
 		
 		
 		# === Classify Type of Course Info Page
 		# === Based on the type, perform different parsing
-		if    test_signature_match?(chunk.children, TYPE_A_SIGNATURE)
+		if    test_signature_match?(segment, TYPE_A_SIGNATURE)
 			puts "=> Type A"
-		elsif test_signature_match?(chunk.children, TYPE_B_SIGNATURE)
+		elsif test_signature_match?(segment, TYPE_B_SIGNATURE)
 			puts "=> Type B"
 		else
 			puts "=== Data dump"
-			p chunk.children.collect{|x| x.name}.join(' ')
+			p segment.collect{|x| x.name}.join(' ')
 			puts "====="
 			raise "ERROR: Course info page in an unexpected format.\n" +
 			      "Try comparing match data dump with an existing type signature format.\n"+
@@ -331,7 +334,7 @@ class CourseInfo
 		# for description, start after the <hr> following an invisible <span></span>
 		# and go until first <strong>
 		# (this part may include mulitple lines, separated by <br/> tags)
-		i_a = segment.find_index{  |x| x.name == "hr" }
+		i_a = 0
 		i_b = segment.find_index{  |x| x.name == "strong" }
 		
 		
