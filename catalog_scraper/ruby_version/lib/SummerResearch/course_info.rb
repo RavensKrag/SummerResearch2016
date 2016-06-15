@@ -33,54 +33,35 @@ class CourseInfo
 			Utilities.write_to_file("./course.html", chunk)
 		
 		
+		# === Set up state variables
 		out = Hash.new
-		
-		
-		
-		# table      <-- skip this
-		# h1         <-- name of course again
-		# * data you actually care about (some formatting markup, no semantic tree-like structure)
-		# p > br     <-- end of meaningful section
-		# some links to the catalog
-		
-		# [0] nothing
-		# [1] navigation
-		# [2] nothing
-		# [3] h1
-		# [4] text after the h1 (mixed content) ex: "Credits: 2"
-		# 
-		
-		# <strong>Corequisite(s):</strong>
-		# CS 112.
-		# <br>
-		# ---
-		# title in <strong> tags
-		# content
-		# <br>
-		
-		# NOTE: regaurdless of the number of "lines", BS4 should parse all of the plain text in between the <strong></strong> and <br/> as one line. No need to check for the possibilty of mulitple lines.
-		
-		
-		
-		
-		# === figure out where the interesting section is
-		
-		
-		
-		# === extract the interesting section
-		
-		
-		
-		
 		header = nil
 		rest   = nil
 		
 		
 		
+		
+		
 		# === Classify Type of Course Info Page
 		# === Based on the type, perform different parsing
-		if    signature_match?(chunk, TYPE_A_SIGNATURE)
-			puts "=> Type A"
+		if    signature_match?(chunk.children, TYPE_A_SIGNATURE)
+			# === figure out where the interesting section is
+			# === extract the interesting section
+			
+			# table      <-- skip this
+			# h1         <-- name of course again
+			# * data you actually care about
+			# * (some formatting markup, no semantic tree-like structure)
+			# *
+			# p > br     <-- end of meaningful section
+			# some links to the catalog
+			
+			# [0] nothing
+			# [1] navigation
+			# [2] nothing
+			# [3] h1
+			# [4] text after the h1 (mixed content) ex: "Credits: 2"
+			# 
 			
 			list = chunk.children
 			# puts list.size
@@ -100,11 +81,28 @@ class CourseInfo
 			
 			segment = list[(i_start..i_end)]
 			
+			# <strong>Corequisite(s):</strong>
+			# CS 112.
+			# <br>
+			# ---
+			# title in <strong> tags
+			# content
+			# <br>
+			
+			# NOTE: regaurdless of the number of "lines", BS4 should parse all of the plain text in between the <strong></strong> and <br/> as one line. No need to check for the possibilty of mulitple lines.
+			
+			
+			
 			heading = segment[0]
 			top     = segment[1..6]
 			rest    = segment[7..-1]
-		elsif signature_match?(chunk, TYPE_B_SIGNATURE)
-			puts "=> Type B"
+			
+			# TODO: consider that some code from #parse_body may need to move into this section
+			# parse_body() should only contain "universal" code
+		elsif signature_match?(chunk.children, TYPE_B_SIGNATURE)
+			list = chunk.children
+			
+			
 			
 			# first string in that last string of 4 is the one you want
 			p segment
@@ -205,9 +203,9 @@ class CourseInfo
 		
 		# === Classify Type of Course Info Page
 		# === Based on the type, perform different parsing
-		if    signature_match?(chunk, TYPE_A_SIGNATURE)
+		if    test_signature_match?(chunk.children, TYPE_A_SIGNATURE)
 			puts "=> Type A"
-		elsif signature_match?(chunk, TYPE_B_SIGNATURE)
+		elsif test_signature_match?(chunk.children, TYPE_B_SIGNATURE)
 			puts "=> Type B"
 		else
 			puts "=== Data dump"
@@ -234,9 +232,9 @@ class CourseInfo
 	
 	private
 	
-	def signature_match?(chunk, type_signature)
+	def signature_match?(node_list, type_signature)
 		# NOTE: Enumerable#all? will short-circuit
-		flag = chunk.children.first(type_signature.size).collect{  |x| x.name  }
+		flag = node_list.first(type_signature.size).collect{  |x| x.name  }
 		            .zip(type_signature)
 		            .all? do |child_name, token_type|
 		            	child_name == token_type
@@ -247,9 +245,9 @@ class CourseInfo
 	
 	# Should be exactly the same as #test_signature, but with debug printing enabled
 	# Should be used for testing purposes only
-	def test_signature_match?(chunk, type_signature)
+	def test_signature_match?(node_list, type_signature)
 		puts "----"
-		flag = chunk.children.first(type_signature.size).collect{  |x| x.name  }
+		flag = node_list.first(type_signature.size).collect{  |x| x.name  }
 		            .zip(type_signature)
 		            .all? do |child_name, token_type|
 		            	p [child_name, token_type]
@@ -325,7 +323,6 @@ class CourseInfo
 	def parse_body(segment)
 		out = Hash.new
 		
-		# ===== parse the body
 		
 		# NOTE: Assuming that the entire body is flat. The <hr> lies at the same level of the HTML tree as the bolded elements indicated by <strong></strong>
 			# At least in the case of EVPP 110, this is not the case. Other cases that break the "pattern" may also exist.
@@ -373,14 +370,6 @@ class CourseInfo
 		end
 		
 		return out
-	end
-	
-	def body_TypeA
-		
-	end
-	
-	def body_TypeB
-		
 	end
 end
 
