@@ -232,6 +232,80 @@ task :pathway7 => :pathwayA do
 end
 
 
+# Now that we have the data, actually start to walk it and do something interesting with it.
+# 1 2 13
+# 
+# actually, may want to just go back to pathway4 instead
+
+# precedesssor: pathway4
+# 1 5 7 8 10 9
+task :pathway9 => [:pathwayA, :pathwayB] do
+	# TODO: cache 1 and 5 to speed up evaluation
+	
+	
+	puts "=== run processing"
+	
+	[
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	# take one degree program, and walk the dependencies for all courses in the degree
+	course_list = @env.foo7("Computer Science, BS")  # get all relevant courses
+	class_dependencies = @env.foo8(course_list)      # construct all dependencies
+	
+	# =====
+	puts "============"
+	better_list = 
+		course_list.reject{  |course| course.id == "Mason Core" }
+		           .uniq{  |a| a.id    }
+		           .sort_by{  |a| a.id.split(' ').first   }
+	better_list.each do |course|
+		puts course.id
+		puts course.url
+		
+		info = SummerResearch::CourseInfo.new(course)
+		info.fetch
+		p info["Prerequisite(s)"]
+		p info["Corequisite(s)"]
+		p info["Notes"]
+		puts ""
+	end
+	
+	
+	# could pull down *list* of all courses associated with a dept
+	# if courses in a major have prereqs in that department?
+	# (definitely don't actually pull down each and every course before filtering though...)
+	
+	# under the current pipeline, I think this is the only way to do things?
+	# can't ask for a single class by course ID until you have a list of all courses by dept
+	# (foo4 experiments with this, but currently does not except a parameter)
+	
+	# department_codes = better_list.collect{ |course| course.id.split(' ').first }.uniq
+	
+
+	
+	
+	
+	# =====
+	
+	
+	output_filepath = ""
+	@env.foo10(class_dependencies, output_filepath)  # visualize the dependency graph
+	
+	
+	# query: what is the chain of courses that lead up to this course? 
+	@env.foo9(class_dependencies, "CS 465")
+	# => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
+	
+	# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
+	# NOTE: "ECE 301" is the old name, IIRC
+end
+
+
 
 
 
