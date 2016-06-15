@@ -68,6 +68,7 @@ task :all => [
 	:pathway4,
 	:pathway5,
 	:pathway6,
+	:pathway8,
 	:pathway7
 ]
 
