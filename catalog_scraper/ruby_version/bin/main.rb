@@ -302,6 +302,8 @@ class Main
 		puts ""
 	end
 	
+	# Like foo11, but with even more debug information. 
+	# 
 	# most of the code in this method comes directly from foo11 above
 	# only the method call on CouseInfo has been changed from #fetch to #test_types
 	def foo14(course_list)

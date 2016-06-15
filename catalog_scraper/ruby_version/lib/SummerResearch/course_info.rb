@@ -5,7 +5,7 @@ class CourseInfo
 	attr_reader :id, :url
 	
 	def initialize(course)
-		@storage = Hash.new
+		@storage = nil
 		
 		@id  = course.id
 		@url = course.url
@@ -61,7 +61,7 @@ class CourseInfo
 			:type_a => {
 				:signature => %w[h1 text br text br text a span text hr],
 				:callback  => ->(){
-					puts "TYPE A"
+					# puts "TYPE A"
 					# table      <-- skip this
 					# h1         <-- name of course again
 					# * data you actually care about
@@ -111,7 +111,7 @@ class CourseInfo
 			:type_b => {
 				:signature => %w[h1 p hr text p   p p text p],
 				:callback  => ->(){
-					puts "TYPE B"
+					# puts "TYPE B"
 					# first string in that last string of 4 is the one you want
 					
 					# p segment.collect{|x| x.name }.join(' ')
@@ -139,7 +139,7 @@ class CourseInfo
 			:type_c => {
 				:signature => %w[h1 text br a], # never any <hr> dividing the header from body,
 				:callback  => ->(){
-					puts "TYPE C"
+					# puts "TYPE C"
 					# Mason Core listing actually uses Type A format,
 					# but it doesn't list even a single "KEY: value" pair,
 					# and then absense of the bold items alone is what throws off the parsing
@@ -150,6 +150,17 @@ class CourseInfo
 					
 					
 					# Actually wait no, it's actually pretty different, because the total absense of an <hr> to show where the top sector ends
+					
+					heading = segment[0]
+					heading_data = parse_heading(heading)
+					
+					
+					other_data = Hash.new
+					other_data["Credits"]     = segment[1].inner_text.split(':').last.strip
+					other_data["Course List"] = segment[3]['href']
+					
+					
+					@storage = heading_data.merge(other_data)
 				}
 			}
 		}
@@ -186,7 +197,16 @@ class CourseInfo
 			puts "=== Data dump"
 			p chunk.children.collect{|x| x.name}.join(' ')
 			puts "====="
-			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below."
+			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below. Use foo14 (pathway8) for detailed analysis."
+		else
+			if @storage.nil?
+				# ERROR: variable never set
+				raise "ERROR: variable @storage never set in course_info.rb.\n" +
+				      "(remember to set this variable in the type callback)"
+			elsif @storage.empty?
+				# WARNING: no data was found in the catalog for @id
+				warn "Warning: No data found in the catalog for course #{@id}"
+			end
 		end
 		
 		return self
@@ -205,6 +225,8 @@ class CourseInfo
 	end
 	
 	def [](key)
+		raise "ERROR: No data yet. Remember to run #fetch on #{self.class} objects to pull down data from the catalog, before trying to read data."
+		
 		return @storage[key]
 	end
 	
@@ -212,7 +234,9 @@ class CourseInfo
 	
 	
 	# NOTE: this method is for testing only.
-	# If you want 
+	# * Copy over code from #fetch 
+	# * move code to output full page type signature BEFORE running type search
+	# * replace #signature_match? wih #test_signature_match?
 	def test_types
 		# GET THE DATA USING NOKOGIRI
 		xml = Nokogiri::HTML(open(@url))
