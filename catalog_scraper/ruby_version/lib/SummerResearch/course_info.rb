@@ -11,9 +11,6 @@ class CourseInfo
 		@url = course.url
 	end
 	
-	TYPE_A_SIGNATURE = %w[h1 text br]
-	TYPE_B_SIGNATURE = %w[h1 p hr text p   p p text p]
-	
 	# get from the online Catalog
 	def fetch
 		# <strong>Prerequisite(s):</strong>
@@ -59,100 +56,149 @@ class CourseInfo
 		
 		# === Classify Type of Course Info Page
 		# === Based on the type, perform different parsing
-		if    signature_match?(segment, TYPE_A_SIGNATURE)
-			# === figure out where the interesting section is
-			# === extract the interesting section
+		# 
+		# Based on the names of tags the Aray 'segment',
+		# various different types of course info pages can be identified
+		# 
+		# Each type signature is associated with a different callback for parsing that page layout.
+		# (some minor code duplication, but this structure is very flexible.)
+		hash = {
+			:type_a => {
+				:signature => %w[h1 text br text br text a span text hr],
+				:callback  => ->(){
+					puts "TYPE A"
+					# === figure out where the interesting section is
+					# === extract the interesting section
+					
+					# table      <-- skip this
+					# h1         <-- name of course again
+					# * data you actually care about
+					# * (some formatting markup, no semantic tree-like structure)
+					# *
+					# p > br     <-- end of meaningful section
+					# some links to the catalog
+					
+					# [0] nothing
+					# [1] navigation
+					# [2] nothing
+					# [3] h1
+					# [4] text after the h1 (mixed content) ex: "Credits: 2"
+					# 
+					
+					# <strong>Corequisite(s):</strong>
+					# CS 112.
+					# <br>
+					# ---
+					# title in <strong> tags
+					# content
+					# <br>
+					
+					# NOTE: regaurdless of the number of "lines", BS4 should parse all of the plain text in between the <strong></strong> and <br/> as one line. No need to check for the possibilty of mulitple lines.
+					
+					
+					
+					heading = segment[0]
+					top     = segment[1..6]
+					rest    = segment[7..-1]
+					
+					# TODO: consider that some code from #parse_body may need to move into this section
+					# parse_body() should only contain "universal" code
+					
+					
+					# Unified processing, regaurdless of where the pieces are located
+					heading_data = parse_heading(heading)
+					top_data     = parse_top_chunk(top)
+					body_data    = parse_body(rest)
+					
+					# p [heading_data.class, top_data.class, body_data.class]
+					
+					@storage = heading_data.merge(top_data).merge(body_data)
+				}
+			},
 			
-			# table      <-- skip this
-			# h1         <-- name of course again
-			# * data you actually care about
-			# * (some formatting markup, no semantic tree-like structure)
-			# *
-			# p > br     <-- end of meaningful section
-			# some links to the catalog
+			:type_b => {
+				:signature => %w[h1 p hr text p   p p text p],
+				:callback  => ->(){
+					puts "TYPE B"
+					# first string in that last string of 4 is the one you want
+					
+					# p segment.collect{|x| x.name }.join(' ')
+					# => "h1 p hr text p p p text p text br br hr text div"
+					#     0  1 2  3    4 5 6 7    8 9    10 11 12 13   14 
+					
+					heading = segment[0]
+					top     = segment[1].children
+					rest    = segment[4].children
+					
+					# Utilities.write_to_file("./course_info_type_b", rest)
+					
+					
+					# Unified processing, regaurdless of where the pieces are located
+					heading_data = parse_heading(heading)
+					top_data     = parse_top_chunk(top)
+					body_data    = parse_body(rest)
+					
+					# p [heading_data.class, top_data.class, body_data.class]
+					
+					@storage = heading_data.merge(top_data).merge(body_data)
+				}
+			},
 			
-			# [0] nothing
-			# [1] navigation
-			# [2] nothing
-			# [3] h1
-			# [4] text after the h1 (mixed content) ex: "Credits: 2"
-			# 
+			:type_c => {
+				:signature => %w[h1 text br a], # never any <hr> dividing the header from body,
+				:callback  => ->(){
+					puts "TYPE C"
+					# Mason Core listing actually uses Type A format,
+					# but it doesn't list even a single "KEY: value" pair,
+					# and then absense of the bold items alone is what throws off the parsing
+					
+					# may want to still declare this as a third Type C format?
+					# It is rather different, because the Mason Core course entries are not really courses
+					# they are just aliases for whole lists of courses
+					
+					
+					# Actually wait no, it's actually pretty different, because the total absense of an <hr> to show where the top sector ends
+				}
+			}
+		}
+		# TODO: give 'hash' a better variable name
+		# TODO: consider moving 'hash' outside of this method, to dramatically reduce duplication between this method, and the testing variant, #test_types
+			# (remember that this will alter how data is passed into those lambdas)
+		
+		
+		
+		success_flag = false
+		[
+			# Ordered list of types to check for.
+			# Will attempt to match types higher up on the list, before types lower in the list
 			
-			# <strong>Corequisite(s):</strong>
-			# CS 112.
-			# <br>
-			# ---
-			# title in <strong> tags
-			# content
-			# <br>
+			# NOTE: *** Reorder this list to change search priority ***
+			:type_a,
+			:type_b,
+			:type_c
+		].each do |name|
+			type = hash[name]
 			
-			# NOTE: regaurdless of the number of "lines", BS4 should parse all of the plain text in between the <strong></strong> and <br/> as one line. No need to check for the possibilty of mulitple lines.
-			
-			
-			
-			heading = segment[0]
-			top     = segment[1..6]
-			rest    = segment[7..-1]
-			
-			# TODO: consider that some code from #parse_body may need to move into this section
-			# parse_body() should only contain "universal" code
-		elsif signature_match?(segment, TYPE_B_SIGNATURE)
-			# first string in that last string of 4 is the one you want
-			
-			# p segment.collect{|x| x.name }.join(' ')
-			# => "h1 p hr text p p p text p text br br hr text div"
-			#     0  1 2  3    4 5 6 7    8 9    10 11 12 13   14 
-			
-			heading = segment[0]
-			top     = segment[1].children
-			rest    = segment[4].children
-			
-			# Utilities.write_to_file("./course_info_type_b", rest)
-		else
+			if signature_match?(segment, type[:signature])
+				# when a matching signature is found,
+				# run the callback, and then do not look for any other potential callbacks
+				type[:callback].call()
+				
+				success_flag = true
+				break
+			end
+		end
+		# TODO: use #any? to get the success flag in a more organic way
+		
+		
+		unless success_flag
 			puts "=== Data dump"
 			p chunk.children.collect{|x| x.name}.join(' ')
 			puts "====="
 			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below."
 		end
 		
-		
-		# Mason Core listing actually uses Type A format,
-		# but it doesn't list even a single "KEY: value" pair,
-		# and then absense of the bold items alone is what throws off the parsing
-		
-		
-		
-		# Unified processing, regaurdless of where the pieces are located
-		heading_data = parse_heading(heading)
-		top_data     = parse_top_chunk(top)
-		body_data    = parse_body(rest)
-		
-		# p [heading_data.class, top_data.class, body_data.class]
-		
-		@storage = heading_data.merge(top_data).merge(body_data)
-		
 		return self
-		
-		
-		
-		
-		
-		
-		
-		
-		# junk on top
-		# header
-		# body
-			# BRANCH
-			# Type A
-			
-			
-			# Type B
-			
-			
-		# link to PatriotWeb THIS Semester
-		# link to PatriotWeb NEXT Semester
-		# junk on bottom		
 	end
 	
 	# dump to the disk
@@ -183,12 +229,7 @@ class CourseInfo
 			Utilities.write_to_file("./course.html", chunk)
 		
 		
-		
-		
-		
-		
-		
-		# Test the data, and return types
+		# === Set up state variables
 		out = Hash.new
 		header = nil
 		rest   = nil
@@ -203,22 +244,69 @@ class CourseInfo
 		segment = list[(i_start..i_end)]
 		
 		
-		
 		# === Classify Type of Course Info Page
 		# === Based on the type, perform different parsing
-		if    test_signature_match?(segment, TYPE_A_SIGNATURE)
-			puts "=> Type A"
-		elsif test_signature_match?(segment, TYPE_B_SIGNATURE)
-			puts "=> Type B"
-		else
-			puts "=== Data dump"
-			p segment.collect{|x| x.name}.join(' ')
-			puts "====="
-			raise "ERROR: Course info page in an unexpected format.\n" +
-			      "Try comparing match data dump with an existing type signature format.\n"+
-			      "Type signature formats defined in course_info.rb"
-			      "See data dump above, or stack trace below."
+		# 
+		# Based on the names of tags the Aray 'segment',
+		# various different types of course info pages can be identified
+		# 
+		# Each type signature is associated with a different callback for parsing that page layout.
+		# (some minor code duplication, but this structure is very flexible.)
+		hash = {
+			:type_a => {
+				:signature => %w[h1 text br text br text a span text hr],
+				:callback  => ->(){
+					puts "=> TYPE A"
+				}
+			},
+			
+			:type_b => {
+				:signature => %w[h1 p hr text p   p p text p],
+				:callback  => ->(){
+					puts "=> TYPE B"
+				}
+			},
+			
+			:type_c => {
+				:signature => %w[h1 text br a], # never any <hr> dividing the header from body,
+				:callback  => ->(){
+					puts "=> TYPE C"
+				}
+			}
+		}
+		
+		success_flag = false
+		[
+			# Ordered list of types to check for.
+			# Will attempt to match types higher up on the list, before types lower in the list
+			
+			# NOTE: *** Reorder this list to change search priority ***
+			:type_a,
+			:type_b,
+			:type_c
+		].each do |name|
+			type = hash[name]
+			
+			if test_signature_match?(segment, type[:signature])
+				# when a matching signature is found,
+				# run the callback, and then do not look for any other potential callbacks
+				type[:callback].call()
+				
+				success_flag = true
+				break
+			end
 		end
+		
+		
+		
+		unless success_flag
+			puts "=== Data dump"
+			p chunk.children.collect{|x| x.name}.join(' ')
+			puts "====="
+			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below."
+		end
+		
+		return self
 		
 		
 		
@@ -335,7 +423,21 @@ class CourseInfo
 		# and go until first <strong>
 		# (this part may include mulitple lines, separated by <br/> tags)
 		i_a = 0
-		i_b = segment.find_index{  |x| x.name == "strong" }
+		i_b = segment.find_index{  |x| x.name == "strong" } # stop when you find bold. before end.
+		i_b ||= segment.size # walk from beginning to end
+		
+		
+		
+		
+		# if there is a bolded KEY: value pair section
+		description_sector = segment[i_a..(i_b-1)]
+		attribute_sector   = segment[i_b..(segment.size-1)]
+		
+		# if there is not
+		description_sector = segment[i_a..(segment.size-1)] # aka, the entire segment array
+		
+		
+		
 		
 		
 		out["Description"] =  
@@ -360,6 +462,8 @@ class CourseInfo
 		# NOTE: #tr is for character replacement, #gsub is for regex-based substring replacement
 		strong_tags.collect!{  |x| x.tr(':', '')   }
 		attributes = strong_tags.zip(value_strings).to_h
+		
+		
 		
 		# --- merge with other attributes from the header
 		out = out.merge attributes

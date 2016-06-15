@@ -319,12 +319,12 @@ class Main
 				puts course.id
 				puts course.description
 				puts course.url
-				# puts e.message
-				# puts e.backtrace
-				# throw e
 			else
 				flag = true
-				print "."
+			ensure
+				puts "=============="
+				puts
+				puts
 			end
 		end
 		
