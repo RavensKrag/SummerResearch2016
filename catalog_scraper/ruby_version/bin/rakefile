@@ -263,18 +263,24 @@ task :pathway9 => [:pathwayA, :pathwayB] do
 		course_list.reject{  |course| course.id == "Mason Core" }
 		           .uniq{  |a| a.id    }
 		           .sort_by{  |a| a.id.split(' ').first   }
-	better_list.each do |course|
-		puts course.id
-		puts course.url
+	# better_list.each do |course|
+	# 	# puts course.id
+	# 	puts course.url
 		
-		info = SummerResearch::CourseInfo.new(course)
-		info.fetch
-		p info["Prerequisite(s)"]
-		p info["Corequisite(s)"]
-		p info["Notes"]
-		puts ""
-	end
+	# 	info = SummerResearch::CourseInfo.new(course)
+	# 	info.fetch
+	# 	p info["Title"]
+	# 	p info["Prerequisite(s)"]
+	# 	p info["Corequisite(s)"]
+	# 	p info["Notes"]
+	# 	puts ""
+	# end
 	
+	
+	puts "=== download course listings..."
+	course_info_list = better_list.collect{  |x| SummerResearch::CourseInfo.new(x).fetch  }
+	
+	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", course_info_list.to_yaml)
 	
 	# could pull down *list* of all courses associated with a dept
 	# if courses in a major have prereqs in that department?
@@ -285,24 +291,74 @@ task :pathway9 => [:pathwayA, :pathwayB] do
 	# (foo4 experiments with this, but currently does not except a parameter)
 	
 	# department_codes = better_list.collect{ |course| course.id.split(' ').first }.uniq
-	
+end
 
+# must run pathway9 before this, but can't list as explict dependency,
+# because I want to be able to run pathway9 and pathway10 in separate executions
+# (kinda like caching?)
+task :pathway10 => :setup do
+	# @env is active in this block, but can't actually be meaningully used
+	# bascially, you should only interact with the data from the yaml file in this block,
+	# otherwise weird things will happen
+	
+	course_info_list = SummerResearch::Utilities.load_yaml_file("./all_course_data.yaml")
 	
 	
-	
-	# =====
-	
-	
-	output_filepath = ""
-	@env.foo10(class_dependencies, output_filepath)  # visualize the dependency graph
-	
-	
-	# query: what is the chain of courses that lead up to this course? 
-	@env.foo9(class_dependencies, "CS 465")
-	# => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
-	
-	# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
-	# NOTE: "ECE 301" is the old name, IIRC
+	puts "=== process data..."
+	course_info_list.each do |course_info|
+		regexp = /(\p{L}+ \d+)/
+		
+		# Explict dependencies
+		
+		
+		hard_deps =
+			%w[Prerequisite(s) Corequisite(s)]
+				.collect do |x|
+					requirements = course_info[x]
+					p requirements
+					next unless requirements
+					requirements.scan(regexp)
+				end
+				
+		
+		# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
+		# ERROR: can't deal with 'or 240'
+		# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
+		
+		# "Grade of C or better in CS 310, 330, and 367."
+		# ERROR: can't deal with 'CS 310, 330, and 367' => 'and 367'
+		
+		# CS 499 
+		# Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
+		
+		# PHIL 371 - Philosophy of Natural Sciences
+		# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
+
+		
+		
+		# "#{course} with grade of C or better"
+		# "Minimum grade of C in #{course}"
+		soft_deps = 
+			if course_info["Notes"]
+				# [0] PHYS 161
+				# [1] PHYS
+				# [2] 161
+				
+				# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
+				[] # pseudo-return empty array to stub this out
+			else
+				[] # if "Notes" attribute not set, return empty Array
+			end
+		
+		
+		# p hard_deps
+		# p soft_deps
+		dependencies = hard_deps + soft_deps
+		
+		
+		p dependencies.flatten.compact.uniq
+		puts "---------"
+	end
 end
 
 
