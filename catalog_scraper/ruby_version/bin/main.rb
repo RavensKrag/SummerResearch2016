@@ -178,7 +178,7 @@ class Main
 	def foo8(list_of_courses)
 		list_of_courses.each do |course|
 			# p course
-			puts course.id
+			# puts course.id
 		end
 		
 		# course_list = util.read_csv("./tmp/required_courses.csv")
@@ -243,8 +243,6 @@ class Main
 	end
 	
 	def foo13(course_list)
-		# WARNING: EVPP 110 fails with #course_info because it is not as flat as expected.
-		
 		output_data = 
 			course_list.collect do |course|
 				puts course.id

@@ -233,10 +233,7 @@ end
 
 
 # Now that we have the data, actually start to walk it and do something interesting with it.
-# 1 2 13
-# 
-# actually, may want to just go back to pathway4 instead
-
+# (actually, may want to just go back to pathway4 instead)
 # precedesssor: pathway4
 # 1 5 7 8 10 9
 task :pathway9 => [:pathwayA, :pathwayB] do
@@ -244,6 +241,10 @@ task :pathway9 => [:pathwayA, :pathwayB] do
 	
 	
 	puts "=== run processing"
+	
+	
+	# TODO: output data on different degrees to different folders.
+	# probably need to restructure some other code, such that the output directory is configurable?
 	
 	[
 		"Computer Science, BS",
@@ -257,28 +258,21 @@ task :pathway9 => [:pathwayA, :pathwayB] do
 	course_list = @env.foo7("Computer Science, BS")  # get all relevant courses
 	class_dependencies = @env.foo8(course_list)      # construct all dependencies
 	
-	# =====
 	puts "============"
+	
+	
+	# =====
+	puts "Filtering courses..."
 	better_list = 
 		course_list.reject{  |course| course.id == "Mason Core" }
 		           .uniq{  |a| a.id    }
 		           .sort_by{  |a| a.id.split(' ').first   }
-	# better_list.each do |course|
-	# 	# puts course.id
-	# 	puts course.url
-		
-	# 	info = SummerResearch::CourseInfo.new(course)
-	# 	info.fetch
-	# 	p info["Title"]
-	# 	p info["Prerequisite(s)"]
-	# 	p info["Corequisite(s)"]
-	# 	p info["Notes"]
-	# 	puts ""
-	# end
 	
-	
-	puts "=== download course listings..."
-	course_info_list = better_list.collect{  |x| SummerResearch::CourseInfo.new(x).fetch  }
+	puts "=== download individual course data..."
+	course_info_list = better_list.collect do |x|
+		print '.'
+		SummerResearch::CourseInfo.new(x).fetch
+	end
 	
 	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", course_info_list.to_yaml)
 	
@@ -301,11 +295,15 @@ task :pathway10 => :setup do
 	# bascially, you should only interact with the data from the yaml file in this block,
 	# otherwise weird things will happen
 	
+	# TODO: this code, when completed, should be moved under foo8
+	
 	course_info_list = SummerResearch::Utilities.load_yaml_file("./all_course_data.yaml")
 	
 	
 	puts "=== process data..."
 	course_info_list.each do |course_info|
+		puts "#{course_info.id} - #{course_info.title}"
+		
 		regexp = /(\p{L}+ \d+)/
 		
 		# Explict dependencies
@@ -333,7 +331,7 @@ task :pathway10 => :setup do
 		
 		# PHIL 371 - Philosophy of Natural Sciences
 		# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
-
+		
 		
 		
 		# "#{course} with grade of C or better"
@@ -360,6 +358,8 @@ task :pathway10 => :setup do
 		puts "---------"
 	end
 end
+
+# TODO: print list of courses for a degree, chunked by what sector they appear in in the Program of Study page. This, in conjunction with the dependency info printed in pathway10, can be used to generate visualizations.
 
 
 
