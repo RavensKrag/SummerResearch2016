@@ -1,6 +1,6 @@
 module SummerResearch
 
-	CatalogLink = Struct.new("CatalogLink", :id, :description, :url)
+	CatalogLink = Struct.new("CatalogLink", :id, :description, :url, :link_type)
 
 	class << self
 
@@ -150,58 +150,69 @@ def unpack_catalog_link(node)
 	
 	id, description = text.split(" - ")
 	
-	url = extract_link(node['onclick'])
+	url, link_type = extract_link(node['onclick'])
 	
 	
-	return CatalogLink.new(id, description, url)
+	return CatalogLink.new(id, description, url, link_type)
 end
 
 def extract_link(script)
-	regexp_a = /showCourse\('(.+?)'\, '(.+?)',this,/
-	regexp_b = /acalogPopup\('(.+?)'.*/
-	regexp_c = /showCatalogData\('(\d+?)'\, '(\d+?)'\, '(\d+?)'\, '(.+?)'/
-	
 	# TEST: checks to see that either one match or the other is found, but not both
 	# puts script.scan(regexp_a).size + script.scan(regexp_b).size == 1
+		
+	patterns = {
+		"Type A" => {
+			:pattern  => /showCourse\('(.+?)'\, '(.+?)',this,/,
+			:callback => ->(matches){
+				all, a,b = matches.to_a
+				"preview_course.php?catoid=#{a}&coid=#{b}&print"
+			}
+		},
+		
+		"Type B" => {
+			:pattern  => /acalogPopup\('(.+?)'.*/,
+			:callback => ->(matches){
+				matches[1]
+			}
+		},
+		
+		"Type C" => {
+			:pattern  => /showCatalogData\('(\d+?)'\, '(\d+?)'\, '(\d+?)'\, '(.+?)'/,
+			:callback => ->(matches){
+				all, a,b,c,d = matches.to_a
+				# p [a,b,c,d]
+				"preview_course.php?catoid=#{a}&coid=#{c}&print"
+			}
+		}
+	}
 	
+	name_url_pairs = 
+		patterns.lazy
+		        .collect{  |type, data|   [type, script.match(data[:pattern]), data[:callback]]  }
+		        .reject{   |type, match, callback|  match.nil?  }
+		        .collect{  |type, match, callback|  [type, callback[match]]  }
+		        .to_a
 	
-	# TODO: use #match not #scan. #scan gives all matches, and #match gives only one, and there should only ever be one
-	# NOTE: you actually get a different type out, but the interface is exactly the same because of Ruby's ability to implement the array-style access
+	name_url_pairs.size == 1
 	
-	# oh but wait, this block only gets evaluated if there is a match, so that's rather convienent
-	a = 
-		script.scan(regexp_a).collect do |a,b|
-			"preview_course.php?catoid=#{a}&coid=#{b}&print"
-		end
+	# TODO: remove '&print' from URLs, so if you every have to view the page manually for debugging etc, you get the nice looking UI, and not the print-friendly UI.
+	# (I've been just removing that bit manually, but that seems a bit silly.)
 	
-	b = 
-		script.scan(regexp_b).collect do |matches|
-			matches.first
-		end
-	
-	c = 
-		script.scan(regexp_c).collect do |a,b,c,d|
-			# p [a,b,c,d]
-			"preview_course.php?catoid=#{a}&coid=#{c}&print"
-		end
-	
-	# two lists joined together, resulting list always has size of 1
-	# as show in the the test near the top of this method.
-	results = (a + b + c)
-	unless results.size == 1
+	unless name_url_pairs.size == 1
 		puts "==== Data Dump ===="
 		puts "Script:"
 		puts script
 		puts "Regex Sets:"
-		p results
+		p name_url_pairs
 		puts "==================="
 		
 		raise "Error: could not find catalog course link inside this script. See data dump above, or stack trace below."
 	end
 	
-	local_link = results.first
+	# should only ever be one at this point
+	type, local_link = name_url_pairs.first
 	
-	return "http://catalog.gmu.edu/" + local_link
+	return "http://catalog.gmu.edu/" + local_link, type
 end
 
 def search_programs_of_study(url, target_fields)

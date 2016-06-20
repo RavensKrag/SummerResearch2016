@@ -238,7 +238,7 @@ class Main
 				"Global Understanding",
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
 			]
-		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c) }
+		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
 		return sample
 	end
 	

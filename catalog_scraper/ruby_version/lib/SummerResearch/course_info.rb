@@ -195,7 +195,7 @@ class CourseInfo
 		# ---
 		unless success_flag
 			puts "=== Data dump"
-			p chunk.children.collect{|x| x.name}.join(' ')
+			p chunk.children.collect{|x| x.name}[3..-1].join(' ')
 			puts "====="
 			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below. Use foo14 (pathway8) for detailed analysis."
 		else
@@ -289,7 +289,7 @@ class CourseInfo
 		}
 		
 		
-		p chunk.children.collect{|x| x.name}.join(' ')
+		p chunk.children.collect{|x| x.name}[3..-1].join(' ')
 		
 		# Ordered list of types to check for.
 		# Will attempt to match types higher up on the list, before types lower in the list
