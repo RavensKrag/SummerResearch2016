@@ -279,6 +279,7 @@ class Main
 				puts course.id
 				puts course.description
 				puts course.url
+				puts "Catalog Link format: #{course.link_type}"
 				# throw e
 				
 				# output the data from the exception
@@ -321,6 +322,7 @@ class Main
 				puts course.id
 				puts course.description
 				puts course.url
+				puts "Catalog Link format: #{course.link_type}"
 			else
 				flag = true
 			ensure
