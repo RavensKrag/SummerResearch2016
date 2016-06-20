@@ -2,13 +2,13 @@ module SummerResearch
 
 
 class CourseInfo
-	attr_reader :id, :url
+	attr_reader :url, :id, :title, :credits, :attempts, :department
 	
 	def initialize(course)
 		@storage = nil
 		
-		@id  = course.id
 		@url = course.url
+		@id  = course.id
 	end
 	
 	# get from the online Catalog
@@ -98,13 +98,13 @@ class CourseInfo
 					
 					
 					# Unified processing, regaurdless of where the pieces are located
-					heading_data = parse_heading(heading)
-					top_data     = parse_top_chunk(top)
+					parse_heading(heading)
+					parse_top_chunk(top)
 					body_data    = parse_body(rest)
 					
 					# p [heading_data.class, top_data.class, body_data.class]
 					
-					@storage = heading_data.merge(top_data).merge(body_data)
+					@storage = body_data
 				}
 			},
 			
@@ -126,13 +126,13 @@ class CourseInfo
 					
 					
 					# Unified processing, regaurdless of where the pieces are located
-					heading_data = parse_heading(heading)
-					top_data     = parse_top_chunk(top)
+					parse_heading(heading)
+					parse_top_chunk(top)
 					body_data    = parse_body(rest)
 					
 					# p [heading_data.class, top_data.class, body_data.class]
 					
-					@storage = heading_data.merge(top_data).merge(body_data)
+					@storage = body_data
 				}
 			},
 			
@@ -152,7 +152,7 @@ class CourseInfo
 					# Actually wait no, it's actually pretty different, because the total absense of an <hr> to show where the top sector ends
 					
 					heading = segment[0]
-					heading_data = parse_heading(heading)
+					parse_heading(heading)
 					
 					
 					other_data = Hash.new
@@ -160,7 +160,7 @@ class CourseInfo
 					other_data["Course List"] = segment[3]['href']
 					
 					
-					@storage = heading_data.merge(other_data)
+					@storage = other_data
 				}
 			}
 		}
@@ -405,21 +405,15 @@ class CourseInfo
 
 	
 	def parse_heading(h1_node)
-		out = Hash.new
+		@title = h1_node.inner_text.strip # <h1>
 		
-		out["Title"] = h1_node.inner_text.strip # <h1>
-		
-		return out
+		@title = @title.split(' - ').last
 	end
 	
 	def parse_top_chunk(segment)
-		out = Hash.new
-		
-		out["Credits"]    = segment[0].inner_text.split(':').last.strip
-		out["Attempts"]   = segment[2].inner_text.strip
-		out["Department"] = segment[5].inner_text.strip # <a>, href dept. page in the catalog
-		
-		return out
+		@credits    = segment[0].inner_text.split(':').last.strip
+		@attempts   = segment[2].inner_text.strip
+		@department = segment[5].inner_text.strip # <a>, href dept. page in the catalog
 	end
 	
 	def parse_body(segment)
