@@ -8,18 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
 .eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -67,3 +56,6 @@ target/
 # Ignore automatic cache
 # TODO: move all these files to some temporary directory
 catalog_scraper/tmp
+
+catalog_scraper/ruby_version/bin/data
+Gemfile.lock
