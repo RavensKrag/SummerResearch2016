@@ -101,6 +101,8 @@ class Main
 		dept, number = course_id.split
 		course = @courses[dept].find{  |x| x.id.include? number }
 		
+		# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
+		
 		return SummerResearch::CourseInfo.new(course).fetch
 	end
 	
