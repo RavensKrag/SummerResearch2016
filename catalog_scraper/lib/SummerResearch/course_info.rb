@@ -26,7 +26,7 @@ class CourseInfo
 		# GET THE DATA USING NOKOGIRI
 		xml = Nokogiri::HTML(open(@url))
 		chunk = xml.css('td.block_content_popup')
-			Utilities.write_to_file("./course.html", chunk)
+			# Utilities.write_to_file("./course.html", chunk)
 		
 		
 		# === figure out where the interesting section is, and store in 'segment' variable
@@ -243,7 +243,7 @@ class CourseInfo
 		# GET THE DATA USING NOKOGIRI
 		xml = Nokogiri::HTML(open(@url))
 		chunk = xml.css('td.block_content_popup')
-			Utilities.write_to_file("./course.html", chunk)
+			# Utilities.write_to_file("./course.html", chunk)
 		
 		
 		

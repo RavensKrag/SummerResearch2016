@@ -19,13 +19,10 @@ def write_csv(filepath, data)
 	end
 end
 
-def load_csv(filepath)
+def load_csv_file(filepath)
 	CSV.read_lines(filepath)
 end
 
-def load_yaml_file(filepath)
-	return YAML.load_file filepath
-end
 
 
 

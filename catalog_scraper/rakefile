@@ -11,14 +11,6 @@ require 'rake/testtask'
 # constants
 PATH_TO_FILE = File.expand_path(File.dirname(__FILE__))
 
-# -- file hierarchy --
-		# ROOT
-		# 	this directory
-		# 		this file
-
-# Must expand '..' shortcut into a proper path. But that results in a shorter string.
-PATH_TO_ROOT = File.expand_path '../..', __FILE__
-
 # gems (for everything else)
 require 'bundler/setup'
 
@@ -29,9 +21,7 @@ require 'yaml'
 require 'csv'
 
 # files
-Dir.chdir PATH_TO_ROOT do
-	require_all './lib/SummerResearch'
-end
+require_all 'lib/SummerResearch'
 
 # require './main'
 
@@ -39,7 +29,7 @@ end
 
 # setup tests
 Rake::TestTask.new do |t|
-	t.libs << "test"
+	t.libs = []
 	t.test_files = FileList['test/test*.rb']
 	t.verbose = true
 end
@@ -71,6 +61,61 @@ end
 
 
 task :setup_data do
+
+end
+
+# ok, this is pretty solid...
+# but what happens when you get mulitple intermediates out of one process?
+# (similar to a multiple return)
+
+
+# Check out this question on StackOverflow that deals with this exact situation:
+# src: http://stackoverflow.com/questions/24026092/rake-task-with-multiple-prerequisites-generating-multiple-outputs
+
+# based on that answer, I wrote this:
+# foo = {
+# 	:targets     => %w[target1.txt target2.txt],
+# 	:shared_deps => %w[src1.txt src2.txt],
+# 	:callback => ->(){
+		
+# 	}
+# }
+# foo[:targets].each do |filename|
+# 	file filename => foo[:shared_deps] do |t|
+# 		foo[:callback]
+# 	end
+# end
+
+
+# Declare a file task that generates mulitple files with the same prerequisites.
+# (actually will generate multiple tasks, but this is a nice convienence)
+def multi_file(args={}, &block)
+	# kinda a hacky way of getting the Rake-style interface.
+	# Should probably see what Rake actually does,
+	# because this is not sophisticated enough to be how Rails works.
+	outputs        = args.keys.first
+	shared_prereqs = args.values.first
+	
+	outputs.each do |filename|
+		file filename => shared_prereqs do |t|
+			block.call(t)
+		end
+		# there should be a way to just pass the block, instead of calling a block from a block
+		# but that way is complicated and arcane, so don't do it.
+		# 
+		# This way is simple to understand.
+	end
+end
+
+multi_file %w[target1.txt target2.txt] => %w[src1.txt src2.txt] do
+	
+end
+
+
+
+
+
+
 	@dataset0 = [
 		"Computer Science",
 		"Information Technology",
@@ -129,64 +174,14 @@ task :setup_data do
 			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
 		]
 	]
-end
-
-# ok, this is pretty solid...
-# but what happens when you get mulitple intermediates out of one process?
-# (similar to a multiple return)
-
-
-# Check out this question on StackOverflow that deals with this exact situation:
-# src: http://stackoverflow.com/questions/24026092/rake-task-with-multiple-prerequisites-generating-multiple-outputs
-
-# based on that answer, I wrote this:
-# foo = {
-# 	:targets     => %w[target1.txt target2.txt],
-# 	:shared_deps => %w[src1.txt src2.txt],
-# 	:callback => ->(){
-		
-# 	}
-# }
-# foo[:targets].each do |filename|
-# 	file filename => foo[:shared_deps] do |t|
-# 		foo[:callback]
-# 	end
-# end
-
-
-# Declare a file task that generates mulitple files with the same prerequisites.
-# (actually will generate multiple tasks, but this is a nice convienence)
-def multi_target(args={}, &block)
-	# kinda a hacky way of getting the Rake-style interface.
-	# Should probably see what Rake actually does,
-	# because this is not sophisticated enough to be how Rails works.
-	outputs        = args.keys.first
-	shared_prereqs = args.values.first
-	
-	outputs.each do |filename|
-		file filename => shared_prereqs do |t|
-			block.call(t)
-		end
-		# there should be a way to just pass the block, instead of calling a block from a block
-		# but that way is complicated and arcane, so don't do it.
-		# 
-		# This way is simple to understand.
-	end
-end
-
-multi_target %w[target1.txt target2.txt] => %w[src1.txt src2.txt] do
-	
-end
-
-
-
-
 
 
 
 
 # get programs of study from the catalog
-file 'data/programs_of_study.yaml' do |t, args|
+def foo1
+	return if @degrees
+	
 	list_of_degrees = @dataset0
 	
 	# --------
@@ -202,17 +197,18 @@ file 'data/programs_of_study.yaml' do |t, args|
 	
 	# --------
 	
-	filepath = t.name
+	filepath = 'bin/data/programs_of_study.yaml'
 	puts "Writing to file '#{filepath}'"
 	SummerResearch::Utilities.write_to_file(filepath, degrees.to_yaml )
 	
 	@degrees = degrees
 end
 
-
 # get the list of courses for one program, based on its name
-file 'data/required_courses.csv' => 'data/programs_of_study.yaml' do |t|
-	@degrees ||= YAML.load_file(t.prerequisites[0])
+def foo2
+	return if @required_courses
+	
+	@degrees ||= YAML.load_file('bin/data/programs_of_study.yaml')
 	
 	degree_name = "Computer Science, BS"
 	
@@ -231,39 +227,31 @@ file 'data/required_courses.csv' => 'data/programs_of_study.yaml' do |t|
 	
 	# --------
 	
-	filepath = t.name
+	filepath = 'bin/data/required_courses.csv'
 	SummerResearch::Utilities.write_csv(filepath, course_list)
 	
 	@required_courses = course_list
 end
 
-file 'data/requirements.html' => [] do |t|
-	# this file is generated by requirements_subtree()
-end
-
-
-file 'data/course.html' => [] do |t|
-	# generated by CourseInfo #fetch and #test_types
-end
-
-file 'data/courses.yaml' do |t|
+def foo3
 	# code taken from foo5
 	list_of_deparments = @dataset2
 	
 	# --------
 	
-	courses = list_of_deparments.collect{  |dept|  
+	courses = list_of_deparments.collect{  |dept|
+	          	# SummerResearch.courses_in_department => 'bin/data/search.html'
 	          	[dept, SummerResearch.courses_in_department(dept)]
 	          }.to_h
 	
 	# --------
 	
-	SummerResearch::Utilities.write_to_file('data/courses.yaml', courses.to_yaml )
+	SummerResearch::Utilities.write_to_file('bin/data/courses.yaml', courses.to_yaml )
 	
 	@courses = courses
 end
 
-task :from_foo4 => 'data/courses.yaml' do |t|
+def foo4
 	# code taken from foo4
 	# (this is the same data as required_courses.csv?)
 	# 
@@ -273,7 +261,7 @@ task :from_foo4 => 'data/courses.yaml' do |t|
 	# depends on pulling data down from the catalog from a department?
 	# thus, the data writing should not happen here, but the prereq to this
 	
-	@courses ||= YAML.load_file(t.prerequisites[0])
+	@courses ||= YAML.load_file('bin/data/courses.yaml')
 	
 	course_id = "CS 101"
 	# --------
@@ -294,15 +282,36 @@ task :from_foo4 => 'data/courses.yaml' do |t|
 	p course_info
 	
 	# --------
-	
-	
 end
 
 
-file 'data/course_info.yaml' => [] do |t|
+task :foo, [] do |t, args|
+	pathway_numbers = args.extras.collect{|x| x.to_i }
+	
+	puts "foo: #{pathway_numbers.inspect}"
+	
+	pathway_numbers.each do |number|
+		eval "foo#{number}()"
+	end
+end
+
+# foo1()
+# foo2()
+# foo3()
+# foo4()
+
+
+
+
+file 'bin/data/course_info.yaml' => 
+['bin/data/required_courses.csv', 'bin/data/courses.yaml'] do |t|
 	# code taken from foo13
 	
-	course_list = []
+	@required_courses ||= SummerResearch::Utilities.load_csv_file(t.prerequisites[0])
+	@courses          ||= YAML.load_file(t.prerequisites[1])
+	
+	dept = "CS"
+	course_list = @required_courses + @courses[dept]
 	
 	# --------
 	
@@ -329,7 +338,7 @@ file 'data/course_info.yaml' => [] do |t|
 end
 
 
-file 'data/search.html' => [] do |t|
+file 'bin/data/search.html' => [] do |t|
 	# generated by courses_in_department(dept_code)
 end
 
