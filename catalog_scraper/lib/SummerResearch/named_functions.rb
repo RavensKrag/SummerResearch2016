@@ -378,7 +378,7 @@ def list_dependencies(course_info)
 	
 	# class ID codes will always be in all caps.
 	# You can use this property to cleanse things that are not actually class IDs
-	dependencies.reject!{|x| x.is_lower? }
+	# dependencies.reject!{|x| x.is_lower? }
 	
 	return dependencies
 end

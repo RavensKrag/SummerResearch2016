@@ -667,6 +667,8 @@ task :new_pathway2 => ["data/required_courses.yaml", "data/catalog.yaml"] do
 		
 		# fetch new specific data
 		input_list = new_deps.to_a
+		
+		p input_list
 	end
 	# TODO: like other testing, alert when there is an error with parsing dependencies for a course, but continue on to the other courses. I would like to be able to see some trends in anamolous data.
 	
@@ -685,13 +687,161 @@ task :new_pathway3 => ["data/all_course_data.yaml"] do
 end
 
 
-task :new_pathway4 do
+# file "data/all_course_data.yaml" => ["data/required_courses.yaml", "data/catalog.yaml"] do
+task :new_pathway4 => ["data/required_courses.yaml", "data/catalog.yaml"] do
+	@required_courses ||= YAML.load_file('data/required_courses.yaml')
+	@catalog          ||= SummerResearch::Catalog.load("data/catalog")
 	
+	# =====
+	
+	puts "Filtering courses..."
+	filtered_list = 
+		@required_courses.reject{  |course| course.id == "Mason Core" }
+		                 .uniq{  |a| a.id    }
+		                 .sort_by{  |a| a.id.split(' ').first   }
+	
+	puts "=== recursive download of dependencies... "
+	
+	
+	
+	
+	# recursive traversal
+	# (iterative implementation, breadth first traversal)
+	
+	# maybe try a depth first approach this time?
+	# maybe that would make it easier to report errors with proper context?
+	
+	input_list = filtered_list.collect{  |cat_link| cat_link.id  }.uniq
+	
+	all_info_pages = Array.new
+	
+	# input_list     - array of strings, ex) ["CS 101", "CS 330", "CS 499"]
+	# all_info_pages - collection of CourseInfo objects (should all be unique)
+		# NOTE: equality of CourseInfo objects within a Set not yet defined
+	until input_list.empty? do
+		info_pages = 
+			input_list.collect do |course_id|
+				info = nil
+				begin
+					info = @catalog.download_course_info(course_id)
+				rescue StandardError => e
+					
+				ensure
+					yield info
+				end
+				
+				
+				info
+			end
+		
+		nested_ids = info_pages.collect{  |info| SummerResearch.list_dependencies(info)  }
+			# [[id, id, id], [id, id]]
+		
+		# add recently downloaded data into the greater collection (in-memory cache)
+		all_info_pages += info_pages
+		
+		# all dependencies at this level
+		new_dependencies = nested_ids.flatten.compact.uniq
+			# [id, id, id, id]
+		
+		# all dependencies where data has not yet been fetched
+		dep_set           = new_dependencies.to_set                           # set of strings
+		detailed_info_set = all_info_pages.collect{  |info| info.id  }.to_set # set of strings
+		new_deps          = dep_set.difference(detailed_info_set)
+		
+		# fetch new specific data
+		input_list = new_deps.to_a
+	end
+	# TODO: like other testing, alert when there is an error with parsing dependencies for a course, but continue on to the other courses. I would like to be able to see some trends in anamolous data.
+	
+	
+	
+	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", all_info_pages.to_yaml)
+	@full_dependency_list = all_info_pages
 end
 
 
 
-
+# extract data from programs of study for manual generation of graphs.
+# Just want to pull down the basic info I'm going to need to get this stuff done.
+# Don't want to attempt to fully automate any more, because the data is too messed up.
+# 
+# Tests for various errors that may occur while trying to look up a course in the catalog by ID
+task :new_pathway5 => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
+	puts "=== load data..."
+	
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+	@catalog           ||= SummerResearch::Catalog.load("data/catalog")
+	
+	# ===
+	
+	puts "=== Get degree requirements..."
+	
+	programs = [
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	out = 
+		programs.collect do |program_name|
+			verbose = false
+			
+			puts "=== #{program_name}"
+			# === take one degree program, and walk the dependencies for all courses in the degree
+			# (get all relevant courses)
+			
+			url = @programs_of_study[program_name]
+			
+			fragment = SummerResearch.requirements_subtree(url)
+			
+			# TODO: need to improve this selector. catching some false positives.
+			# wait, variable 'fragment' is a list...
+			course_list = SummerResearch.get_all_weird_link_urls(fragment)
+			
+			puts "Filtering courses..."
+			better_list = 
+				course_list.reject{  |course| course.id == "Mason Core" }
+				           .uniq{  |a| a.id    }
+				           .sort_by{  |a| a.id.split(' ').first   }
+			# NOTE:
+				# "Mason Core" -> the whole thing, not one particular course class, causes crash
+				# "BIOL 580" -> no data on BIOL classes > 499 (pagination problem)
+				
+				# leading space
+				# BIOL > 499
+				# Mason Core
+				# numbers only, no department (Psych BA)
+				
+				
+			puts "Downloading data..."
+			
+			better_list.collect do |catalog_link|
+				print '.'
+				
+				begin
+					@catalog.download_course_info(catalog_link.id)
+				rescue StandardError => e
+					# from foo11
+					puts
+					puts e.message
+					
+					if verbose
+						e.backtrace.each do |line|
+							puts "\t" + line
+							# indent the lines of the backtrace.
+							# makes it easier to see things when you start getting multiple errors
+						end
+					end
+				end
+			end
+			puts ""
+		end
+	
+	SummerResearch::Utilities.write_to_file("./all_degree_requirements.yaml", out.to_yaml)
+end
 
 
 

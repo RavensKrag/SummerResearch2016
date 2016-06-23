@@ -44,13 +44,20 @@ class Catalog
 	
 	# precondition: run #fetch to populate @storage
 	def download_course_info(course_id)
+		if course_id.is_a? SummerResearch::CatalogLink
+			raise "ERROR: argument should be a course id, not a CatalogLink object"
+		end
+		
+		
 		# TODO: consider using a real database for storage, so you don't have to worry about effeciency of searching for records.
 		
 		dept_code, course_number = course_id.split(' ')
 		
 		department_listing = @storage[dept_code]
 		
-		raise "ERROR: no department found. Looking for '#{dept_code}'" unless department_listing
+		unless department_listing
+			raise "ERROR: no department found. Looking for '#{dept_code}' (#{course_id})"
+		end
 		
 		course_link = department_listing.find{  |cat_link| cat_link.id == course_id }
 		
