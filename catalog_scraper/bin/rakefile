@@ -24,41 +24,34 @@ PATH_TO_ROOT = File.expand_path '../..', __FILE__
 
 
 
+# gems
+require 'open-uri'
+require 'nokogiri'
+require 'yaml'
+require 'csv'
 
-task :load_dependencies do
-	# gems
-	require 'open-uri'
-	require 'nokogiri'
-	require 'yaml'
-	require 'csv'
-	
-	# files
-	Dir.chdir PATH_TO_ROOT do
-		require_all './lib/SummerResearch'
-	end
+# files
+Dir.chdir PATH_TO_ROOT do
+	require_all './lib/SummerResearch'
 end
 
-task :load_main do
-	require './main'
-end
 
+# load main
+require './main'
+
+puts "=== setup environment"
+@env = SummerResearch::Main.new
 
 task :default => :run
 
 # run the program
-task :run => [:setup] do
+task :run do
 	p @env
 	# consider different forms of caching
 	# -- instance variable: cache for the session
 	# -- save to disk: cache for multiple sessions
 	
 	# TODO: consider promoting pathway4 as the default?
-end
-
-# all root tasks should list this as a dependency
-task :setup => [:load_dependencies, :load_main] do
-	puts "=== setup environment"
-	@env = SummerResearch::Main.new
 end
 
 task :all => [
@@ -77,7 +70,7 @@ task :all => [
 
 
 # 1
-task :pathwayA => :setup do
+task :pathwayA do
 	puts "=== setup data"
 	# search for relevant programs of study
 	# (required to run #foo2)
@@ -91,7 +84,7 @@ task :pathwayA => :setup do
 end
 
 # 5
-task :pathwayB => :setup do
+task :pathwayB do
 	# search catalog for even more data?
 	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
 	@env.foo5(deparments)
@@ -107,7 +100,7 @@ task :pathway1 => :pathwayA do
 end
 
 # 5 4
-task :pathway2 => :setup do
+task :pathway2 do
 	@env.foo5(["CS"])	
 	@env.foo4()
 end
@@ -232,12 +225,38 @@ task :pathway7 => :pathwayA do
 end
 
 
+
+
+
+file "data/checkpoint001.yaml" do
+	puts "=== setup data"
+	# search for relevant programs of study
+	# (required to run #foo2)
+	@env.foo1 [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	
+	# search catalog for even more data?
+	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
+	@env.foo5(deparments)
+	
+	
+	
+	SummerResearch::Utilities.write_to_file("./checkpoint001.yaml", @env.to_yaml)
+end
+
 # Now that we have the data, actually start to walk it and do something interesting with it.
 # (actually, may want to just go back to pathway4 instead)
 # precedesssor: pathway4
 # 1 5 7 8 10 9
-task :pathway9 => [:pathwayA, :pathwayB] do
-	# TODO: cache 1 and 5 to speed up evaluation
+file "data/all_course_data.yaml" => "data/checkpoint001.yaml" do
+	puts "=== loading @env from checkpoint001..."
+	@env = SummerResearch::Utilities.load_yaml_file("./checkpoint001.yaml")
+	
 	
 	
 	puts "=== run processing"
@@ -287,10 +306,14 @@ task :pathway9 => [:pathwayA, :pathwayB] do
 	# department_codes = better_list.collect{ |course| course.id.split(' ').first }.uniq
 end
 
+task :pathway9 => "data/all_course_data.yaml" do
+	puts "=== pathway9"
+end
+
 # must run pathway9 before this, but can't list as explict dependency,
 # because I want to be able to run pathway9 and pathway10 in separate executions
 # (kinda like caching?)
-task :pathway10 => :setup do
+task :pathway10 => "data/all_course_data.yaml" do
 	# @env is active in this block, but can't actually be meaningully used
 	# bascially, you should only interact with the data from the yaml file in this block,
 	# otherwise weird things will happen
@@ -367,7 +390,7 @@ end
 
 # this is just a template
 # 1 2 3 (list the full foo execution chain?)
-task :pathwayX => :setup do
+task :pathwayX do
 	
 end
 
