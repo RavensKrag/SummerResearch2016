@@ -49,7 +49,13 @@ class Catalog
 		dept_code, course_number = course_id.split(' ')
 		
 		department_listing = @storage[dept_code]
+		
+		raise "ERROR: no department found. Looking for '#{dept_code}'" unless department_listing
+		
 		course_link = department_listing.find{  |cat_link| cat_link.id == course_id }
+		
+		raise "ERROR: Department found, but not the course. Looking for '#{course_id}'" unless course_link
+		
 		# course_link = department_listing.bsearch{  |cat_link| cat_link.id.split(' ').last >= course_number }
 		# TODO: profile to see if it is worth it to use bsearch
 		

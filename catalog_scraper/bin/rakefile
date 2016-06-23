@@ -30,6 +30,7 @@ require 'open-uri'
 require 'nokogiri'
 require 'yaml'
 require 'csv'
+require 'set'
 
 # files
 Dir.chdir PATH_TO_ROOT do
@@ -484,9 +485,9 @@ def multi_file(args={}, &block)
 	end
 end
 
-multi_file %w[target1.txt target2.txt] => %w[src1.txt src2.txt] do
+# multi_file %w[target1.txt target2.txt] => %w[src1.txt src2.txt] do
 	
-end
+# end
 
 
 
@@ -504,10 +505,13 @@ end
 
 
 
+# TODO: name functions and move them from main.rb to named_functions.rb
+# (this will also remove dependence on shared state stored in @env)
+# (state should be stored / shared at this level (rake), not within the @env variable)
 
 
-# ["data/programs_of_study.yaml", "data/catalog.yaml"] => []
-task :new_pathway1 do
+
+multi_file ["data/programs_of_study.yaml", "data/catalog.yaml"] => [] do
 	puts "=== setup data"
 	# search for relevant programs of study
 	# (required to run #foo2)
@@ -527,22 +531,25 @@ task :new_pathway1 do
 	puts "#{count} programs found for search query."
 	
 	SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
-	
+	@programs_of_study = degrees
 	
 	
 	# search catalog for even more data?
-	catalog = SummerResearch::Catalog.new
-	catalog.fetch
-	catalog.dump("data/catalog")
+	@catalog = SummerResearch::Catalog.new
+	@catalog.fetch
+	@catalog.dump("data/catalog")
 end
 
-task :new_pathway2 do
-	catalog = SummerResearch::Catalog.load("data/catalog")
+# test recursive dependency resolution using new Catalog class
+task :new_pathway1 => ["data/catalog.yaml"] do
+	@catalog ||= SummerResearch::Catalog.load("data/catalog")
 	
-	p catalog.download_course_info("CS 101")
+	
+	# TODO: move much of this logic into named_functions.rb as foo8() and then rename that function
+	p @catalog.download_course_info("CS 101")
 	
 	
-	info = catalog.download_course_info("SWE 443")
+	info = @catalog.download_course_info("SWE 443")
 	p info
 	
 	p info["Prerequisite(s)"]
@@ -550,10 +557,137 @@ end
 
 
 
+file "data/required_courses.yaml" => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
+	puts "=== load data..."
+	
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+	@catalog           ||= SummerResearch::Catalog.load("data/catalog")
+	
+	
+	
+	puts "=== run processing"
+	
+	
+	# TODO: output data on different degrees to different folders.
+	# probably need to restructure some other code, such that the output directory is configurable?
+	
+	[
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	
+	
+	# === take one degree program, and walk the dependencies for all courses in the degree
+	# (get all relevant courses)
+	
+	program_name = "Computer Science, BS"
+	url = @programs_of_study[program_name]
+	
+	fragment = SummerResearch.requirements_subtree(url)
+	
+	# TODO: need to improve this selector. catching some false positives.
+	# wait, variable 'fragment' is a list...
+	course_list = SummerResearch.get_all_weird_link_urls(fragment)
+	
+	
+	
+	# TODO: remove dupicate entries in the list of courses
+		# not just as simple as removing duplicates from list
+		# need to remove when two tuples have the same first element
+		# also - want to keep original ordering
+	# NOTE: this may not be necessary if the selection filter on links is improved
+	
+	SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
+	
+	@required_courses = course_list
+	
+	
+	
+	class_dependencies = SummerResearch.foo8(course_list)      # construct all dependencies
+	
+	puts "============"
+	
+	
+	
+end
 
 
+# file "data/all_course_data.yaml" => ["data/required_courses.yaml", "data/catalog.yaml"] do
+task :new_pathway2 => ["data/required_courses.yaml", "data/catalog.yaml"] do
+	@required_courses ||= YAML.load_file('data/required_courses.yaml')
+	@catalog          ||= SummerResearch::Catalog.load("data/catalog")
+	
+	# =====
+	
+	puts "Filtering courses..."
+	filtered_list = 
+		@required_courses.reject{  |course| course.id == "Mason Core" }
+		                 .uniq{  |a| a.id    }
+		                 .sort_by{  |a| a.id.split(' ').first   }
+	
+	puts "=== recursive download of dependencies... "
+	
+	
+	
+	
+	# recursive traversal
+	# (iterative implementation, breadth first traversal)
+	
+	input_list = filtered_list.collect{  |cat_link| cat_link.id  }.uniq
+	
+	all_info_pages = Array.new
+	
+	# input_list     - array of strings, ex) ["CS 101", "CS 330", "CS 499"]
+	# all_info_pages - collection of CourseInfo objects (should all be unique)
+		# NOTE: equality of CourseInfo objects within a Set not yet defined
+	until input_list.empty? do
+		puts "-- downloading..."
+		info_pages = input_list.collect{  |course_id|  print'.'; @catalog.download_course_info(course_id) }
+		puts ""
+		nested_ids = info_pages.collect{  |info| SummerResearch.list_dependencies(info)  }
+			# [[id, id, id], [id, id]]
+		
+		puts "-- update"
+		# add recently downloaded data into the greater collection (in-memory cache)
+		all_info_pages += info_pages
+		
+		puts "-- calculate courses to check"
+		# all dependencies at this level
+		new_dependencies = nested_ids.flatten.compact.uniq
+			# [id, id, id, id]
+		
+		# all dependencies where data has not yet been fetched
+		dep_set           = new_dependencies.to_set                           # set of strings
+		detailed_info_set = all_info_pages.collect{  |info| info.id  }.to_set # set of strings
+		new_deps          = dep_set.difference(detailed_info_set)
+		
+		# fetch new specific data
+		input_list = new_deps.to_a
+	end
+	# TODO: like other testing, alert when there is an error with parsing dependencies for a course, but continue on to the other courses. I would like to be able to see some trends in anamolous data.
+	
+	
+	
+	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", all_info_pages.to_yaml)
+	@full_dependency_list = all_info_pages
+end
+
+task :new_pathway3 => ["data/all_course_data.yaml"] do 
+	@full_dependency_list ||= YAML.load_file("data/all_course_data.yaml")
+	
+	
+	
+	
+end
 
 
+task :new_pathway4 do
+	
+end
 
 
 

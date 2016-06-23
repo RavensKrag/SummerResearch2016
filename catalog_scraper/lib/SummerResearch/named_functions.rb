@@ -301,17 +301,6 @@ def search_by_department(dept_code)
 end
 
 
-# find out where all the specific course data is located for every single course offered
-# NOTE: search_by_department() only actually checks the first page of results, so this may not get EVERYTHING, but should be enough to analyse undergraduate requirements.
-def foo5
-	departments      = all_department_codes()
-	courses_per_dept = departments.collect{  |dept|  SummerResearch.search_by_department(dept) }
-										# (no specific data. just URLs, link types, etc)
-	
-	return departments.zip(courses_per_dept).to_h
-end
-
-
 def all_department_codes
 	xml = Nokogiri::HTML(open(COURSE_SEARCH_BASE_URL))
 	
@@ -326,6 +315,118 @@ def all_department_codes
 end
 
 
+def list_dependencies(course_info)
+	# much code for this method taken from pathway10
+	
+	
+	puts "#{course_info.id} - #{course_info.title}"
+	
+	regexp = /(\p{L}+ \d+)/
+	
+	# Explict dependencies
+	
+	
+	hard_deps =
+		%w[Prerequisite(s) Corequisite(s)]
+			.collect do |x|
+				requirements = course_info[x]
+				p requirements
+				next unless requirements
+				requirements.scan(regexp)
+			end
+			
+	
+	# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
+	# ERROR: can't deal with 'or 240'
+	# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
+	
+	# "Grade of C or better in CS 310, 330, and 367."
+	# ERROR: can't deal with 'CS 310, 330, and 367' => 'and 367'
+	
+	# CS 499 
+	# Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
+	
+	# PHIL 371 - Philosophy of Natural Sciences
+	# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
+	
+	
+	
+	# "#{course} with grade of C or better"
+	# "Minimum grade of C in #{course}"
+	soft_deps = 
+		if course_info["Notes"]
+			# [0] PHYS 161
+			# [1] PHYS
+			# [2] 161
+			
+			# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
+			[] # pseudo-return empty array to stub this out
+		else
+			[] # if "Notes" attribute not set, return empty Array
+		end
+	
+	
+	# p hard_deps
+	# p soft_deps
+	dependencies = hard_deps + soft_deps
+	
+	
+	dependencies = dependencies.flatten.compact.uniq
+	p dependencies
+	puts "---------"
+	
+	
+	# class ID codes will always be in all caps.
+	# You can use this property to cleanse things that are not actually class IDs
+	dependencies.reject!{|x| x.is_lower? }
+	
+	return dependencies
+end
+
+
+
+
+
+
+
+# Backend dependency graph construction.
+# given a list of courses, figure out all of the dependencies
+def foo8(list_of_courses)
+	list_of_courses.each do |course|
+		# p course
+		# puts course.id
+	end
+	
+	# course_list = util.read_csv("./tmp/required_courses.csv")
+	
+	
+	# out = dict()
+	
+	# for course in list_of_courses:
+	# 	name, desc, url_fragment = course
+		
+	# 	dependencies = []
+	# 	print self.get_dependencies(course)
+	# 	out[name] = dependencies
+	
+	# return out
+end
+
+
+
 
 end
+end
+
+
+# src: http://stackoverflow.com/questions/12713251/ruby-how-to-tell-if-character-is-upper-lowercase
+class String
+	def is_upper?
+		!!self.match(/\p{Upper}/)
+	end
+
+	def is_lower?
+		!!self.match(/\p{Lower}/)
+		# or: !self.is_upper?
+	end
 end
