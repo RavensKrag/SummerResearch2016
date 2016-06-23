@@ -1,5 +1,8 @@
 module SummerResearch
-
+	
+	PROGRAMS_OF_STUDY_URL  = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
+	COURSE_SEARCH_BASE_URL = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6272"
+	
 	CatalogLink = Struct.new("CatalogLink", :id, :description, :url, :link_type)
 
 	class << self
@@ -215,14 +218,14 @@ def extract_link(script)
 	return "http://catalog.gmu.edu/" + local_link, type
 end
 
-def search_programs_of_study(url, target_fields)
+def search_programs_of_study(target_fields)
 	levels = %w[BS BA MS PhD MA]
 	# TODO: limit degrees by education level
 	
 	
 	# --- fetch the page from the internet
 	# note: catoid encodes the catalog year
-	xml = Nokogiri::HTML(open(url))
+	xml = Nokogiri::HTML(open(PROGRAMS_OF_STUDY_URL))
 	
 	puts "downloading list of all programs at Mason..."
 	# --- grab unordered list from the HTML
@@ -276,11 +279,12 @@ end
 
 # get a list of classes using the catalog search
 # ex) "BIOL", "CS", etc
-# returns a list of triples: dept_code, class_number, url
-#                       ex) [CHEM, 313, catalog_URL_here]
+# returns a list of CatalogLink objects
 def search_by_department(dept_code)
 	# use this url to search for courses
 	# may return mulitple pages of results, but should be pretty clear
+	
+	# TODO: modify url to use COURSE_SEARCH_BASE_URL constant (reorder url args)
 	url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=" + dept_code + "&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter"
 	
 	xml = Nokogiri::HTML(open(url))
@@ -288,12 +292,37 @@ def search_by_department(dept_code)
 	puts "searching for classes under: " + dept_code + " ..."
 	
 	node = xml.css('td.block_content_outer table')[3]
-		Utilities.write_to_file("./search.html", node)
+		# Utilities.write_to_file("./search.html", node)
 	
 	tr_list = node.css('tr')[2..-1]
 	
 	# tr_list.each{|x| puts x.class }
 	return tr_list.collect{  |x| get_all_weird_link_urls(x)  }.flatten
+end
+
+
+# find out where all the specific course data is located for every single course offered
+# NOTE: search_by_department() only actually checks the first page of results, so this may not get EVERYTHING, but should be enough to analyse undergraduate requirements.
+def foo5
+	departments      = all_department_codes()
+	courses_per_dept = departments.collect{  |dept|  SummerResearch.search_by_department(dept) }
+										# (no specific data. just URLs, link types, etc)
+	
+	return departments.zip(courses_per_dept).to_h
+end
+
+
+def all_department_codes
+	xml = Nokogiri::HTML(open(COURSE_SEARCH_BASE_URL))
+	
+	#course_search > table > tbody > tr:nth-child(4) > td:nth-child(1) > select
+	segment = xml.css('#course_search table tr:nth-child(4) > td:nth-child(1) > select > option')
+		# Utilities.write_to_file("./department_codes_fragment.html", segment)
+	
+	departments = segment.collect{  |option_node|  option_node["value"]  } 
+	departments.shift # remove the first one, which is just -1, the default nonsense value
+	
+	return departments
 end
 
 

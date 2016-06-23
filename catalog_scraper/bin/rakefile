@@ -240,6 +240,9 @@ file "data/checkpoint001.yaml" do
 		"Psychology"
 	]
 	
+	
+	
+	
 	# search catalog for even more data?
 	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
 	@env.foo5(deparments)
@@ -255,7 +258,7 @@ end
 # 1 5 7 8 10 9
 file "data/all_course_data.yaml" => "data/checkpoint001.yaml" do
 	puts "=== loading @env from checkpoint001..."
-	@env = SummerResearch::Utilities.load_yaml_file("./checkpoint001.yaml")
+	@env = YAML.load_file("data/checkpoint001.yaml")
 	
 	
 	
@@ -320,7 +323,7 @@ task :pathway10 => "data/all_course_data.yaml" do
 	
 	# TODO: this code, when completed, should be moved under foo8
 	
-	course_info_list = SummerResearch::Utilities.load_yaml_file("./all_course_data.yaml")
+	course_info_list = YAML.load_file("data/all_course_data.yaml")
 	
 	
 	puts "=== process data..."
@@ -383,6 +386,84 @@ task :pathway10 => "data/all_course_data.yaml" do
 end
 
 # TODO: print list of courses for a degree, chunked by what sector they appear in in the Program of Study page. This, in conjunction with the dependency info printed in pathway10, can be used to generate visualizations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ["data/programs_of_study.yaml", "data/catalog.yaml"] => []
+task :new_pathway1 do
+	puts "=== setup data"
+	# search for relevant programs of study
+	# (required to run #foo2)
+	
+	list_of_degrees = [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	
+	degrees = SummerResearch.search_programs_of_study(list_of_degrees)
+	
+	
+	count = degrees.keys.size
+	puts "#{count} programs found for search query."
+	
+	SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
+	
+	
+	
+	# search catalog for even more data?
+	catalog = SummerResearch::Catalog.new
+	catalog.fetch
+	catalog.dump("data/catalog")
+end
+
+task :new_pathway2 do
+	catalog = SummerResearch::Catalog.load("data/catalog")
+	
+	p catalog.download_course_info("CS 101")
+	
+	
+	info = catalog.download_course_info("SWE 443")
+	p info
+	
+	p info["Prerequisite(s)"]
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
