@@ -5,6 +5,7 @@ require 'rubygems'
 
 require 'rake'
 require 'rake/clean'
+require 'rake/testtask'
 
 require 'bundler/setup'
 require 'require_all'
@@ -386,6 +387,106 @@ task :pathway10 => "data/all_course_data.yaml" do
 end
 
 # TODO: print list of courses for a degree, chunked by what sector they appear in in the Program of Study page. This, in conjunction with the dependency info printed in pathway10, can be used to generate visualizations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# setup tests
+Rake::TestTask.new do |t|
+	t.libs = []
+	t.test_files = FileList['test/test*.rb']
+	t.verbose = true
+end
+
+
+# =============================================
+
+
+
+# task :default => :run
+
+
+# Run multiple pathways with a single command
+# usage: rake pathways[1,2,3]
+# 
+#           positional arguments only, no named args
+#               V
+task :pathways, [] => [:load_dependencies, :setup_data] do |t, args|
+	pathway_numbers = args.extras.collect{|x| x.to_i }
+	
+	puts "pathways: #{pathway_numbers.inspect}"
+	
+	pathway_numbers.each do |number|
+		Rake::Task["pathway#{number}".to_sym].invoke()
+	end
+end
+
+
+
+
+task :setup_data do
+
+end
+
+# ok, this is pretty solid...
+# but what happens when you get mulitple intermediates out of one process?
+# (similar to a multiple return)
+
+
+# Check out this question on StackOverflow that deals with this exact situation:
+# src: http://stackoverflow.com/questions/24026092/rake-task-with-multiple-prerequisites-generating-multiple-outputs
+
+# based on that answer, I wrote this:
+# foo = {
+# 	:targets     => %w[target1.txt target2.txt],
+# 	:shared_deps => %w[src1.txt src2.txt],
+# 	:callback => ->(){
+		
+# 	}
+# }
+# foo[:targets].each do |filename|
+# 	file filename => foo[:shared_deps] do |t|
+# 		foo[:callback]
+# 	end
+# end
+
+
+# Declare a file task that generates mulitple files with the same prerequisites.
+# (actually will generate multiple tasks, but this is a nice convienence)
+def multi_file(args={}, &block)
+	# kinda a hacky way of getting the Rake-style interface.
+	# Should probably see what Rake actually does,
+	# because this is not sophisticated enough to be how Rails works.
+	outputs        = args.keys.first
+	shared_prereqs = args.values.first
+	
+	outputs.each do |filename|
+		file filename => shared_prereqs do |t|
+			block.call(t)
+		end
+		# there should be a way to just pass the block, instead of calling a block from a block
+		# but that way is complicated and arcane, so don't do it.
+		# 
+		# This way is simple to understand.
+	end
+end
+
+multi_file %w[target1.txt target2.txt] => %w[src1.txt src2.txt] do
+	
+end
 
 
 
