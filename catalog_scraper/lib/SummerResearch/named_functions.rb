@@ -156,7 +156,7 @@ def unpack_catalog_link(node)
 	url, link_type = extract_link(node['onclick'])
 	
 	
-	return CatalogLink.new(id, description, url, link_type)
+	return CatalogLink.new(id.strip, description, url, link_type)
 end
 
 def extract_link(script)
