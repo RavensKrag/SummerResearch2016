@@ -7,3 +7,5 @@ catalog_scraper/bin/data
 Gemfile.lock
 
 departments/data/dept_codes.csv
+
+*.db
