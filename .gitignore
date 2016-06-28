@@ -9,3 +9,4 @@ Gemfile.lock
 departments/data/dept_codes.csv
 
 *.db
+activerecord_test/database.log
