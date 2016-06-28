@@ -9,7 +9,7 @@ class CourseInfo
 		
 		@url = course.url
 			regex = /catoid=(\d+)/
-			@catalog_version = @url.scan(regex)
+			@catalog_version = @url.scan(regex).first[0].to_i
 		@id  = course.id
 	end
 	

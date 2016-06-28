@@ -51,6 +51,8 @@ class Catalog
 		
 		# TODO: consider using a real database for storage, so you don't have to worry about effeciency of searching for records.
 		
+		# TODO: switch to SQL  ASAP
+		
 		dept_code, course_number = course_id.split(' ')
 		
 		department_listing = @storage[dept_code]

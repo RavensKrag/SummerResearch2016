@@ -816,29 +816,37 @@ task :new_pathway5 => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
 				
 			puts "Downloading data..."
 			
-			better_list.collect do |catalog_link|
-				print '.'
-				
-				begin
-					@catalog.download_course_info(catalog_link.id)
-				rescue StandardError => e
-					# from foo11
-					puts
-					puts e.message
+			data = 
+				better_list.collect do |catalog_link|
+					print '.'
 					
-					if verbose
-						e.backtrace.each do |line|
-							puts "\t" + line
-							# indent the lines of the backtrace.
-							# makes it easier to see things when you start getting multiple errors
+					begin
+						@catalog.download_course_info(catalog_link.id)
+					rescue StandardError => e
+						# from foo11
+						puts
+						puts e.message
+						
+						if verbose
+							e.backtrace.each do |line|
+								puts "\t" + line
+								# indent the lines of the backtrace.
+								# makes it easier to see things when you start getting multiple errors
+							end
 						end
 					end
 				end
-			end
 			puts ""
+			
+			data
 		end
 	
 	SummerResearch::Utilities.write_to_file("./all_degree_requirements.yaml", out.to_yaml)
+end
+
+
+task :course_list_to_db do
+	
 end
 
 
