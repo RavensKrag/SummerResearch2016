@@ -7,8 +7,16 @@ require 'rake'
 require 'rake/clean'
 require 'rake/testtask'
 
+require 'bundler'
+Bundler.require(:default)
 require 'bundler/setup'
-require 'require_all'
+
+# other libraries
+require 'yaml'
+require 'csv'
+require 'set'
+require 'open-uri'
+
 
 # constants
 PATH_TO_FILE = File.expand_path(File.dirname(__FILE__))
@@ -21,16 +29,6 @@ PATH_TO_FILE = File.expand_path(File.dirname(__FILE__))
 # Must expand '..' shortcut into a proper path. But that results in a shorter string.
 PATH_TO_ROOT = File.expand_path '../..', __FILE__
 
-
-
-
-
-# gems
-require 'open-uri'
-require 'nokogiri'
-require 'yaml'
-require 'csv'
-require 'set'
 
 # files
 Dir.chdir PATH_TO_ROOT do

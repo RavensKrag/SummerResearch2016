@@ -5,7 +5,10 @@ gem 'require_all'
 gem 'curb'
 gem 'nokogiri'
 
-gem 'roo'
+gem 'roo' # currently actually unnecssary
 
+# might not need these two right now either
 gem 'oauth'
 gem 'json'
+
+gem 'activerecord'
