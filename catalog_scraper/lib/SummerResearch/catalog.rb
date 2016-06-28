@@ -3,41 +3,56 @@ module SummerResearch
 
 class Catalog
 	def initialize
-		@storage = nil
+		
 	end
 	
-	class << self
-		def load(filepath)
-			storage = YAML.load_file(filepath + '.yaml')
-			
-			catalog = Catalog.new
-			catalog.instance_eval do
-				@storage = storage
+	def setup
+		ActiveRecord::Schema.define do
+			unless ActiveRecord::Base.connection.tables.include? 'courses'
+				create_table :courses do |table|
+					table.column :dept,          :string
+					table.column :course_number, :string
+					table.column :catoid,        :string
+					table.column :coid,          :string
+				end
 			end
-			
-			return catalog
 		end
 	end
-	
-	def dump(filepath)
-		File.open(filepath + '.yaml', 'w') do |f|
-			f.puts @storage.to_yaml
-		end
-	end
-	
-	
 	
 	# fetch list of all avaiable courses from the catalog
 	# (currently only gets the first page of results from each deparment, but that should probably be up to 499 for most, if not all, deparments. Should be good enough to analyze undegrad programs.)
 	# 
 	# postcondition: populate @storage
 	def fetch
-		departments      = SummerResearch.all_department_codes
-		courses_per_dept = departments.collect{  |dept| SummerResearch.search_by_department(dept) }
-											# (no specific data. just URLs, link types, etc)
+		puts "fetching data..."
+		# departments      = SummerResearch.all_department_codes
+		# courses_per_dept = departments.collect{  |dept| SummerResearch.search_by_department(dept) }
+		# 									# (no specific data. just URLs, link types, etc)
 		
-		@storage = departments.zip(courses_per_dept).to_h
-		# department => [CatalogLink]
+		# data = departments.zip(courses_per_dept).to_h
+		# # department => [CatalogLink]
+		
+		
+		departments = SummerResearch.all_department_codes()
+		departments.each do |department|
+			SummerResearch.search_by_department(department).each do |catalog_link|
+				dept, course_number = parse_course_id(catalog_link.id)
+				
+				next if Course.find_by(:dept => dept, :course_number => course_number)
+				
+				catoid, coid = parse_url(catalog_link.url)
+				
+				Course.create(
+					:dept          => dept,
+					:course_number => course_number,
+					:catoid        => catoid,
+					:coid          => coid
+				)
+			end
+			
+			sleep(0.5)
+		end
+		
 		
 		return self
 	end
@@ -72,6 +87,56 @@ class Catalog
 		
 		return info
 	end
+	
+	
+	private
+	
+	# TODO: consider case of Mason Core classes
+	def parse_course_id(course_id)
+		dept_code, course_number = course_id.split(' ')
+		
+		return dept_code, course_number
+	end
+	
+	def parse_url(url)
+		# example:  http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305044&print
+		regex = /preview_course.php\?catoid=(\d+)&coid=(\d+)/
+		match_data = url.match(regex)
+		catoid = match_data[1]
+		coid   = match_data[2]
+		
+		return catoid, coid
+	end
+	
+	
+	
+	
+	
+	
+
+	# backs to SQL (relational logic)
+	class Course < ActiveRecord::Base
+		# self.primary_keys = :dept, :course_number
+		
+		def course_id
+			[self.dept, self.course_number].join(' ')
+		end
+		
+		
+		def find_by_course_id(course_id)
+			dept, number = dept_and_number(course_id)
+			return self.class.find_by(:dept => dept, :course_number => number)
+		end
+	end
+	private_constant :Course
+	
+	
+	
+	# backs to Mongo (document store)
+	class CourseDetails
+		
+	end
+	private_constant :CourseDetails
 end
 
 

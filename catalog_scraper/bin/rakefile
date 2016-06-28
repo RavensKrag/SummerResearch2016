@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-# gems
 require 'rubygems'
 
 require 'rake'
@@ -357,6 +356,17 @@ task :pathway10 => "data/all_course_data.yaml" do
 		
 		# PHIL 371 - Philosophy of Natural Sciences
 		# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
+		
+		
+		
+		
+		# SWE 443 - Software Architectures
+		# Prerequisite(s): Grade of C or better in CS 321 or CS 421 or SWE 321 or SWE 421.
+		# IIRC, 421 was re-numbered to 321.
+		# Notice that the numbers are the same for CS and SWE
+		# this is a cross-listed course.
+			# (note that some cross listed courses are exactly the same, but there's some OR course that's not? depending on if you take it as OR or MATH, there are a different number of seats avaiable in the class, and the prereqs are fairly different. This is despite it being the exact same physical lecture section.)
+		
 		
 		
 		
@@ -845,9 +855,50 @@ task :new_pathway5 => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
 end
 
 
-task :course_list_to_db do
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace :db_backend do
+	task :create_db do
+		ActiveRecord::Base.logger = Logger.new(File.open('database.log', 'w'))
+		
+		ActiveRecord::Base.establish_connection(
+			:adapter  => 'sqlite3',
+			:database => 'example.db'
+			# :database => ':memory:'
+		)
+		
+		
+		@catalog = Catalog.new
+		
+		@catalog.setup
+		@catalog.fetch
+	end
 	
+	task :course_list_to_db => [] do
+		@catalog = Catalog.new
+	end
 end
+
+
 
 
 

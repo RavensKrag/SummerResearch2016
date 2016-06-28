@@ -285,19 +285,44 @@ def search_by_department(dept_code)
 	# may return mulitple pages of results, but should be pretty clear
 	
 	# TODO: modify url to use COURSE_SEARCH_BASE_URL constant (reorder url args)
-	url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=" + dept_code + "&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter"
+	url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=#{dept_code}&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter"
 	
 	xml = Nokogiri::HTML(open(url))
 	
-	puts "searching for classes under: " + dept_code + " ..."
+	puts "searching for classes under: #{dept_code} ..."
 	
 	node = xml.css('td.block_content_outer table')[3]
-		# Utilities.write_to_file("./search.html", node)
+		Utilities.write_to_file("./search.html", xml) if node.nil?
+	# NOTE: sometimes fails to find courses.
+	# just retry the request again, and you should be able to get it.
+	while node.nil?
+		"retrying #{dept_code}..."
+		sleep(1.0) # wait a bit before retrying
+		
+		xml = Nokogiri::HTML(open(url))
+		node = xml.css('td.block_content_outer table')[3]
+	end
+		
+	
+	# NOTE: results are paginated. Should get info from ALL pages, not just the first one.
 	
 	tr_list = node.css('tr')[2..-1]
 	
 	# tr_list.each{|x| puts x.class }
 	return tr_list.collect{  |x| get_all_weird_link_urls(x)  }.flatten
+	
+	
+	
+	
+	# As noted in notes on how the Catalog URL works:
+	# corresponding pages in different versions of the catalog DO NOT have analogous numbers.
+	# This makes scraping the catalog considerably more tedious.
+	
+	#[29, 27, 25] # etc
+	# http://catalog.gmu.edu/index.php?catoid=25   (base page)
+	# in the left sidebar, there is a link for "Courses"
+	# href: http://catalog.gmu.edu/content.php?catoid=25&navoid=4962
+	# need to extract that navoid value
 end
 
 

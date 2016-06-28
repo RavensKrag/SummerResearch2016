@@ -102,6 +102,7 @@ class Catalog
 	class Course < ActiveRecord::Base
 		# self.primary_keys = :dept, :course_number
 		
+		
 		def course_id
 			[self.dept, self.course_number].join(' ')
 		end
