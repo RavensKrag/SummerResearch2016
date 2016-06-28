@@ -1,0 +1,46 @@
+plan to download all relevant data,
+without having to download literally everything
+
+
+
+download all college of science data
+	(Everyone has to take math and science, want to analyze Bio (and maybe Chem?) in particular)
+download all volgeneu school data
+
+download all data relevant to Mason Core
+	honors college
+	"Mason Core" labeled core lists
+	
+	(not full departments this time, just sets of classes)
+	(need to download the full list of each department's class offerings, but only need to download the specific course data for relevant classes)
+
+
+download Psychology major data (College of Humanities and Social Sciences)
+
+
+
+
+
+
+
+
+
+
+
+
+
+TODO: chunk all department codes by college / department
+	want to see which courses are more likely to be interrelated with others.
+	assuming that majors in a particular college are more similar than ones in disparate colleges.
+		
+		This is not totally true for the same reason that species in a phylogenitic tree
+		are not always similar, even if they are placed close together on the tree:
+		
+		The organizational structure is only a human best guess. It will change over time.
+
+
+
+if you go into the individual data for each course in the catalog,
+the catalog will tell you what department is offering a specific course
+
+(I just did it manually, because I just wanted a rough overview)
