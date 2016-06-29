@@ -153,9 +153,9 @@ class Catalog
 				
 				all_links = search_by_department(record.catoid, record.courses_navoid, department)
 				all_links.each do |catalog_link|
-					dept, course_number = parse_course_id(catalog_link.id)
+					dept, course_number = Catalog.parse_course_id(catalog_link.id)
 					
-					coid = coid_from_url(catalog_link.url)
+					coid = Catalog.coid_from_url(catalog_link.url)
 					
 					Course.create(
 						:dept          => dept,
@@ -209,7 +209,7 @@ class Catalog
 			
 			
 			# puts "main query"
-			dept, course_number = parse_course_id(course_id)
+			dept, course_number = Catalog.parse_course_id(course_id)
 			
 			
 			# symbols = CatalogYear.methods.grep(/name/)
@@ -237,20 +237,21 @@ class Catalog
 			# end
 			
 			
+			
+			
+			
+			
+			# ==================
 			# basically manually performing a JOIN with Mongo data at this point
 			# (need to downlad the data if necessary)
-			
+			# ==================
 			
 			record = most_recent_course_record
 			url = record.url
 			catalog_year = record.catalog_year.year_range
 			
 			
-			key = [record.dept, record.course_number, catalog_year]
-			
-			
-			
-			
+			# check if the document is in MongoDB
 			document = 
 				@mongo[:course_info].find(
 					:course_id => record.course_id, :catalog_year => catalog_year
@@ -258,28 +259,29 @@ class Catalog
 				.limit(1)
 				.first
 			
-			if document.nil?
-				# document not found. fetch data and add it to DB,
-				# then pull BSON back out of Mongo again (really just want the BSON for right now)
-				info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
-				info.fetch
-				
-				# puts info.to_h
-				
-				# p @mongo[:course_info]
-				@mongo[:course_info].insert_one(info.to_h)
-				
-				document = 
-					@mongo[:course_info].find(
-						:course_id => record.course_id, :catalog_year => catalog_year
-					)
-					.limit(1)
-					.first
-			end
 			
-			puts "===== Document"
-			p document
+			info = 
+				if document.nil?
+					# Document not found. Fetch data and add it to DB.
+					# Return the original CourseInfo object, which is still in memory.
+					info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
+					info.fetch
+					
+					# puts info.to_h
+					
+					# p @mongo[:course_info]
+					@mongo[:course_info].insert_one(info.to_h)
+					
+					
+					info # pseudo-return for block
+				else
+					# Document was in MongoDB. Turn it back into a CourseInfo object.
+					# p document.class # => BSON::Document
+					
+					CourseInfo.load(document)
+				end
 			
+			return info
 		else
 			raise "ERROR: NOT IMPLEMENTED YET"
 		end
@@ -374,36 +376,39 @@ class Catalog
 		# need to extract that navoid value
 	end
 	
-	# TODO: consider case of Mason Core classes
-	def parse_course_id(course_id)
-		dept_code     = nil
-		course_number = nil
-		
-		if course_id.include? "Mason Core"
-			dept_code = "Mason Core"
-			course_number = course_id.match(/Mason Core (.*)/)[1]
-		else
-			dept_code, course_number = course_id.split(' ')
-			course_number = course_number
+	
+	class << self
+		# TODO: consider case of Mason Core classes
+		def parse_course_id(course_id)
+			dept_code     = nil
+			course_number = nil
+			
+			if course_id.include? "Mason Core"
+				dept_code = "Mason Core"
+				course_number = course_id.match(/Mason Core (.*)/)[1]
+			else
+				dept_code, course_number = course_id.split(' ')
+				course_number = course_number
+			end
+			
+			return dept_code, course_number
 		end
 		
-		return dept_code, course_number
-	end
-	
-	# url => catoid, coid
-	def coid_from_url(url)
-		# example:  http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305044&print
-		regex = /preview_course.php\?catoid=(\d+)&coid=(\d+)/
-		match_data = url.match(regex)
-		catoid = match_data[1]
-		coid   = match_data[2]
+		# url => catoid, coid
+		def coid_from_url(url)
+			# example:  http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305044&print
+			regex = /preview_course.php\?catoid=(\d+)&coid=(\d+)/
+			match_data = url.match(regex)
+			catoid = match_data[1]
+			coid   = match_data[2]
+			
+			return coid
+		end
 		
-		return coid
-	end
-	
-	# catoid, coid => url
-	def course_description_url(catoid, coid)
-		return "http://catalog.gmu.edu/preview_course.php?catoid=#{catoid}&coid=#{coid}"
+		# catoid, coid => url
+		def course_description_url(catoid, coid)
+			return "http://catalog.gmu.edu/preview_course.php?catoid=#{catoid}&coid=#{coid}"
+		end
 	end
 	
 	
@@ -425,9 +430,8 @@ class Catalog
 			return self.class.find_by(:dept => dept, :course_number => number)
 		end
 		
-		# same code as Catalog#course_description_url above
 		def url
-			return "http://catalog.gmu.edu/preview_course.php?catoid=#{self.catoid}&coid=#{self.coid}"
+			return Catalog.course_description_url(self.catoid, self.coid)
 		end
 	end
 	private_constant :Course

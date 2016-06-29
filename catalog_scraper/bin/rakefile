@@ -909,7 +909,8 @@ namespace :db_backend do
 		@catalog = Catalog.new(DATABASE_FILEPATH)
 		
 		
-		@catalog.course_info('CS 101')
+		info = @catalog.course_info('CS 101')
+		# p info
 		# @catalog.query do |q|
 			
 		# end
