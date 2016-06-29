@@ -55,6 +55,7 @@ class Catalog
 		
 		
 		# For each available catalog year, navigate to the Course search page
+		# (Set 'courses_navoid' field for each CatalogYear record. Enables link to course search)
 		CatalogYear.all.each do |record|
 			next unless record.courses_navoid.nil?
 			
@@ -105,11 +106,13 @@ class Catalog
 		# end
 		
 		
-		restricted_set = %w[BIOL CHEM MATH CS SWE IT PSYC CDS ASTR GEOL PHYS GGS NEUR CRIM PHIL ENGH STAT ECE COMM ECON BENG MBUS HAP OR SYST].to_set
+		
+		# Restrict departments to a useful subset.
+		# Should include all deparments necessary to evaulate CS EE IT Psyc and Bio degrees.
+		restricted_set = (%w[BIOL CHEM MATH CS SWE IT PSYC CDS ASTR GEOL PHYS GGS NEUR CRIM PHIL ENGH STAT ECE COMM ECON BENG MBUS HAP OR SYST EVPP] + ["Mason Core"]).to_set
 		
 		CatalogYear.all.each do |record|
 			puts "#{record.year_range} Catalog Year"
-			# next if record.year_range == "2016-2017"
 			
 			# --- For each catalog year, find the list of department IDs for that year
 			url = "http://catalog.gmu.edu/content.php?catoid=#{record.catoid}&navoid=#{record.courses_navoid}"
@@ -122,6 +125,8 @@ class Catalog
 			
 			# --- Search for all avaiable courses in each department
 			dept_codes.each do |department|
+				# skip this whole department if you've seen it before,
+				# within the specificed catalog year
 				next if Course.find_by(:dept => department, :catoid => record.catoid)
 				
 				all_links = search_by_department(record.catoid, record.courses_navoid, department)
@@ -257,11 +262,21 @@ class Catalog
 	
 	# TODO: consider case of Mason Core classes
 	def parse_course_id(course_id)
-		dept_code, course_number = course_id.split(' ')
+		dept_code     = nil
+		course_number = nil
+		
+		if course_id.include? "Mason Core"
+			dept_code = "Mason Core"
+			course_number = course_id.match(/Mason Core (.*)/)[1]
+		else
+			dept_code, course_number = course_id.split(' ')
+			course_number = course_number
+		end
 		
 		return dept_code, course_number
 	end
 	
+	# url => catoid, coid
 	def coid_from_url(url)
 		# example:  http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305044&print
 		regex = /preview_course.php\?catoid=(\d+)&coid=(\d+)/
@@ -270,6 +285,11 @@ class Catalog
 		coid   = match_data[2]
 		
 		return coid
+	end
+	
+	# catoid, coid => url
+	def course_description_url(catoid, coid)
+		return "http://catalog.gmu.edu/preview_course.php?catoid=#{catoid}&coid=#{coid}"
 	end
 	
 	
