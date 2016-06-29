@@ -298,9 +298,14 @@ class Catalog
 		block.call(Course, CatalogYear)
 	end
 	
-	def mongo_query(&block)
+	def mongo_query(namespace, &block)
+		block.call @mongo[namespace]
+	end
+	
+	def course_details_mongo(&block)
 		block.call @mongo[:course_info]
 	end
+	
 	
 	
 	

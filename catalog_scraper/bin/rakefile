@@ -916,28 +916,90 @@ namespace :db_backend do
 		# end
 	end
 	
-	task :mongo_query_test do
+	task :wipe_mongo do
 		@catalog = Catalog.new(DATABASE_FILEPATH)
 		
-		@catalog.mongo_query do |db|
-			db.find(:course_id => "CS 101").each do |doc|
-				puts doc
-			end
-			
-			
-			result = db.find(:course_id => "CS 101").delete_many
+		@catalog.course_details_mongo do |db|
+			result = db.delete_many
 			puts result.n
 		end
 		
 	end
 	
-	task :wipe_mongo do
+	
+	file 'data/programs_of_study.yaml' do
+		puts "=== setup data"
+		# search for relevant programs of study
+		# (required to run #foo2)
+		
+		list_of_degrees = [
+			"Computer Science",
+			"Information Technology",
+			"Electrical Engineering",
+			"Biology",
+			"Psychology"
+		]
+		
+		degrees = SummerResearch.search_programs_of_study(list_of_degrees)
+		
+		
+		count = degrees.keys.size
+		puts "#{count} programs found for search query."
+		
+		SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
+		@programs_of_study = degrees
+	end
+	
+	file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
+		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+		
+		puts "=== run processing"
+		
+		
+		# TODO: output data on different degrees to different folders.
+		# probably need to restructure some other code, such that the output directory is configurable?
+		
+		[
+			"Computer Science, BS",
+			"Applied Computer Science, BS",
+			"Biology, BA",
+			"Biology, BS",
+			"Psychology, BA"
+		]
+		
+		
+		
+		# === take one degree program, and walk the dependencies for all courses in the degree
+		# (get all relevant courses)
+		
+		program_name = "Computer Science, BS"
+		url = @programs_of_study[program_name]
+		
+		fragment = SummerResearch.requirements_subtree(url)
+		
+		# TODO: need to improve this selector. catching some false positives.
+		# wait, variable 'fragment' is a list...
+		course_list = SummerResearch.get_all_weird_link_urls(fragment)
+		
+		
+		
+		# TODO: remove dupicate entries in the list of courses
+			# not just as simple as removing duplicates from list
+			# need to remove when two tuples have the same first element
+			# also - want to keep original ordering
+		# NOTE: this may not be necessary if the selection filter on links is improved
+		
+		SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
+		
+		@required_courses = course_list
+	end
+	
+	task :cs_requirements => 'data/required_courses.yaml' do
+		@required_courses ||= YAML.load_file('data/required_courses.yaml')
+		
 		@catalog = Catalog.new(DATABASE_FILEPATH)
 		
-		@catalog.mongo_query do |db|
-			result = db.delete_many
-			puts result.n
-		end
+		
 		
 	end
 end
