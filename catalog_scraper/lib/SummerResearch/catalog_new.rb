@@ -109,7 +109,7 @@ class Catalog
 		
 		# Restrict departments to a useful subset.
 		# Should include all deparments necessary to evaulate CS EE IT Psyc and Bio degrees.
-		restricted_set = (%w[BIOL CHEM MATH CS SWE IT PSYC CDS ASTR GEOL PHYS GGS NEUR CRIM PHIL ENGH STAT ECE COMM ECON BENG MBUS HAP OR SYST EVPP] + ["Mason Core"]).to_set
+		restricted_set = (%w[BIOL CHEM MATH CS SWE IT PSYC CDS ASTR GEOL PHYS GGS NEUR CRIM PHIL ENGH STAT ECE COMM ECON BENG MBUS HAP OR SEOR OM SYST EVPP] + ["Mason Core"]).to_set
 		
 		CatalogYear.all.each do |record|
 			puts "#{record.year_range} Catalog Year"
