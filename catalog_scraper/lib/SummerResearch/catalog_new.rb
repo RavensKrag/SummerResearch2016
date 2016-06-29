@@ -7,6 +7,12 @@ class Catalog
 			:database => database_filepath
 			# :database => ':memory:'
 		)
+		
+		
+		@mongo_ip      = "127.0.0.1"
+		@mongo_port    = "12345"
+		@mongo_address = [@mongo_ip, @mongo_port].join(':')
+		@mongo = Mongo::Client.new([ @mongo_address ], :database => 'mydb')
 	end
 	
 	def setup
@@ -253,7 +259,10 @@ class Catalog
 			info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
 			info.fetch
 			
-			p info
+			puts info.to_h
+			
+			# p @mongo[:course_info]
+			@mongo[:course_info].insert_one(info.to_h)
 		else
 			raise "ERROR: NOT IMPLEMENTED YET"
 		end
@@ -264,6 +273,17 @@ class Catalog
 	def query(&block)
 		
 	end
+	
+	
+	def activerecord_query(&block)
+		block.call(Course, CatalogYear)
+	end
+	
+	def mongo_query(&block)
+		block.call @mongo[:course_info]
+	end
+	
+	
 	
 	
 	private

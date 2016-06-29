@@ -871,6 +871,20 @@ end
 
 
 
+def mongo_environment()
+	mongo_db_storage_path = File.expand_path("bin/data/mongo", PATH_TO_ROOT)
+	p mongo_db_storage_path
+	`mongod --dbpath "#{mongo_db_storage_path}" --port 12345`
+	# ^ this needs to be in a subprocess or something (like, another thread?) or you won't be able to continue with the execution of the main program
+	# maybe launch as daemon instead?
+		# mongod --fork --logpath /var/log/mongodb.log
+	
+	yield
+	
+	
+	`mongod --shutdown`
+end
+
 
 DATABASE_FILEPATH = 'example.db'
 
@@ -896,6 +910,21 @@ namespace :db_backend do
 		# @catalog.query do |q|
 			
 		# end
+	end
+	
+	task :mongo_query_test do
+		@catalog = Catalog.new(DATABASE_FILEPATH)
+		
+		@catalog.mongo_query do |db|
+			db.find(:course_id => "CS 101").each do |doc|
+				puts doc
+			end
+			
+			
+			result = db.find(:course_id => "CS 101").delete_many
+			puts result.n
+		end
+		
 	end
 end
 
