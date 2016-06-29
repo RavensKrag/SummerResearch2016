@@ -248,6 +248,32 @@ class Catalog
 			
 			key = [record.dept, record.course_number, catalog_year]
 			
+			
+			documents = 
+				@mongo[:course_info].find(
+					:course_id => record.course_id, :catalog_year => catalog_year
+				)
+			p documents.count
+			
+			unless documents.count > 0
+				# document not found. fetch data and add it to DB,
+				# then pull BSON back out of Mongo again (really just want the BSON for right now)
+				info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
+				info.fetch
+				
+				# puts info.to_h
+				
+				# p @mongo[:course_info]
+				@mongo[:course_info].insert_one(info.to_h)
+				
+				documents = 
+					@mongo[:course_info].find(
+						:course_id => record.course_id, :catalog_year => catalog_year
+					)
+			end
+			
+			p documents
+			
 			# document = get_document_from_mongo(key)
 			
 			# if document_in_mongo?(key)
@@ -256,13 +282,7 @@ class Catalog
 				
 			# end
 			
-			info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
-			info.fetch
 			
-			puts info.to_h
-			
-			# p @mongo[:course_info]
-			@mongo[:course_info].insert_one(info.to_h)
 		else
 			raise "ERROR: NOT IMPLEMENTED YET"
 		end
