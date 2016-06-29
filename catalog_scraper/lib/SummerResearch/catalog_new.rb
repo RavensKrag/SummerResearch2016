@@ -1,6 +1,12 @@
 class Catalog
-	def initialize
+	def initialize(database_filepath, log_filepath='database.log')
+		ActiveRecord::Base.logger = Logger.new(File.open(log_filepath, 'w'))
 		
+		ActiveRecord::Base.establish_connection(
+			:adapter  => 'sqlite3',
+			:database => database_filepath
+			# :database => ':memory:'
+		)
 	end
 	
 	def setup
@@ -24,7 +30,7 @@ class Catalog
 		end
 	end
 	
-	def fetch
+	def fetch_course_listing
 		# go to the main catalog page
 		# and figure out what catalog years are avaiable
 		url = "http://catalog.gmu.edu"
@@ -107,6 +113,16 @@ class Catalog
 		
 		
 		
+		# really want to split this up into two separate steps, so pipeline is smoother
+		
+		# catalog year -> department codes
+		# year, department codes -> list of courses available in that year
+		
+		# (keep having to re-downlod list of dept codes per year, even if you already have the list of all the coursese available in that year.)
+		
+		
+		
+		
 		# Restrict departments to a useful subset.
 		# Should include all deparments necessary to evaulate CS EE IT Psyc and Bio degrees.
 		restricted_set = (%w[BIOL CHEM MATH CS SWE IT PSYC CDS ASTR GEOL PHYS GGS NEUR CRIM PHIL ENGH STAT ECE COMM ECON BENG MBUS HAP OR SEOR OM SYST EVPP] + ["Mason Core"]).to_set
@@ -179,7 +195,68 @@ class Catalog
 	# May fetch data over the network as needed.
 	# Assuming that catalog data never changes once the catalog has been published.
 	def course_info(course_id, catalog_year=:most_recent)
-		
+		if catalog_year == :most_recent
+			
+			
+			# puts "Select a year"
+			# p CatalogYear.find_by(:year_range => '2014-2015').courses
+			
+			
+			# puts "main query"
+			dept, course_number = parse_course_id(course_id)
+			
+			
+			# symbols = CatalogYear.methods.grep(/name/)
+			# results = symbols.collect{|sym| CatalogYear.send(sym)  }
+			# p symbols.zip(results).to_h
+			# p symbols
+			
+			# p CatalogYear.methods
+			# p CatalogYear.name
+			# p CatalogYear.model_name
+			
+			
+			
+			
+			most_recent_course_record = 
+				Course.where(:dept => dept, :course_number => course_number)
+				      .joins(:catalog_year)
+				      .order("year_range DESC").first
+			# course_list = Course.where(:dept => dept, :course_number => course_number)
+			# p course_list.joins(:catalog_year).order("year_range DESC").first
+			
+			p most_recent_course_record
+			# course_list.each do |course|
+			# 	p course.catalog_year.year_range
+			# end
+			
+			
+			# basically manually performing a JOIN with Mongo data at this point
+			# (need to downlad the data if necessary)
+			
+			
+			record = most_recent_course_record
+			url = record.url
+			catalog_year = record.catalog_year.year_range
+			
+			
+			key = [record.dept, record.course_number, catalog_year]
+			
+			# document = get_document_from_mongo(key)
+			
+			# if document_in_mongo?(key)
+				
+			# else
+				
+			# end
+			
+			info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
+			info.fetch
+			
+			p info
+		else
+			raise "ERROR: NOT IMPLEMENTED YET"
+		end
 	end
 	
 	# expose the database to the block.
@@ -299,7 +376,7 @@ class Catalog
 	# backs to SQL (relational logic)
 	class Course < ActiveRecord::Base
 		# self.primary_keys = :dept, :course_number
-		
+		belongs_to :catalog_year, :foreign_key => 'catoid'
 		
 		def course_id
 			[self.dept, self.course_number].join(' ')
@@ -310,13 +387,20 @@ class Catalog
 			dept, number = dept_and_number(course_id)
 			return self.class.find_by(:dept => dept, :course_number => number)
 		end
+		
+		# same code as Catalog#course_description_url above
+		def url
+			return "http://catalog.gmu.edu/preview_course.php?catoid=#{self.catoid}&coid=#{self.coid}"
+		end
 	end
 	private_constant :Course
 	
 	# backs to SQL (relational logic)
 	class CatalogYear < ActiveRecord::Base
+		# TODO: link to Course with foreign key constraint (catoid)
 		self.primary_keys = :catoid
 		
+		has_many :courses, :foreign_key => 'catoid'
 	end
 	private_constant :CatalogYear
 	
