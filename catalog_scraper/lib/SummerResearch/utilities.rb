@@ -23,6 +23,11 @@ def write_csv(relative_filepath, data)
 	end
 end
 
+def load_csv(relative_filepath)
+	filepath = File.expand_path(relative_filepath, DATA_DIR)
+	CSV.readlines(filepath)
+end
+
 def load_yaml_file(relative_filepath)
 	filepath = File.expand_path(relative_filepath, DATA_DIR)
 	return YAML.load_file filepath

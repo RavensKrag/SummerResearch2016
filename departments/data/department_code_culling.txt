@@ -1,0 +1,85 @@
+Examining degrees in these departments
+CS IT EE Bio Psyc
+
+===========
+should be good enough to restrict to these department codes, at least at first:
+(approximately a 1/8 reduction, just so happens)
+
+
+BIOL
+CHEM
+MATH
+CS
+SWE
+IT
+PSYC
+CDS
+ASTR
+GEOL
+PHYS
+GGS
+NEUR
+CRIM
+ENGH
+STAT
+ECE
+COMM
+ECON
+BENG
+MBUS
+HAP
+
+Mason Core
+	ANTH
+	ARTH
+	BUS
+	CEIE
+	COMM
+	CRIM
+	DANCE
+	CON
+	FRLN
+	GCH
+	JAPA
+	RELI
+	RUSS
+	SOCI
+	SPAN
+	SYST
+	THR
+	TOUR
+	WMST
+
+
+
+===================
+
+
+["ACCT", "AFAM", "AIT", "AMGT", "ANTH", "ARAB", "ARTH", "ASTR", "ATEP", "AVT", "BAS", "BENG", "BINF", "BIOD", "BIOL", "BIOS", "BIS", "BMED", "BMGT", "BULE", "BUS", "CDS", "CEIE", "CFRS", "CHEM", "CHIN", "CHSS", "CL", "CLAS", "CLIM", "COMM", "CONF", "CONS", "COS", "CRIM", "CS", "CSI", "CSS", "CULT", "CVPA", "CYSE", "DAEN", "DANC", "EAP", "ECE", "ECED", "ECON", "EDAT", "EDCD", "EDCI", "EDEP", "EDIT", "EDLE", "EDPD", "EDRD", "EDRS", "EDSE", "EDUC", "EFHP", "EMBA", "ENGH", "ENGR", "EVPP", "FAVS", "FNAN", "FREN", "FRLN", "FRSC", "GAME", "GBUS", "GCH", "GEOL", "GERM", "GGS", "GLOA", "GOVT", "GREE", "HAP", "HDFS", "HE", "HEAL", "HEBR", "HHS", "HIST", "HNRS", "HNRT", "IETT", "INFS", "INTS", "ISA", "IT", "ITAL", "ITRN", "JAPA", "KINE", "KORE", "LAS", "LATN", "LING", "MAIS", "Mason Core", "MATH", "MBA", "MBUS", "ME", "MEIS", "MGMT", "MIS", "MKTG", "MLAB", "MLSC", "MNPE", "MNPS", "MSEC", "MSIS", "MUSI", "NAIS", "NANO", "NEUR", "NURS", "NUTR", "ODKM", "OM", "OR", "PERS", "PHED", "PHIL", "PHYS", "PORT", "PRLS", "PROV", "PSCI", "PSYC", "PUAD", "PUBP", "REAL", "RECR", "RELI", "RHBS", "RUSS", "SEOR", "SOAN", "SOCI", "SOCW", "SOM", "SPAN", "SPMT", "SRST", "STAT", "SWE", "SYST", "TAX", "TCOM", "TECM", "THR", "TOUR", "TURK", "UNIV", "USST", "WMST"]
+
+
+["ACCT", "AFAM", "AIT", "AMGT", "ANTH", "ARAB", "ARTH", "ASTR", "ATEP", "AVT", "BAS", "BENG", "BINF", "BIOD", "BIOL", "BIOS", "BIS", "BMED", "BMGT", "BULE", "BUS", "CDS", "CEIE", "CFRS", "CHEM", "CHIN", "CHSS", "CL", "CLAS", "CLIM", "COMM", "CONF", "CONS", "COS", "CRIM", "CS", "CSI", "CSS", "CTCH", "CULT", "CVPA", "CYSE", "DAEN", "DANC", "EAP", "ECE", "ECED", "ECON", "EDAT", "EDCD", "EDCI", "EDEP", "EDIT", "EDLE", "EDPD", "EDRD", "EDRS", "EDSE", "EDUC", "EFHP", "EMBA", "ENGH", "ENGR", "EVPP", "FAVS", "FNAN", "FREN", "FRLN", "FRSC", "GAME", "GBUS", "GCH", "GEOL", "GERM", "GGS", "GLOA", "GOVT", "GREE", "HAP", "HDFS", "HEAL", "HEBR", "HHS", "HIST", "HNRS", "HNRT", "IETT", "INFS", "ISA", "IT", "ITAL", "ITRN", "JAPA", "KINE", "KORE", "LAS", "LATN", "LING", "MAIS", "Mason Core", "MATH", "MBA", "MBUS", "ME", "MEIS", "MGMT", "MIS", "MKTG", "MLAB", "MLSC", "MNPE", "MNPS", "MSEC", "MSIS", "MUSI", "NAIS", "NANO", "NCLC", "NEUR", "NURS", "NUTR", "ODKM", "OM", "OR", "PERS", "PHED", "PHIL", "PHYS", "PORT", "PRLS", "PROV", "PSCI", "PSYC", "PUAD", "PUBP", "REAL", "RELI", "RHBS", "RUSS", "SEOR", "SOAN", "SOCI", "SOCW", "SOM", "SPAN", "SPMT", "SRST", "STAT", "SWE", "SYST", "TAX", "TCOM", "TECM", "THR", "TOUR", "TURK", "UNIV", "USST", "WMST"]
+
+
+
+["ACCT", "AFAM", "AIT", "AMGT", "ANTH", "ARAB", "ARTH", "ASTR", "ATEP", "AVT", "BAS", "BENG", "BINF", "BIOD", "BIOL", "BIOS", "BIS", "BMED", "BMGT", "BULE", "CDS", "CEIE", "CFRS", "CHEM", "CHIN", "CHSS", "CL", "CLAS", "CLIM", "COMM", "CONF", "CONS", "COS", "CRIM", "CS", "CSI", "CSS", "CTCH", "CULT", "CVPA", "CYSE", "DAEN", "DANC", "EAP", "ECE", "ECED", "ECON", "EDAL", "EDAT", "EDCD", "EDCE", "EDCI", "EDEP", "EDIT", "EDLE", "EDPD", "EDRD", "EDRS", "EDSE", "EDUC", "EFHP", "EMBA", "ENGH", "ENGR", "EVPP", "FAVS", "FNAN", "FREN", "FRLN", "FRSC", "GAME", "GCH", "GEOL", "GERM", "GGS", "GLOA", "GOVT", "GREE", "GSOM", "HAP", "HDFS", "HEAL", "HEBR", "HHS", "HIST", "HNRS", "HNRT", "IETT", "INFS", "ISA", "IT", "ITAL", "ITRN", "JAPA", "KINE", "KORE", "LAS", "LATN", "LING", "MAIS", "MATH", "MBA", "ME", "MEIS", "MGMT", "MIS", "MKTG", "MLAB", "MLSC", "MNPE", "MNPS", "MSEC", "MSOM", "MUSI", "NAIS", "NANO", "NCLC", "NEUR", "NURS", "NUTR", "ODKM", "OM", "OR", "PERS", "PHED", "PHIL", "PHYS", "PORT", "PRLS", "PROV", "PSCI", "PSYC", "PUAD", "PUBP", "REAL", "RELI", "RHBS", "RUSS", "SEOR", "SOAN", "SOCI", "SOCW", "SOM", "SPAN", "SPMT", "SRST", "STAT", "SWE", "SYST", "TAX", "TCOM", "TECM", "TELE", "THR", "TOUR", "TURK", "UNIV", "USST", "WMST"]
+
+
+
+["ACCT", "AFAM", "AIT", "AMGT", "ANTH", "ARAB", "ARTH", "ASTR", "ATEP", "AVT", "BAS", "BENG", "BINF", "BIOD", "BIOL", "BIOS", "BIS", "BMED", "BMGT", "BULE", "CDS", "CEIE", "CFRS", "CHEM", "CHIN", "CHSS", "CL", "CLAS", "CLIM", "COMM", "CONF", "CONS", "CRIM", "CS", "CSI", "CSS", "CTCH", "CULT", "CVPA", "DANC", "ECE", "ECED", "ECON", "EDAL", "EDAT", "EDCD", "EDCE", "EDCI", "EDEP", "EDIT", "EDLE", "EDPD", "EDRD", "EDRS", "EDSE", "EDUC", "EFHP", "EMBA", "ENGH", "ENGR", "EVPP", "FAVS", "FNAN", "FREN", "FRLN", "FRSC", "GAME", "GCH", "GEOL", "GERM", "GGS", "GLOA", "GOVT", "GREE", "GSOM", "HAP", "HDFS", "HEAL", "HEBR", "HHS", "HIST", "HNRS", "HNRT", "IETT", "INFS", "ISA", "IT", "ITAL", "ITRN", "JAPA", "KINE", "KORE", "LAS", "LATN", "LING", "MAIS", "MATH", "MBA", "ME", "MEIS", "MGMT", "MIS", "MKTG", "MLSC", "MNPE", "MNPS", "MSEC", "MSOM", "MTCH", "MUSI", "NAIS", "NANO", "NCLC", "NEUR", "NURS", "NUTR", "ODKM", "OM", "OR", "PERS", "PHED", "PHIL", "PHYS", "PORT", "PRLS", "PROV", "PSCI", "PSYC", "PUAD", "PUBP", "REAL", "RELI", "RHBS", "RUSS", "SEOR", "SOAN", "SOCI", "SOCW", "SOM", "SPAN", "SPMT", "SRST", "STAT", "SWE", "SYST", "TAX", "TCOM", "TECM", "TELE", "THR", "TOUR", "TURK", "UNIV", "USST", "WMST"]
+
+
+
+["ACCT", "AFAM", "AIT", "AMGT", "ANTH", "ARAB", "ARTH", "ASTR", "ATEP", "AVT", "BENG", "BINF", "BIOD", "BIOL", "BIOS", "BIS", "BMED", "BULE", "CDS", "CEIE", "CFRS", "CHEM", "CHIN", "CHSS", "CL", "CLAS", "CLIM", "COMM", "CONF", "CONS", "CRIM", "CS", "CSI", "CSS", "CTCH", "CULT", "CVPA", "DANC", "ECE", "ECED", "ECON", "EDAL", "EDCD", "EDCE", "EDCI", "EDEP", "EDIT", "EDLE", "EDRD", "EDRS", "EDSE", "EDUC", "EEP", "EFHP", "EMBA", "ENGH", "ENGR", "EVPP", "FAVS", "FNAN", "FREN", "FRLN", "FRSC", "GAME", "GCH", "GEOL", "GERM", "GGS", "GLOA", "GOVT", "GREE", "GSOM", "HAP", "HEAL", "HEBR", "HHS", "HIST", "HNRS", "HNRT", "IETT", "INFS", "ISA", "IT", "ITAL", "ITRN", "JAPA", "KINE", "KORE", "LAS", "LATN", "LING", "MAIS", "MATH", "MBA", "MGMT", "MIS", "MKTG", "MLSC", "MNPE", "MNPS", "MSEC", "MSOM", "MTCH", "MUSI", "NAIS", "NANO", "NCLC", "NEUR", "NURS", "NUTR", "ODKM", "OM", "OR", "PERS", "PHED", "PHIL", "PHYS", "PORT", "PRLS", "PROV", "PSCI", "PSYC", "PUAD", "PUBP", "REAL", "RELI", "RHBS", "RUSS", "SEOR", "SOAN", "SOCI", "SOCW", "SOM", "SPAN", "SPMT", "SRST", "STAT", "SWE", "SYST", "TAX", "TCOM", "TECM", "TELE", "THR", "TOUR", "TURK", "UNIV", "USST", "WMST"]
+
+
+
+["ACCT", "AFAM", "AIT", "AMGT", "ANTH", "ARAB", "ARTH", "ASTR", "ATEP", "AVT", "BENG", "BINF", "BIOD", "BIOL", "BIOS", "BIS", "BMED", "BULE", "CDS", "CEIE", "CFRS", "CHEM", "CHIN", "CHSS", "CL", "CLAS", "CLIM", "COMM", "CONF", "CONS", "CRIM", "CS", "CSI", "CSS", "CTCH", "CULT", "CVPA", "DANC", "ECE", "ECED", "ECON", "EDAL", "EDCD", "EDCE", "EDCI", "EDEP", "EDIT", "EDLE", "EDRD", "EDRS", "EDSE", "EDUC", "EEP", "EFHP", "EMBA", "ENGH", "ENGR", "EVPP", "FAVS", "FNAN", "FREN", "FRLN", "FRSC", "GAME", "GCH", "GEOL", "GERM", "GGS", "GLOA", "GOVT", "GREE", "GSOM", "HAP", "HEAL", "HEBR", "HHS", "HIST", "HNRS", "HNRT", "IETT", "INFS", "ISA", "IT", "ITAL", "ITRN", "JAPA", "KINE", "KORE", "LAS", "LATN", "LING", "MAIS", "MATH", "MBA", "MGMT", "MIS", "MKTG", "MLSC", "MNPE", "MNPS", "MSEC", "MSOM", "MTCH", "MUSI", "NAIS", "NANO", "NCLC", "NEUR", "NURS", "NUTR", "ODKM", "OM", "OR", "PERS", "PHED", "PHIL", "PHYS", "PORT", "PRLS", "PROV", "PSCI", "PSYC", "PUAD", "PUBP", "REAL", "RELI", "RHBS", "RUSS", "SEOR", "SOAN", "SOCI", "SOCW", "SOM", "SPAN", "SPMT", "SRST", "STAT", "SWE", "SYST", "TAX", "TCOM", "TECM", "TELE", "THR", "TOUR", "TURK", "UNIV", "USST", "WMST"]
+
+
+
+["ACCT", "AFAM", "AIT", "AMGT", "ANTH", "ARAB", "ARTH", "ASTR", "ATEP", "AVT", "BENG", "BINF", "BIOD", "BIOL", "BIOS", "BIS", "BMED", "BULE", "CDS", "CEIE", "CFRS", "CHEM", "CHIN", "CHSS", "CL", "CLAS", "CLIM", "COMM", "CONF", "CONS", "CRIM", "CS", "CSI", "CSS", "CTCH", "CULT", "CVPA", "DANC", "ECE", "ECON", "EDAL", "EDCD", "EDCE", "EDCI", "EDEP", "EDIT", "EDLE", "EDRD", "EDRS", "EDSE", "EDUC", "EDUT", "EEP", "EFHP", "EMBA", "ENGL", "ENGR", "EVPP", "FAVS", "FNAN", "FREN", "FRLN", "FRSC", "GAME", "GCH", "GEOL", "GERM", "GGS", "GLOA", "GOVT", "GREE", "GSOM", "HAP", "HEAL", "HEBR", "HHS", "HIST", "HNRS", "IETT", "INFS", "ISA", "IT", "ITAL", "ITRN", "JAPA", "KINE", "KORE", "LAS", "LATN", "LING", "MAIS", "MATH", "MBA", "MGMT", "MIS", "MKTG", "MLSC", "MNPE", "MNPS", "MSOM", "MTCH", "MUSI", "NAIS", "NANO", "NCLC", "NEUR", "NURS", "ODKM", "OM", "OR", "PHED", "PHIL", "PHYS", "PRLS", "PSCI", "PSYC", "PUAD", "PUBP", "REAL", "RELI", "RUSS", "SEOR", "SOAN", "SOCI", "SOCW", "SOM", "SPAN", "SPMT", "STAT", "SWE", "SYST", "TAX", "TCOM", "TECM", "TELE", "THR", "TOUR", "UNIV", "USST", "WMST"]
+
+
+
+["ACCT", "ADJ", "AFAM", "ANTH", "ARAB", "ARTH", "ASTR", "ATEP", "AVT", "BENG", "BINF", "BIOD", "BIOL", "BIOS", "BIS", "BULE", "CDS", "CEIE", "CFRS", "CHEM", "CHIN", "CHSS", "CL", "CLAS", "CLIM", "COMM", "CONF", "CONS", "CS", "CSI", "CSS", "CTCH", "CULT", "CVPA", "DANC", "EC", "ECE", "ECON", "EDAE", "EDAL", "EDCD", "EDCE", "EDCI", "EDEP", "EDIT", "EDLE", "EDRD", "EDRS", "EDSE", "EDUC", "EDUT", "EEP", "EFHP", "EMBA", "ENGL", "ENGR", "EOS", "EVPP", "FAVS", "FNAN", "FREN", "FRLN", "FRSC", "GAME", "GCH", "GEOG", "GEOL", "GERM", "GLOA", "GOVT", "GREE", "GSOM", "HAP", "HEAL", "HEBR", "HHS", "HIST", "HNRS", "IETT", "INFS", "ISA", "IT", "ITAL", "ITRN", "JAPA", "JLCP", "KORE", "LAS", "LATN", "LING", "LRNG", "MAIS", "MAM", "MATH", "MBA", "MGMT", "MIS", "MKTG", "MLSC", "MNPE", "MNPS", "MSBM", "MSOM", "MTCH", "MUSI", "NAIS", "NANO", "NCLC", "NEUR", "NSCI", "NURS", "OM", "OR", "PHED", "PHIL", "PHYS", "PRLS", "PSCI", "PSYC", "PUAD", "PUBP", "REAL", "RELI", "RUSS", "SEOR", "SOAN", "SOCI", "SOCW", "SOM", "SPAN", "SPMT", "STAT", "SWE", "SYST", "TAX", "TCOM", "TECM", "TELE", "THR", "TOUR", "UNIV", "USST", "WMST"]

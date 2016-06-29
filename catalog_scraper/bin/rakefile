@@ -1,0 +1,920 @@
+# encoding: utf-8
+
+require 'rubygems'
+
+require 'rake'
+require 'rake/clean'
+require 'rake/testtask'
+
+require 'bundler'
+Bundler.require(:default)
+require 'bundler/setup'
+
+# other libraries
+require 'yaml'
+require 'csv'
+require 'set'
+require 'open-uri'
+
+
+# constants
+PATH_TO_FILE = File.expand_path(File.dirname(__FILE__))
+
+# -- file hierarchy --
+		# ROOT
+		# 	this directory
+		# 		this file
+
+# Must expand '..' shortcut into a proper path. But that results in a shorter string.
+PATH_TO_ROOT = File.expand_path '../..', __FILE__
+
+
+# files
+Dir.chdir PATH_TO_ROOT do
+	require_all './lib/SummerResearch'
+end
+
+
+# load main
+require './main'
+
+puts "=== setup environment"
+@env = SummerResearch::Main.new
+
+task :default => :run
+
+# run the program
+task :run do
+	p @env
+	# consider different forms of caching
+	# -- instance variable: cache for the session
+	# -- save to disk: cache for multiple sessions
+	
+	# TODO: consider promoting pathway4 as the default?
+end
+
+task :all => [
+	:pathway1,
+	:pathway2,
+	:pathway3,
+	:pathway4,
+	:pathway5,
+	:pathway6,
+	:pathway8,
+	:pathway7
+]
+
+
+
+
+
+# 1
+task :pathwayA do
+	puts "=== setup data"
+	# search for relevant programs of study
+	# (required to run #foo2)
+	@env.foo1 [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+end
+
+# 5
+task :pathwayB do
+	# search catalog for even more data?
+	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
+	@env.foo5(deparments)
+end
+
+
+
+# 1 2 3
+task :pathway1 => :pathwayA do
+	courses = @env.foo2("Computer Science, BS")
+	
+	@env.foo3()
+end
+
+# 5 4
+task :pathway2 do
+	@env.foo5(["CS"])	
+	@env.foo4()
+end
+
+# 1 6
+task :pathway3 => :pathwayA do
+	@env.foo6() # NOTE: foo6 not yet properly ported
+end
+
+# 1 5 7 8 10 9
+task :pathway4 => [:pathwayA, :pathwayB] do
+	# TODO: cache 1 and 5 to speed up evaluation
+	
+	
+	
+	puts "=== run processing"
+	
+	[
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	# take one degree program, and walk the dependencies for all courses in the degree
+	course_list = @env.foo7("Computer Science, BS")  # get all relevant courses
+	class_dependencies = @env.foo8(course_list)      # construct all dependencies
+	
+	output_filepath = ""
+	@env.foo10(class_dependencies, output_filepath)  # visualize the dependency graph
+	
+	
+	# query: what is the chain of courses that lead up to this course? 
+	@env.foo9(class_dependencies, "CS 465")
+	# => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
+	
+	# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
+	# NOTE: "ECE 301" is the old name, IIRC
+end
+
+# 1 2 13
+task :pathway5 => :pathwayA do
+	courses = @env.foo2("Computer Science, BS")
+	
+	
+	puts "=== run processing"
+	course_data = @env.foo13(courses)
+end
+
+# test course parsing with a couple of key examples
+# (TODO: take extra data from foo3 and move into foo12 for more variety of data)
+# 1 2 12 11
+task :pathway6 => :pathwayA do
+	courses = @env.foo2("Computer Science, BS")
+	
+	
+	puts "=== run processing"
+	
+	courses = @env.foo12()
+	course_data = @env.foo11(courses)
+end
+
+# test course parsing with a couple of key examples
+# Test for different types of course description pages
+# 1 2 12 14
+task :pathway8 => :pathwayA do
+	courses = @env.foo2("Computer Science, BS")
+	
+	
+	puts "=== run processing"
+	
+	courses = @env.foo12()
+	course_data = @env.foo14(courses)
+end
+
+# test all courses across various majors to make sure everything runs correctly
+# uses foo11 to detect which courses have odd link formats
+# 1 2 11
+task :pathway7 => :pathwayA do	
+	puts "=== cycle through programs of study..."
+	
+	programs = [
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	programs.each do |degree_name|
+		puts "=== Getting info for: #{degree_name}"
+		courses = @env.foo2(degree_name)
+		# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
+			# url = @env.degrees[degree_name]
+			# course_list = SummerResearch.degree_requirements(url)
+			# puts "test"
+		# failure occurs inside of SummerResearch.degree_requiremnts
+		
+		puts "=== analyzing courses... "
+		course_data = @env.foo11(courses)
+	end
+	
+	# errors from: SummerResearch::CourseInfo#fetch
+	# two other page formats:
+		# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
+			# ^ seems to be for more recent courses? not really sure why the markup is different
+		# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
+	
+	
+	
+	# NOTE: perhaps not all majors work right now? so be careful of that too
+	
+	
+	
+	# NOTE: the following programs of study only use Type A or Type B catalog links
+		# "Computer Science, BS",
+		# "Biology, BA",
+	# NOTE: the following programs of study are known to list courses with Type C catalog links
+		# "Applied Computer Science, BS",
+		# "Biology, BS",
+		# "Psychology, BA"
+end
+
+
+
+
+
+file "data/checkpoint001.yaml" do
+	puts "=== setup data"
+	# search for relevant programs of study
+	# (required to run #foo2)
+	@env.foo1 [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	
+	
+	
+	
+	# search catalog for even more data?
+	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
+	@env.foo5(deparments)
+	
+	
+	
+	SummerResearch::Utilities.write_to_file("./checkpoint001.yaml", @env.to_yaml)
+end
+
+# Now that we have the data, actually start to walk it and do something interesting with it.
+# (actually, may want to just go back to pathway4 instead)
+# precedesssor: pathway4
+# 1 5 7 8 10 9
+file "data/all_course_data.yaml" => "data/checkpoint001.yaml" do
+	puts "=== loading @env from checkpoint001..."
+	@env = YAML.load_file("data/checkpoint001.yaml")
+	
+	
+	
+	puts "=== run processing"
+	
+	
+	# TODO: output data on different degrees to different folders.
+	# probably need to restructure some other code, such that the output directory is configurable?
+	
+	[
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	# take one degree program, and walk the dependencies for all courses in the degree
+	course_list = @env.foo7("Computer Science, BS")  # get all relevant courses
+	class_dependencies = @env.foo8(course_list)      # construct all dependencies
+	
+	puts "============"
+	
+	
+	# =====
+	puts "Filtering courses..."
+	better_list = 
+		course_list.reject{  |course| course.id == "Mason Core" }
+		           .uniq{  |a| a.id    }
+		           .sort_by{  |a| a.id.split(' ').first   }
+	
+	puts "=== download individual course data..."
+	course_info_list = better_list.collect do |x|
+		print '.'
+		SummerResearch::CourseInfo.new(x).fetch
+	end
+	
+	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", course_info_list.to_yaml)
+	
+	# could pull down *list* of all courses associated with a dept
+	# if courses in a major have prereqs in that department?
+	# (definitely don't actually pull down each and every course before filtering though...)
+	
+	# under the current pipeline, I think this is the only way to do things?
+	# can't ask for a single class by course ID until you have a list of all courses by dept
+	# (foo4 experiments with this, but currently does not except a parameter)
+	
+	# department_codes = better_list.collect{ |course| course.id.split(' ').first }.uniq
+end
+
+task :pathway9 => "data/all_course_data.yaml" do
+	puts "=== pathway9"
+end
+
+# must run pathway9 before this, but can't list as explict dependency,
+# because I want to be able to run pathway9 and pathway10 in separate executions
+# (kinda like caching?)
+task :pathway10 => "data/all_course_data.yaml" do
+	# @env is active in this block, but can't actually be meaningully used
+	# bascially, you should only interact with the data from the yaml file in this block,
+	# otherwise weird things will happen
+	
+	# TODO: this code, when completed, should be moved under foo8
+	
+	course_info_list = YAML.load_file("data/all_course_data.yaml")
+	
+	
+	puts "=== process data..."
+	course_info_list.each do |course_info|
+		puts "#{course_info.id} - #{course_info.title}"
+		
+		regexp = /(\p{L}+ \d+)/
+		
+		# Explict dependencies
+		
+		
+		hard_deps =
+			%w[Prerequisite(s) Corequisite(s)]
+				.collect do |x|
+					requirements = course_info[x]
+					p requirements
+					next unless requirements
+					requirements.scan(regexp)
+				end
+				
+		
+		# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
+		# ERROR: can't deal with 'or 240'
+		# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
+		
+		# "Grade of C or better in CS 310, 330, and 367."
+		# ERROR: can't deal with 'CS 310, 330, and 367' => 'and 367'
+		
+		# CS 499 
+		# Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
+		
+		# PHIL 371 - Philosophy of Natural Sciences
+		# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
+		
+		
+		
+		
+		# SWE 443 - Software Architectures
+		# Prerequisite(s): Grade of C or better in CS 321 or CS 421 or SWE 321 or SWE 421.
+		# IIRC, 421 was re-numbered to 321.
+		# Notice that the numbers are the same for CS and SWE
+		# this is a cross-listed course.
+			# (note that some cross listed courses are exactly the same, but there's some OR course that's not? depending on if you take it as OR or MATH, there are a different number of seats avaiable in the class, and the prereqs are fairly different. This is despite it being the exact same physical lecture section.)
+		
+		
+		
+		
+		# "#{course} with grade of C or better"
+		# "Minimum grade of C in #{course}"
+		soft_deps = 
+			if course_info["Notes"]
+				# [0] PHYS 161
+				# [1] PHYS
+				# [2] 161
+				
+				# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
+				[] # pseudo-return empty array to stub this out
+			else
+				[] # if "Notes" attribute not set, return empty Array
+			end
+		
+		
+		# p hard_deps
+		# p soft_deps
+		dependencies = hard_deps + soft_deps
+		
+		
+		p dependencies.flatten.compact.uniq
+		puts "---------"
+	end
+end
+
+# TODO: print list of courses for a degree, chunked by what sector they appear in in the Program of Study page. This, in conjunction with the dependency info printed in pathway10, can be used to generate visualizations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# setup tests
+Rake::TestTask.new do |t|
+	t.libs = []
+	t.test_files = FileList['test/test*.rb']
+	t.verbose = true
+end
+
+
+# =============================================
+
+
+
+# task :default => :run
+
+
+# Run multiple pathways with a single command
+# usage: rake pathways[1,2,3]
+# 
+#           positional arguments only, no named args
+#               V
+task :pathways, [] => [:load_dependencies, :setup_data] do |t, args|
+	pathway_numbers = args.extras.collect{|x| x.to_i }
+	
+	puts "pathways: #{pathway_numbers.inspect}"
+	
+	pathway_numbers.each do |number|
+		Rake::Task["pathway#{number}".to_sym].invoke()
+	end
+end
+
+
+
+
+task :setup_data do
+
+end
+
+# ok, this is pretty solid...
+# but what happens when you get mulitple intermediates out of one process?
+# (similar to a multiple return)
+
+
+# Check out this question on StackOverflow that deals with this exact situation:
+# src: http://stackoverflow.com/questions/24026092/rake-task-with-multiple-prerequisites-generating-multiple-outputs
+
+# based on that answer, I wrote this:
+# foo = {
+# 	:targets     => %w[target1.txt target2.txt],
+# 	:shared_deps => %w[src1.txt src2.txt],
+# 	:callback => ->(){
+		
+# 	}
+# }
+# foo[:targets].each do |filename|
+# 	file filename => foo[:shared_deps] do |t|
+# 		foo[:callback]
+# 	end
+# end
+
+
+# Declare a file task that generates mulitple files with the same prerequisites.
+# (actually will generate multiple tasks, but this is a nice convienence)
+def multi_file(args={}, &block)
+	# kinda a hacky way of getting the Rake-style interface.
+	# Should probably see what Rake actually does,
+	# because this is not sophisticated enough to be how Rails works.
+	outputs        = args.keys.first
+	shared_prereqs = args.values.first
+	
+	outputs.each do |filename|
+		file filename => shared_prereqs do |t|
+			block.call(t)
+		end
+		# there should be a way to just pass the block, instead of calling a block from a block
+		# but that way is complicated and arcane, so don't do it.
+		# 
+		# This way is simple to understand.
+	end
+end
+
+# multi_file %w[target1.txt target2.txt] => %w[src1.txt src2.txt] do
+	
+# end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# TODO: name functions and move them from main.rb to named_functions.rb
+# (this will also remove dependence on shared state stored in @env)
+# (state should be stored / shared at this level (rake), not within the @env variable)
+
+
+
+multi_file ["data/programs_of_study.yaml", "data/catalog.yaml"] => [] do
+	puts "=== setup data"
+	# search for relevant programs of study
+	# (required to run #foo2)
+	
+	list_of_degrees = [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	
+	degrees = SummerResearch.search_programs_of_study(list_of_degrees)
+	
+	
+	count = degrees.keys.size
+	puts "#{count} programs found for search query."
+	
+	SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
+	@programs_of_study = degrees
+	
+	
+	# search catalog for even more data?
+	@catalog = SummerResearch::Catalog.new
+	@catalog.fetch
+	@catalog.dump("data/catalog")
+end
+
+# test recursive dependency resolution using new Catalog class
+task :new_pathway1 => ["data/catalog.yaml"] do
+	@catalog ||= SummerResearch::Catalog.load("data/catalog")
+	
+	
+	# TODO: move much of this logic into named_functions.rb as foo8() and then rename that function
+	p @catalog.download_course_info("CS 101")
+	
+	
+	info = @catalog.download_course_info("SWE 443")
+	p info
+	
+	p info["Prerequisite(s)"]
+end
+
+
+
+file "data/required_courses.yaml" => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
+	puts "=== load data..."
+	
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+	@catalog           ||= SummerResearch::Catalog.load("data/catalog")
+	
+	
+	
+	puts "=== run processing"
+	
+	
+	# TODO: output data on different degrees to different folders.
+	# probably need to restructure some other code, such that the output directory is configurable?
+	
+	[
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	
+	
+	# === take one degree program, and walk the dependencies for all courses in the degree
+	# (get all relevant courses)
+	
+	program_name = "Computer Science, BS"
+	url = @programs_of_study[program_name]
+	
+	fragment = SummerResearch.requirements_subtree(url)
+	
+	# TODO: need to improve this selector. catching some false positives.
+	# wait, variable 'fragment' is a list...
+	course_list = SummerResearch.get_all_weird_link_urls(fragment)
+	
+	
+	
+	# TODO: remove dupicate entries in the list of courses
+		# not just as simple as removing duplicates from list
+		# need to remove when two tuples have the same first element
+		# also - want to keep original ordering
+	# NOTE: this may not be necessary if the selection filter on links is improved
+	
+	SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
+	
+	@required_courses = course_list
+	
+	
+	
+	class_dependencies = SummerResearch.foo8(course_list)      # construct all dependencies
+	
+	puts "============"
+	
+	
+	
+end
+
+
+# file "data/all_course_data.yaml" => ["data/required_courses.yaml", "data/catalog.yaml"] do
+task :new_pathway2 => ["data/required_courses.yaml", "data/catalog.yaml"] do
+	@required_courses ||= YAML.load_file('data/required_courses.yaml')
+	@catalog          ||= SummerResearch::Catalog.load("data/catalog")
+	
+	# =====
+	
+	puts "Filtering courses..."
+	filtered_list = 
+		@required_courses.reject{  |course| course.id == "Mason Core" }
+		                 .uniq{  |a| a.id    }
+		                 .sort_by{  |a| a.id.split(' ').first   }
+	
+	puts "=== recursive download of dependencies... "
+	
+	
+	
+	
+	# recursive traversal
+	# (iterative implementation, breadth first traversal)
+	
+	input_list = filtered_list.collect{  |cat_link| cat_link.id  }.uniq
+	
+	all_info_pages = Array.new
+	
+	# input_list     - array of strings, ex) ["CS 101", "CS 330", "CS 499"]
+	# all_info_pages - collection of CourseInfo objects (should all be unique)
+		# NOTE: equality of CourseInfo objects within a Set not yet defined
+	until input_list.empty? do
+		puts "-- downloading..."
+		info_pages = input_list.collect{  |course_id|  print'.'; @catalog.download_course_info(course_id) }
+		puts ""
+		nested_ids = info_pages.collect{  |info| SummerResearch.list_dependencies(info)  }
+			# [[id, id, id], [id, id]]
+		
+		puts "-- update"
+		# add recently downloaded data into the greater collection (in-memory cache)
+		all_info_pages += info_pages
+		
+		puts "-- calculate courses to check"
+		# all dependencies at this level
+		new_dependencies = nested_ids.flatten.compact.uniq
+			# [id, id, id, id]
+		
+		# all dependencies where data has not yet been fetched
+		dep_set           = new_dependencies.to_set                           # set of strings
+		detailed_info_set = all_info_pages.collect{  |info| info.id  }.to_set # set of strings
+		new_deps          = dep_set.difference(detailed_info_set)
+		
+		# fetch new specific data
+		input_list = new_deps.to_a
+		
+		p input_list
+	end
+	# TODO: like other testing, alert when there is an error with parsing dependencies for a course, but continue on to the other courses. I would like to be able to see some trends in anamolous data.
+	
+	
+	
+	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", all_info_pages.to_yaml)
+	@full_dependency_list = all_info_pages
+end
+
+task :new_pathway3 => ["data/all_course_data.yaml"] do 
+	@full_dependency_list ||= YAML.load_file("data/all_course_data.yaml")
+	
+	
+	
+	
+end
+
+
+# file "data/all_course_data.yaml" => ["data/required_courses.yaml", "data/catalog.yaml"] do
+task :new_pathway4 => ["data/required_courses.yaml", "data/catalog.yaml"] do
+	@required_courses ||= YAML.load_file('data/required_courses.yaml')
+	@catalog          ||= SummerResearch::Catalog.load("data/catalog")
+	
+	# =====
+	
+	puts "Filtering courses..."
+	filtered_list = 
+		@required_courses.reject{  |course| course.id == "Mason Core" }
+		                 .uniq{  |a| a.id    }
+		                 .sort_by{  |a| a.id.split(' ').first   }
+	
+	puts "=== recursive download of dependencies... "
+	
+	
+	
+	
+	# recursive traversal
+	# (iterative implementation, breadth first traversal)
+	
+	# maybe try a depth first approach this time?
+	# maybe that would make it easier to report errors with proper context?
+	
+	input_list = filtered_list.collect{  |cat_link| cat_link.id  }.uniq
+	
+	all_info_pages = Array.new
+	
+	# input_list     - array of strings, ex) ["CS 101", "CS 330", "CS 499"]
+	# all_info_pages - collection of CourseInfo objects (should all be unique)
+		# NOTE: equality of CourseInfo objects within a Set not yet defined
+	until input_list.empty? do
+		info_pages = 
+			input_list.collect do |course_id|
+				info = nil
+				begin
+					info = @catalog.download_course_info(course_id)
+				rescue StandardError => e
+					
+				ensure
+					yield info
+				end
+				
+				
+				info
+			end
+		
+		nested_ids = info_pages.collect{  |info| SummerResearch.list_dependencies(info)  }
+			# [[id, id, id], [id, id]]
+		
+		# add recently downloaded data into the greater collection (in-memory cache)
+		all_info_pages += info_pages
+		
+		# all dependencies at this level
+		new_dependencies = nested_ids.flatten.compact.uniq
+			# [id, id, id, id]
+		
+		# all dependencies where data has not yet been fetched
+		dep_set           = new_dependencies.to_set                           # set of strings
+		detailed_info_set = all_info_pages.collect{  |info| info.id  }.to_set # set of strings
+		new_deps          = dep_set.difference(detailed_info_set)
+		
+		# fetch new specific data
+		input_list = new_deps.to_a
+	end
+	# TODO: like other testing, alert when there is an error with parsing dependencies for a course, but continue on to the other courses. I would like to be able to see some trends in anamolous data.
+	
+	
+	
+	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", all_info_pages.to_yaml)
+	@full_dependency_list = all_info_pages
+end
+
+
+
+# extract data from programs of study for manual generation of graphs.
+# Just want to pull down the basic info I'm going to need to get this stuff done.
+# Don't want to attempt to fully automate any more, because the data is too messed up.
+# 
+# Tests for various errors that may occur while trying to look up a course in the catalog by ID
+task :new_pathway5 => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
+	puts "=== load data..."
+	
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+	@catalog           ||= SummerResearch::Catalog.load("data/catalog")
+	
+	# ===
+	
+	puts "=== Get degree requirements..."
+	
+	programs = [
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	out = 
+		programs.collect do |program_name|
+			verbose = false
+			
+			puts "=== #{program_name}"
+			# === take one degree program, and walk the dependencies for all courses in the degree
+			# (get all relevant courses)
+			
+			url = @programs_of_study[program_name]
+			
+			fragment = SummerResearch.requirements_subtree(url)
+			
+			# TODO: need to improve this selector. catching some false positives.
+			# wait, variable 'fragment' is a list...
+			course_list = SummerResearch.get_all_weird_link_urls(fragment)
+			
+			puts "Filtering courses..."
+			better_list = 
+				course_list.reject{  |course| course.id == "Mason Core" }
+				           .uniq{  |a| a.id    }
+				           .sort_by{  |a| a.id.split(' ').first   }
+			# NOTE:
+				# "Mason Core" -> the whole thing, not one particular course class, causes crash
+				# "BIOL 580" -> no data on BIOL classes > 499 (pagination problem)
+				
+				# leading space
+				# BIOL > 499
+				# Mason Core
+				# numbers only, no department (Psych BA)
+				
+				
+			puts "Downloading data..."
+			
+			data = 
+				better_list.collect do |catalog_link|
+					print '.'
+					
+					begin
+						@catalog.download_course_info(catalog_link.id)
+					rescue StandardError => e
+						# from foo11
+						puts
+						puts e.message
+						
+						if verbose
+							e.backtrace.each do |line|
+								puts "\t" + line
+								# indent the lines of the backtrace.
+								# makes it easier to see things when you start getting multiple errors
+							end
+						end
+					end
+				end
+			puts ""
+			
+			data
+		end
+	
+	SummerResearch::Utilities.write_to_file("./all_degree_requirements.yaml", out.to_yaml)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace :db_backend do
+	task :create_db do
+		ActiveRecord::Base.logger = Logger.new(File.open('database.log', 'w'))
+		
+		ActiveRecord::Base.establish_connection(
+			:adapter  => 'sqlite3',
+			:database => 'example.db'
+			# :database => ':memory:'
+		)
+		
+		
+		@catalog = Catalog.new
+		
+		@catalog.setup
+		@catalog.fetch
+	end
+	
+	task :course_list_to_db => [] do
+		@catalog = Catalog.new
+	end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# this is just a template
+# 1 2 3 (list the full foo execution chain?)
+task :pathwayX do
+	
+end
+
+

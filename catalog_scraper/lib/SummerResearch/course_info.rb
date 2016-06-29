@@ -2,14 +2,24 @@ module SummerResearch
 
 
 class CourseInfo
-	attr_reader :url, :id, :title, :credits, :attempts, :department
+	attr_reader :url, :id, :title, :credits, :attempts, :department, :catalog_version
 	
 	def initialize(course)
 		@storage = nil
 		
 		@url = course.url
+			regex = /catoid=(\d+)/
+			@catalog_version = @url.scan(regex).first[0].to_i
 		@id  = course.id
 	end
+	
+	def ==(other)
+		return false unless other.is_a? self.class
+		
+		@catalog_version == other.catalog_version and @id == other.id
+	end
+	
+	
 	
 	# get from the online Catalog
 	def fetch
@@ -218,10 +228,10 @@ class CourseInfo
 	end
 	
 	class << self
-	# read from the disk
-	def load
-		
-	end
+		# read from the disk
+		def load
+			
+		end
 	end
 	
 	def [](key)

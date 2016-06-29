@@ -19,8 +19,7 @@ class Main
 	# dependencies: none
 	# get possible degree program requrement lists
 	def foo1(list_of_degrees)
-		url = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
-		@degrees = SummerResearch.search_programs_of_study(url, list_of_degrees)
+		@degrees = SummerResearch.search_programs_of_study(list_of_degrees)
 		
 		count = @degrees.keys.size
 		puts "#{count} programs found for search query."

@@ -1,0 +1,121 @@
+# encoding: utf-8
+
+# gems
+require 'rubygems'
+
+require 'rake'
+require 'rake/clean'
+require 'rake/testtask'
+
+require 'bundler/setup'
+require 'require_all'
+
+# constants
+PATH_TO_FILE = File.expand_path(File.dirname(__FILE__))
+
+# -- file hierarchy --
+		# ROOT
+		# 	this directory
+		# 		this file
+
+# Must expand '..' shortcut into a proper path. But that results in a shorter string.
+PATH_TO_ROOT = File.expand_path '../..', __FILE__
+
+
+
+
+
+# gems
+require 'open-uri'
+require 'nokogiri'
+require 'yaml'
+require 'csv'
+require 'set'
+
+# files
+Dir.chdir PATH_TO_ROOT do
+	require_all './lib/SummerResearch'
+end
+
+Dir.chdir PATH_TO_ROOT do
+	require_all '../catalog_scraper/lib/SummerResearch'
+end
+
+
+
+source_file = File.expand_path('../catalog_scraper/bin/data/catalog.yaml', PATH_TO_ROOT)
+file 'data/catalog_db.yaml' => source_file do
+	catalog_data = YAML.load_file(source_file)
+	
+	data = 
+		catalog_data.collect do |dept, courses|
+			courses.collect do |course|
+				[course.id, course.url]
+			end
+		end
+	
+	data = data.flatten.each_slice(2).collect do |id, url|
+		dept          = nil
+		course_number = nil
+		
+		if id.include? "Mason Core"
+			dept = "Mason Core"
+			course_number = id.split(' ')[2..-1].join(' ')
+		else
+			dept, course_number = id.split(' ')
+			course_number = course_number
+		end
+		
+		
+		
+		regex = /preview_course.php\?catoid=(\d+)&coid=(\d+)/
+		match_data = url.match(regex)
+		catoid = match_data[1]
+		coid   = match_data[2]
+		
+		[dept, course_number, catoid, coid]
+	end
+	
+	
+	
+	
+	p data[0..10]
+	
+	filepath = './data/catalog_db.yaml'
+	File.open(filepath, 'w') do |f|
+		f.puts data.to_yaml
+	end
+end
+
+
+
+source_file = File.expand_path('../catalog_scraper/bin/data/', PATH_TO_ROOT)
+source_file = File.join(source_file, 'all_degree_requirements.yaml')
+file 'data/course_info.yaml' => source_file do
+	catalog_data = YAML.load_file(source_file)
+	
+	# NOPE
+	# This is very dumb, just use an actual DB.
+	# Even if you COULD re-implement this code with little trouble, you shouldn't.
+end
+
+
+
+task :default => ['data/catalog_db.yaml', 'data/course_info.yaml'] do
+	catalog_db_data = YAML.load_file('data/catalog_db.yaml')
+	course_db_data = YAML.load_file('data/catalog_db.yaml')
+	
+	course_id = 'CS 101'
+	out = SummerResearch.foobar(catalog_db_data, course_id)
+	
+	puts "#{course_id} => #{out.inspect}"
+	
+	
+	
+	catoid = out[:catoid]
+	coid   = out[:coid]
+	
+	
+	
+	p course_db_data[coid]
+end

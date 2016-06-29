@@ -1,0 +1,16 @@
+source 'https://rubygems.org'
+
+gem 'require_all'
+
+gem 'curb'
+gem 'nokogiri'
+
+gem 'roo' # currently actually unnecssary
+
+# might not need these two right now either
+gem 'oauth'
+gem 'json'
+
+gem 'activerecord', '4.2.6'
+gem 'sqlite3'
+gem 'composite_primary_keys', '~> 8.1.3' # had problems installing through bundler
