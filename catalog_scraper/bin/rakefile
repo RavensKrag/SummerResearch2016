@@ -929,6 +929,16 @@ namespace :db_backend do
 		end
 		
 	end
+	
+	task :wipe_mongo do
+		@catalog = Catalog.new(DATABASE_FILEPATH)
+		
+		@catalog.mongo_query do |db|
+			result = db.delete_many
+			puts result.n
+		end
+		
+	end
 end
 
 
