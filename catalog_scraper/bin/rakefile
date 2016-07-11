@@ -823,6 +823,7 @@ namespace :db_backend do
 	
 	
 	# course [CatalogLink] => [CourseInfo] RELEASE VERSION
+	# no debug information. just prints the course ids for the classes being downloaded
 	# (input dataset: all courses from CS degree)
 	task :pw5 => "data/programs_of_study.yaml" do
 		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
@@ -845,9 +846,15 @@ namespace :db_backend do
 		
 		puts "=== run processing"
 		course_data = SummerResearch::Main.foo13(courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
+		
+		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
+	# only shows error messages when the system fails to fetch a page
+	# otherwise just prints dots to let you know progress is happening
+	# allows you to see errors across all entries (does not stop after the first error)
+	# 
 	# (input dataset: sample dataset)
 	task :pw6 => [:pw_sample_data] do
 		puts "=== run processing"
@@ -857,6 +864,10 @@ namespace :db_backend do
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+	# prints extensive information on the types of data being detected.
+	# type signatures and debug information displayed for all entries.
+	# allows you to see errors across all entries (does not stop after the first error)
+	# 
 	# (input dataset: sample dataset)
 	task :pw8 => [:pw_sample_data] do
 		puts "=== run processing"

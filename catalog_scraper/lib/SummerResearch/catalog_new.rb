@@ -299,6 +299,10 @@ class Catalog
 	end
 	
 	
+	# catoid => 'catolog year' (e.g. "2016-2017" as is stored on CourseInfo objects)
+	def catoid_to_catalog_year(catoid)
+		return CatalogYear.find_by(:catoid => catoid).first.year_range
+	end
 	
 	
 	
@@ -402,15 +406,25 @@ class Catalog
 			return dept_code, course_number
 		end
 		
-		# url => catoid, coid
-		def coid_from_url(url)
+		# url => coid
+		def coid_from_url(url)			
+			return parse_course_description_url(url)[0]
+		end
+		
+		# url => catoid
+		def catoid_from_url(url)
+			parse_course_description_url(url)[1]
+		end
+		
+		# # url => catoid, coid
+		def parse_course_description_url(url)
 			# example:  http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305044&print
 			regex = /preview_course.php\?catoid=(\d+)&coid=(\d+)/
 			match_data = url.match(regex)
 			catoid = match_data[1]
 			coid   = match_data[2]
 			
-			return coid
+			return catoid, coid
 		end
 		
 		# catoid, coid => url

@@ -176,7 +176,6 @@ class Main
 	
 	
 	
-	
 	class << self
 	
 	def foo13(course_list)
@@ -185,8 +184,6 @@ class Main
 				puts course.id
 				SummerResearch::CourseInfo.new(course).fetch
 			end
-		# p output_data
-		Utilities.write_to_file('./course_info.yaml', output_data.to_yaml)
 		
 		return output_data
 	end
