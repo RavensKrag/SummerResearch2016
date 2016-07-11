@@ -1,3 +1,6 @@
+module SummerResearch
+
+
 class Catalog
 	def initialize(sql_db_filepath, sql_log_filepath='database.log')		
 		SQLite.setup(sql_db_filepath, sql_log_filepath)
@@ -506,4 +509,8 @@ class Catalog
 		
 	end
 	private_constant :CourseDetails
+end
+
+
+
 end

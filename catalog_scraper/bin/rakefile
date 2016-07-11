@@ -173,7 +173,7 @@ SQLITE_DATABASE_FILEPATH = 'example.db'
 
 
 task :create_db do
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		# connect to the SQLite and MongoDB databases
 		
 	@catalog.setup
@@ -191,7 +191,7 @@ end
 # run 'create_db' before this to download initial data
 # (can't list as explict dependency at this time, because I don't know how to easily skip processing an entire catalog year)
 task :query_db do
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	
 	info = @catalog.course_info('CS 101')
@@ -202,7 +202,7 @@ task :query_db do
 end
 
 task :wipe_mongo do
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	@catalog.course_details_mongo do |db|
 		result = db.delete_many
@@ -262,7 +262,7 @@ task :cs_requirements => 'data/required_courses.yaml' do
 	@required_courses ||= YAML.load_file('data/required_courses.yaml')
 	
 	
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	
 	
@@ -337,7 +337,7 @@ end
 
 
 task :get_info do
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	p @catalog.course_info("STAT 344")
 end
 
@@ -569,7 +569,7 @@ namespace :test_course_info_fetch do
 	task :one_degree => "data/programs_of_study.yaml" do
 		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
 		
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
 		
 		
@@ -601,7 +601,7 @@ namespace :test_course_info_fetch do
 	# 
 	# (input dataset: sample dataset)
 	task :debug => [:sample_data] do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
 		puts "=== run processing"
 		
@@ -619,7 +619,7 @@ namespace :test_course_info_fetch do
 	# 
 	# (input dataset: sample dataset)
 	task :debug_verbose => [:sample_data] do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
 		puts "=== run processing"
 		
@@ -635,7 +635,7 @@ namespace :test_course_info_fetch do
 	# 
 	# same core procedure as pw6, but with a much bigger data set
 	task :all_degrees_debug do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
 		puts "=== load data..."
 		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")

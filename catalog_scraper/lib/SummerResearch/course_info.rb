@@ -1,3 +1,6 @@
+module SummerResearch
+
+
 class CourseInfo
 	attr_reader :url, :catalog_year, :id, :title, :credits, :attempts, :department
 	
@@ -548,4 +551,8 @@ class CourseInfo
 		
 		return out
 	end
+end
+
+
+
 end
