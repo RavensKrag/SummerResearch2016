@@ -129,6 +129,19 @@ end
 
 
 
+# ^ old way of doing things.
+# The current implementation of Catalog first scans all years
+# for a particular set of dept codes.
+# 
+# It will figure out what the urls are for all classes within this set,
+# but refrain from downloading any specific course information
+# until that particular class is requested.
+# 
+# It will cache data for specific courses in MongoDB,
+# and save dept / id / url information in SQLite
+
+
+
 
 
 
@@ -136,13 +149,22 @@ end
 # how to start and run MongoDB:
 	# https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/
 mongo_db_storage_path = File.expand_path("bin/data/mongo",          PATH_TO_ROOT)
+mongo_db_logpath      = File.expand_path("bin/data/mongo_logs/log", PATH_TO_ROOT)
 
+puts "========="
 puts "Start up mongo in another terminal with the following command:"
 puts "mongod --dbpath '#{mongo_db_storage_path}' --port 12345"
 
 puts "and if necessary, mongo can be stopped with this command:"
 puts "mongod --dbpath '#{mongo_db_storage_path}' --port 12345 --shutdown"
+puts "========="
 # (needs to know just the dbpath so it knows what DB to stop, but may as well pass everything)
+
+
+# launch mongo as a daemon
+		# mongod --fork --logpath /var/log/mongodb.log
+
+
 
 
 
@@ -167,7 +189,7 @@ end
 # end
 
 # run 'create_db' before this to download initial data
-# (can't list as explict dependency at this time, because I don't know how to easily skip processing and entire catalog year)
+# (can't list as explict dependency at this time, because I don't know how to easily skip processing an entire catalog year)
 task :query_db do
 	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
@@ -493,9 +515,9 @@ end
 # Viewing the diagnostic outputs from these tasks should help a person see
 # how the system currently is classifying these documents.
 # (NOTE: this is a manually designed and implemented classification, not machine learning)
-task :test_course_info_fetch => [:pw5, :pw6, :pw8, :pw7]
+task :test_course_info_fetch => [:one_degree, :debug, :debug_verbose, :all_degrees_debug]
 namespace :test_course_info_fetch do
-	task :pw_sample_data do
+	task :sample_data do
 		# NOTE: easily get data for this table from the intermediate file required_courses.csv
 		# (UPDATE: need to figure out a similarly easy way to rip this data out from the DB)
 		
@@ -560,7 +582,7 @@ namespace :test_course_info_fetch do
 	# course [CatalogLink] => [CourseInfo] RELEASE VERSION
 	# no debug information. just prints the course ids for the classes being downloaded
 	# (input dataset: all courses from CS degree)
-	task :pw5 => "data/programs_of_study.yaml" do
+	task :one_degree => "data/programs_of_study.yaml" do
 		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
 		
 		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
@@ -587,14 +609,14 @@ namespace :test_course_info_fetch do
 		
 		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
 	end
-
+	
 	# [CatalogLink] => [CourseInfo] DEBUG
 	# only shows error messages when the system fails to fetch a page
 	# otherwise just prints dots to let you know progress is happening
 	# allows you to see errors across all entries (does not stop after the first error)
 	# 
 	# (input dataset: sample dataset)
-	task :pw6 => [:pw_sample_data] do
+	task :debug => [:sample_data] do
 		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
 		puts "=== run processing"
@@ -605,14 +627,14 @@ namespace :test_course_info_fetch do
 		# [CatalogLink] => [CourseInfo] DEBUG
 		course_data = SummerResearch::Sketch.foo11(@catalog, @pw_sample) 
 	end
-
+	
 	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
 	# prints extensive information on the types of data being detected.
 	# type signatures and debug information displayed for all entries.
 	# allows you to see errors across all entries (does not stop after the first error)
 	# 
 	# (input dataset: sample dataset)
-	task :pw8 => [:pw_sample_data] do
+	task :debug_verbose => [:sample_data] do
 		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
 		puts "=== run processing"
@@ -623,12 +645,12 @@ namespace :test_course_info_fetch do
 		# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
 		course_data = SummerResearch::Sketch.foo14(@catalog, @pw_sample)
 	end
-
+	
 	# [CatalogLink] => [CourseInfo] DEBUG
 	# (input dataset: ALL courses from ALL majors in the sample set)
 	# 
 	# same core procedure as pw6, but with a much bigger data set
-	task :pw7 do
+	task :all_degrees_debug do
 		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
 		puts "=== load data..."
