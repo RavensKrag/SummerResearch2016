@@ -35,8 +35,6 @@ Dir.chdir PATH_TO_ROOT do
 end
 
 
-# load main
-require './main'
 
 # setup tests
 Rake::TestTask.new do |t|
