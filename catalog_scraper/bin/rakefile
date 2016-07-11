@@ -899,10 +899,12 @@ DATABASE_FILEPATH = 'example.db'
 
 namespace :db_backend do
 	task :create_db do
-		@catalog = Catalog.new(DATABASE_FILEPATH)
-		
-		@catalog.setup
-		@catalog.fetch_course_listing
+		mongo_environment do
+			@catalog = Catalog.new(DATABASE_FILEPATH)
+			
+			@catalog.setup
+			@catalog.fetch_course_listing
+		end
 	end
 	
 	# file DATABASE_FILEPATH do
@@ -925,13 +927,14 @@ namespace :db_backend do
 	end
 	
 	task :wipe_mongo do
-		@catalog = Catalog.new(DATABASE_FILEPATH)
-		
-		@catalog.course_details_mongo do |db|
-			result = db.delete_many
-			puts result.n
+		mongo_environment do
+			@catalog = Catalog.new(DATABASE_FILEPATH)
+			
+			@catalog.course_details_mongo do |db|
+				result = db.delete_many
+				puts result.n
+			end
 		end
-		
 	end
 	
 	
@@ -1011,6 +1014,9 @@ namespace :db_backend do
 	task :cs_requirements => 'data/required_courses.yaml' do
 		@required_courses ||= YAML.load_file('data/required_courses.yaml')
 		
+		
+		mongo_environment do
+		
 		@catalog = Catalog.new(DATABASE_FILEPATH)
 		
 		
@@ -1072,14 +1078,19 @@ namespace :db_backend do
 				# 
 				# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
 		end
+		
+		
+		end
 	end
 	
 	
 	
 	
 	task :get_info do
-		@catalog = Catalog.new(DATABASE_FILEPATH)
-		p @catalog.course_info("STAT 344")
+		mongo_environment do
+			@catalog = Catalog.new(DATABASE_FILEPATH)
+			p @catalog.course_info("STAT 344")
+		end
 	end
 end
 
