@@ -839,7 +839,7 @@ namespace :db_backend do
 		
 		
 		puts "=== run processing"
-		course_data = SummerResearch::Main.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
+		course_data = SummerResearch::Sketch.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
 		
 		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
 	end
@@ -859,7 +859,7 @@ namespace :db_backend do
 		# 
 		# sample data set => [CatalogLink] 
 		# [CatalogLink] => [CourseInfo] DEBUG
-		course_data = SummerResearch::Main.foo11(@catalog, @pw_sample) 
+		course_data = SummerResearch::Sketch.foo11(@catalog, @pw_sample) 
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
@@ -877,7 +877,7 @@ namespace :db_backend do
 		# 
 		# sample data set => [CatalogLink] 
 		# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
-		course_data = SummerResearch::Main.foo14(@catalog, @pw_sample)
+		course_data = SummerResearch::Sketch.foo14(@catalog, @pw_sample)
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
@@ -911,7 +911,7 @@ namespace :db_backend do
 			# failure occurs inside of SummerResearch.degree_requiremnts
 			
 			puts "=== analyzing courses... "
-			course_data = SummerResearch::Main.foo11(@catalog, courses)
+			course_data = SummerResearch::Sketch.foo11(@catalog, courses)
 		end
 		
 		# errors from: SummerResearch::CourseInfo#fetch
