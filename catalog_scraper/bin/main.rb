@@ -173,6 +173,12 @@ class Main
 		return sample
 	end
 	
+	
+	
+	
+	
+	class << self
+	
 	def foo13(course_list)
 		output_data = 
 			course_list.collect do |course|
@@ -262,6 +268,8 @@ class Main
 		end
 		
 		puts ""
+	end
+	
 	end
 end
 
