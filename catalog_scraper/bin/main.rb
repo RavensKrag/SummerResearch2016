@@ -15,22 +15,45 @@ class Main
 	attr_reader :degrees
 	
 	
-	
-	# dependencies: none
-	# get possible degree program requrement lists
-	def foo1(list_of_degrees)
-		@degrees = SummerResearch.search_programs_of_study(list_of_degrees)
-		
-		count = @degrees.keys.size
-		puts "#{count} programs found for search query."
-		
-		filepath = File.expand_path("./programs_of_study.yaml", DATA_DIR)
-		puts "Writing to file '#{filepath}'"
-		
-		File.open(filepath, 'w') do |f|
-			f.puts @degrees.to_yaml
+	# Test SummerResearch.course_info on various URLs with different sorts of attributes
+	# NOTE: not all courses specify all attributes. 
+	#   ex) If there are no corequisites, the field is omitted
+	def foo3
+		[
+			["CS 330",   "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302788&print"],
+			["STAT 344", "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306778&print"],
+			["PSYC 320", "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"]
+		].each do |name, url|
+			puts name
+			info = SummerResearch.course_info(url)
+			print info.to_yaml
+			puts "========="
 		end
 	end
+	
+	
+	'CS 101'
+	
+	
+	# TODO: figure out what the anatomy of a course is
+	# * CS 101
+	# * Preview of Computer Science
+	# * Description
+	# * Section ID?
+	# --- these are all different things
+	
+	
+	# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
+	
+	# ^ tests
+	# ===
+	# v actually used methods
+	
+	
+	
+	
+	
+	
 		
 	# dependencies: foo1
 	# get the list of courses for one program, based on its name
@@ -58,52 +81,10 @@ class Main
 		return course_list
 	end
 	
-	# Test SummerResearch.course_info on various URLs with different sorts of attributes
-	# NOTE: not all courses specify all attributes. 
-	#   ex) If there are no corequisites, the field is omitted
-	def foo3
-		[
-			["CS 330",   "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302788&print"],
-			["STAT 344", "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306778&print"],
-			["PSYC 320", "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"]
-		].each do |name, url|
-			puts name
-			info = SummerResearch.course_info(url)
-			print info.to_yaml
-			puts "========="
-		end
-	end
 	
-	# dependencies: none
-	def foo5(list_of_deparments)
-		@courses = Hash.new
-		
-		list_of_deparments.each do |dept|
-			@courses[dept] = SummerResearch.search_by_department(dept)
-		end
-	end
 	
-	# dependencies: foo5
-	# check the cache for info on a particular course
-	def foo4
-		# p @courses["CS"]
-		Utilities.write_to_file('./courses.yaml', @courses.to_yaml)
-		
-		course_id = "CS 101"
-		# TODO: figure out what the anatomy of a course is
-		# * CS 101
-		# * Preview of Computer Science
-		# * Description
-		# * Section ID?
-		# --- these are all different things
-		
-		dept, number = course_id.split
-		course = @courses[dept].find{  |x| x.id.include? number }
-		
-		# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
-		
-		return SummerResearch::CourseInfo.new(course).fetch
-	end
+	
+	
 	
 	# dependencies: foo1
 	def foo6
@@ -332,24 +313,6 @@ class Main
 		end
 		
 		puts ""
-	end
-	
-	
-	private
-	
-	def helper
-		
-	end
-	
-	# dependencies: foo5
-	# precursor: foo4
-	# course ID = DEPT ### (ex: CHEM 313)
-	def get_info(course_id)
-		# dept, number = course_id.split()
-		
-		# @course_dict[dept].find{|x| x.include? number }
-		# course_page = next(x[2] for x in @course_dict[dept] if number in x[0])
-		# return util.course_info(course_page)
 	end
 end
 
