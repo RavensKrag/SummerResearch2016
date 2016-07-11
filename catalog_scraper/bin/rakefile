@@ -763,6 +763,9 @@ namespace :db_backend do
 	task :pw_sample_data do
 		# NOTE: easily get data for this table from the intermediate file required_courses.csv
 		# (UPDATE: need to figure out a similarly easy way to rip this data out from the DB)
+		
+		# NOTE: not all courses specify all attributes. 
+		#   ex) If there are no corequisites, the field is omitted
 		sample = [
 			[
 				"CS 101",
@@ -780,6 +783,21 @@ namespace :db_backend do
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302803&print"
 			],
 			[
+				"CS 330",
+				"Formal Methods and Models",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302788&print"
+			],
+			[
+				"STAT 344",
+				"Probability and Statistics for Engineers and Scientists I",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306778&print"
+			],
+			[
+				"PSYC 320",
+				"Psychological Tests and Measurements",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"
+			],
+			[
 				"EVPP 110",
 				"The Ecosphere: An Introduction to Environmental Science I",
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
@@ -790,6 +808,16 @@ namespace :db_backend do
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
 			]
 		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
+		
+		# TODO: figure out what the anatomy of a course is
+		# * CS 101
+		# * Preview of Computer Science
+		# * Description
+		# * Section ID?
+		# --- these are all different things
+
+
+		# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
 		
 		@pw_sample = sample
 	end
