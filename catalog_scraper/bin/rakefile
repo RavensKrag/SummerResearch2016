@@ -81,20 +81,7 @@ end
 # Check out this question on StackOverflow that deals with this exact situation:
 # src: http://stackoverflow.com/questions/24026092/rake-task-with-multiple-prerequisites-generating-multiple-outputs
 
-# based on that answer, I wrote this:
-# foo = {
-# 	:targets     => %w[target1.txt target2.txt],
-# 	:shared_deps => %w[src1.txt src2.txt],
-# 	:callback => ->(){
-		
-# 	}
-# }
-# foo[:targets].each do |filename|
-# 	file filename => foo[:shared_deps] do |t|
-# 		foo[:callback]
-# 	end
-# end
-
+# I modified that a little bit to write #multi_file()
 
 # Declare a file task that generates mulitple files with the same prerequisites.
 # (actually will generate multiple tasks, but this is a nice convienence)
@@ -124,8 +111,6 @@ end
 
 
 
-
-
 # =============================================
 
 
@@ -141,384 +126,6 @@ end
 # (foo4 experiments with this, but currently does not except a parameter)
 
 # department_codes = better_list.collect{ |course| course.id.split(' ').first }.uniq
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# TODO: name functions and move them from main.rb to named_functions.rb
-# (this will also remove dependence on shared state stored in @env)
-# (state should be stored / shared at this level (rake), not within the @env variable)
-
-
-
-list_of_degrees = [
-	"Computer Science",
-	"Information Technology",
-	"Electrical Engineering",
-	"Biology",
-	"Psychology"
-]
-
-degrees = SummerResearch.search_programs_of_study(list_of_degrees)
-
-
-count = degrees.keys.size
-puts "#{count} programs found for search query."
-
-SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
-@programs_of_study = degrees
-
-
-
-
-
-
-	
-	
-# === take one degree program, and walk the dependencies for all courses in the degree
-# (get all relevant courses)
-
-program_name = "Computer Science, BS"
-url = @programs_of_study[program_name]
-
-fragment = SummerResearch.requirements_subtree(url)
-
-# TODO: need to improve this selector. catching some false positives.
-# wait, variable 'fragment' is a list...
-course_list = SummerResearch.get_all_weird_link_urls(fragment)
-
-
-
-# TODO: remove dupicate entries in the list of courses
-	# not just as simple as removing duplicates from list
-	# need to remove when two tuples have the same first element
-	# also - want to keep original ordering
-# NOTE: this may not be necessary if the selection filter on links is improved
-
-SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
-
-@required_courses = course_list
-
-
-
-class_dependencies = SummerResearch.foo8(course_list)      # construct all dependencies
-
-
-
-->(){
-	
-
-	puts "Filtering courses..."
-	filtered_list = 
-		@required_courses.reject{  |course| course.id == "Mason Core" }
-		                 .uniq{  |a| a.id    }
-		                 .sort_by{  |a| a.id.split(' ').first   }
-	
-	puts "=== recursive download of dependencies... "
-	
-	
-	
-	
-	# recursive traversal
-	# (iterative implementation, breadth first traversal)
-	
-	input_list = filtered_list.collect{  |cat_link| cat_link.id  }.uniq
-	
-	all_info_pages = Array.new
-	
-	# input_list     - array of strings, ex) ["CS 101", "CS 330", "CS 499"]
-	# all_info_pages - collection of CourseInfo objects (should all be unique)
-		# NOTE: equality of CourseInfo objects within a Set not yet defined
-	until input_list.empty? do
-		puts "-- downloading..."
-		info_pages = input_list.collect{  |course_id|  print'.'; @catalog.download_course_info(course_id) }
-		puts ""
-		nested_ids = info_pages.collect{  |info| SummerResearch.list_dependencies(info)  }
-			# [[id, id, id], [id, id]]
-		
-		puts "-- update"
-		# add recently downloaded data into the greater collection (in-memory cache)
-		all_info_pages += info_pages
-		
-		puts "-- calculate courses to check"
-		# all dependencies at this level
-		new_dependencies = nested_ids.flatten.compact.uniq
-			# [id, id, id, id]
-		
-		# all dependencies where data has not yet been fetched
-		dep_set           = new_dependencies.to_set                           # set of strings
-		detailed_info_set = all_info_pages.collect{  |info| info.id  }.to_set # set of strings
-		new_deps          = dep_set.difference(detailed_info_set)
-		
-		# fetch new specific data
-		input_list = new_deps.to_a
-		
-		p input_list
-	end
-	# TODO: like other testing, alert when there is an error with parsing dependencies for a course, but continue on to the other courses. I would like to be able to see some trends in anamolous data.
-	
-	
-	
-	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", all_info_pages.to_yaml)
-	@full_dependency_list = all_info_pages
-}
-
-
-
-
-
-# file "data/all_course_data.yaml" => ["data/required_courses.yaml", "data/catalog.yaml"] do
-task :new_pathway4 => ["data/required_courses.yaml", "data/catalog.yaml"] do
-	@required_courses ||= YAML.load_file('data/required_courses.yaml')
-	@catalog          ||= SummerResearch::Catalog.load("data/catalog")
-	
-	# =====
-	
-	puts "Filtering courses..."
-	filtered_list = 
-		@required_courses.reject{  |course| course.id == "Mason Core" }
-		                 .uniq{  |a| a.id    }
-		                 .sort_by{  |a| a.id.split(' ').first   }
-	
-	puts "=== recursive download of dependencies... "
-	
-	
-	
-	
-	# recursive traversal
-	# (iterative implementation, breadth first traversal)
-	
-	# maybe try a depth first approach this time?
-	# maybe that would make it easier to report errors with proper context?
-	
-	input_list = filtered_list.collect{  |cat_link| cat_link.id  }.uniq
-	
-	all_info_pages = Array.new
-	
-	# input_list     - array of strings, ex) ["CS 101", "CS 330", "CS 499"]
-	# all_info_pages - collection of CourseInfo objects (should all be unique)
-		# NOTE: equality of CourseInfo objects within a Set not yet defined
-	until input_list.empty? do
-		info_pages = 
-			input_list.collect do |course_id|
-				info = nil
-				begin
-					info = @catalog.download_course_info(course_id)
-				rescue StandardError => e
-					
-				ensure
-					yield info
-				end
-				
-				
-				info
-			end
-		
-		nested_ids = info_pages.collect{  |info| SummerResearch.list_dependencies(info)  }
-			# [[id, id, id], [id, id]]
-		
-		# add recently downloaded data into the greater collection (in-memory cache)
-		all_info_pages += info_pages
-		
-		# all dependencies at this level
-		new_dependencies = nested_ids.flatten.compact.uniq
-			# [id, id, id, id]
-		
-		# all dependencies where data has not yet been fetched
-		dep_set           = new_dependencies.to_set                           # set of strings
-		detailed_info_set = all_info_pages.collect{  |info| info.id  }.to_set # set of strings
-		new_deps          = dep_set.difference(detailed_info_set)
-		
-		# fetch new specific data
-		input_list = new_deps.to_a
-	end
-	# TODO: like other testing, alert when there is an error with parsing dependencies for a course, but continue on to the other courses. I would like to be able to see some trends in anamolous data.
-	
-	
-	
-	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", all_info_pages.to_yaml)
-	@full_dependency_list = all_info_pages
-end
-
-
-
-# extract data from programs of study for manual generation of graphs.
-# Just want to pull down the basic info I'm going to need to get this stuff done.
-# Don't want to attempt to fully automate any more, because the data is too messed up.
-# 
-# Tests for various errors that may occur while trying to look up a course in the catalog by ID
-task :new_pathway5 => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
-	puts "=== load data..."
-	
-	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-	@catalog           ||= SummerResearch::Catalog.load("data/catalog")
-	
-	# ===
-	
-	puts "=== Get degree requirements..."
-	
-	programs = [
-		"Computer Science, BS",
-		"Applied Computer Science, BS",
-		"Biology, BA",
-		"Biology, BS",
-		"Psychology, BA"
-	]
-	
-	out = 
-		programs.collect do |program_name|
-			verbose = false
-			
-			puts "=== #{program_name}"
-			# === take one degree program, and walk the dependencies for all courses in the degree
-			# (get all relevant courses)
-			
-			url = @programs_of_study[program_name]
-			
-			fragment = SummerResearch.requirements_subtree(url)
-			
-			# TODO: need to improve this selector. catching some false positives.
-			# wait, variable 'fragment' is a list...
-			course_list = SummerResearch.get_all_weird_link_urls(fragment)
-			
-			puts "Filtering courses..."
-			better_list = 
-				course_list.reject{  |course| course.id == "Mason Core" }
-				           .uniq{  |a| a.id    }
-				           .sort_by{  |a| a.id.split(' ').first   }
-			# NOTE:
-				# "Mason Core" -> the whole thing, not one particular course class, causes crash
-				# "BIOL 580" -> no data on BIOL classes > 499 (pagination problem)
-				
-				# leading space
-				# BIOL > 499
-				# Mason Core
-				# numbers only, no department (Psych BA)
-				
-				
-			puts "Downloading data..."
-			
-			data = 
-				better_list.collect do |catalog_link|
-					print '.'
-					
-					begin
-						@catalog.download_course_info(catalog_link.id)
-					rescue StandardError => e
-						# from foo11
-						puts
-						puts e.message
-						
-						if verbose
-							e.backtrace.each do |line|
-								puts "\t" + line
-								# indent the lines of the backtrace.
-								# makes it easier to see things when you start getting multiple errors
-							end
-						end
-					end
-				end
-			puts ""
-			
-			data
-		end
-	
-	SummerResearch::Utilities.write_to_file("./all_degree_requirements.yaml", out.to_yaml)
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -732,207 +339,7 @@ end
 
 
 
-# ==================
-# v  tests, based on old pathways
 
-
-# === test conversion of CatalogLink object => CourseInfo object
-# (used for fetching detailed information on a specific course from the catalog)
-# (currently does not interface with MongoDB at all, so no caching of any sort is performed)
-# 
-# There are currently 3 different major types of document pages stored in the online catalog
-# CourseInfo should be able to parse all of the differnt variations.
-# These tests throw a considerable variety of data at CourseInfo, and print diagonstics.
-# 
-# Viewing the diagnostic outputs from these tasks should help a person see
-# how the system currently is classifying these documents.
-# (NOTE: this is a manually designed and implemented classification, not machine learning)
-task :pw_sample_data do
-	# NOTE: easily get data for this table from the intermediate file required_courses.csv
-	# (UPDATE: need to figure out a similarly easy way to rip this data out from the DB)
-	
-	# NOTE: not all courses specify all attributes. 
-	#   ex) If there are no corequisites, the field is omitted
-	sample = [
-		[
-			"CS 101",
-			"Preview of Computer Science",
-			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302776&print"
-		],
-		[
-			"CS 465",
-			"Computer Systems Architecture",
-			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302800&print"
-		],
-		[
-			"CS 475",
-			"Concurrent and Distributed Systems",
-			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302803&print"
-		],
-		[
-			"CS 330",
-			"Formal Methods and Models",
-			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302788&print"
-		],
-		[
-			"STAT 344",
-			"Probability and Statistics for Engineers and Scientists I",
-			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306778&print"
-		],
-		[
-			"PSYC 320",
-			"Psychological Tests and Measurements",
-			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"
-		],
-		[
-			"EVPP 110",
-			"The Ecosphere: An Introduction to Environmental Science I",
-			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
-		],
-		[
-			"Mason Core UGU",
-			"Global Understanding",
-			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
-		]
-	].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
-	
-	# TODO: figure out what the anatomy of a course is
-	# * CS 101
-	# * Preview of Computer Science
-	# * Description
-	# * Section ID?
-	# --- these are all different things
-
-
-	# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
-	
-	@pw_sample = sample
-end
-
-
-
-
-# course [CatalogLink] => [CourseInfo] RELEASE VERSION
-# no debug information. just prints the course ids for the classes being downloaded
-# (input dataset: all courses from CS degree)
-task :pw5 => "data/programs_of_study.yaml" do
-	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-	
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-	
-	
-	
-	programs = [
-		"Computer Science, BS",
-		"Applied Computer Science, BS",
-		"Biology, BA",
-		"Biology, BS",
-		"Psychology, BA"
-	]
-	
-	program_name = "Computer Science, BS"
-	url = @programs_of_study[program_name]
-	courses = all_courses_for_degree(url)
-	
-	
-	
-	
-	puts "=== run processing"
-	course_data = SummerResearch::Sketch.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
-	
-	Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
-end
-
-# [CatalogLink] => [CourseInfo] DEBUG
-# only shows error messages when the system fails to fetch a page
-# otherwise just prints dots to let you know progress is happening
-# allows you to see errors across all entries (does not stop after the first error)
-# 
-# (input dataset: sample dataset)
-task :pw6 => [:pw_sample_data] do
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-	
-	puts "=== run processing"
-	
-	# @pw_sample --> course_data
-	# 
-	# sample data set => [CatalogLink] 
-	# [CatalogLink] => [CourseInfo] DEBUG
-	course_data = SummerResearch::Sketch.foo11(@catalog, @pw_sample) 
-end
-
-# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
-# prints extensive information on the types of data being detected.
-# type signatures and debug information displayed for all entries.
-# allows you to see errors across all entries (does not stop after the first error)
-# 
-# (input dataset: sample dataset)
-task :pw8 => [:pw_sample_data] do
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-	
-	puts "=== run processing"
-	
-	# @pw_sample --> course_data
-	# 
-	# sample data set => [CatalogLink] 
-	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
-	course_data = SummerResearch::Sketch.foo14(@catalog, @pw_sample)
-end
-
-# [CatalogLink] => [CourseInfo] DEBUG
-# (input dataset: ALL courses from ALL majors in the sample set)
-# 
-# same core procedure as pw6, but with a much bigger data set
-task :pw7 do
-	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-	
-	puts "=== load data..."
-	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-	
-	
-	puts "=== cycle through programs of study..."
-	
-	programs = [
-		"Computer Science, BS",
-		"Applied Computer Science, BS",
-		"Biology, BA",
-		"Biology, BS",
-		"Psychology, BA"
-	]
-	programs.each do |degree_name|
-		puts "=== Getting info for: #{degree_name}"
-		url = @programs_of_study[program_name]
-		courses = all_courses_for_degree(url)
-		# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
-			# url = @env.degrees[degree_name]
-			# course_list = SummerResearch.degree_requirements(url)
-			# puts "test"
-		# failure occurs inside of SummerResearch.degree_requiremnts
-		
-		puts "=== analyzing courses... "
-		course_data = SummerResearch::Sketch.foo11(@catalog, courses)
-	end
-	
-	# errors from: SummerResearch::CourseInfo#fetch
-	# two other page formats:
-		# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
-			# ^ seems to be for more recent courses? not really sure why the markup is different
-		# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
-	
-	
-	
-	# NOTE: perhaps not all majors work right now? so be careful of that too
-	
-	
-	
-	# NOTE: the following programs of study only use Type A or Type B catalog links
-		# "Computer Science, BS",
-		# "Biology, BA",
-	# NOTE: the following programs of study are known to list courses with Type C catalog links
-		# "Applied Computer Science, BS",
-		# "Biology, BS",
-		# "Psychology, BA"
-end
 
 
 def get_dependencies(course_info)
@@ -1001,6 +408,9 @@ end
 
 
 
+
+->(){
+	
 # =====
 puts "Filtering courses..."
 better_list = 
@@ -1011,6 +421,7 @@ better_list =
 
 # TODO: print list of courses for a degree, chunked by what sector they appear in in the Program of Study page. This, in conjunction with the dependency info printed in pathway10, can be used to generate visualizations.
 
+}
 
 
 
@@ -1049,5 +460,227 @@ end
 task :pathwayX do
 	
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ==================
+# v  tests, based on old pathways
+
+
+
+
+
+
+# === test conversion of CatalogLink object => CourseInfo object
+# (NOTICE: this is not a unit test, just a bunch of diagnostics)
+# Used for fetching detailed information on a specific course from the catalog.
+# Currently does not save documents in Mongo DB.
+# 
+# There are currently 3 different major types of document pages stored in the online catalog
+# CourseInfo should be able to parse all of the differnt variations.
+# These tests throw a considerable variety of data at CourseInfo, and print diagonstics.
+# 
+# Viewing the diagnostic outputs from these tasks should help a person see
+# how the system currently is classifying these documents.
+# (NOTE: this is a manually designed and implemented classification, not machine learning)
+task :test_course_info_fetch => [:pw5, :pw6, :pw8, :pw7]
+namespace :test_course_info_fetch do
+	task :pw_sample_data do
+		# NOTE: easily get data for this table from the intermediate file required_courses.csv
+		# (UPDATE: need to figure out a similarly easy way to rip this data out from the DB)
+		
+		# NOTE: not all courses specify all attributes. 
+		#   ex) If there are no corequisites, the field is omitted
+		sample = [
+			[
+				"CS 101",
+				"Preview of Computer Science",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302776&print"
+			],
+			[
+				"CS 465",
+				"Computer Systems Architecture",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302800&print"
+			],
+			[
+				"CS 475",
+				"Concurrent and Distributed Systems",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302803&print"
+			],
+			[
+				"CS 330",
+				"Formal Methods and Models",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302788&print"
+			],
+			[
+				"STAT 344",
+				"Probability and Statistics for Engineers and Scientists I",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306778&print"
+			],
+			[
+				"PSYC 320",
+				"Psychological Tests and Measurements",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"
+			],
+			[
+				"EVPP 110",
+				"The Ecosphere: An Introduction to Environmental Science I",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
+			],
+			[
+				"Mason Core UGU",
+				"Global Understanding",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
+			]
+		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
+		
+		# TODO: figure out what the anatomy of a course is
+		# * CS 101
+		# * Preview of Computer Science
+		# * Description
+		# * Section ID?
+		# --- these are all different things
+
+
+		# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
+		
+		@pw_sample = sample
+	end
+	
+	# course [CatalogLink] => [CourseInfo] RELEASE VERSION
+	# no debug information. just prints the course ids for the classes being downloaded
+	# (input dataset: all courses from CS degree)
+	task :pw5 => "data/programs_of_study.yaml" do
+		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+		
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		
+		programs = [
+			"Computer Science, BS",
+			"Applied Computer Science, BS",
+			"Biology, BA",
+			"Biology, BS",
+			"Psychology, BA"
+		]
+		
+		program_name = "Computer Science, BS"
+		url = @programs_of_study[program_name]
+		courses = all_courses_for_degree(url)
+		
+		
+		
+		
+		puts "=== run processing"
+		course_data = SummerResearch::Sketch.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
+		
+		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
+	end
+
+	# [CatalogLink] => [CourseInfo] DEBUG
+	# only shows error messages when the system fails to fetch a page
+	# otherwise just prints dots to let you know progress is happening
+	# allows you to see errors across all entries (does not stop after the first error)
+	# 
+	# (input dataset: sample dataset)
+	task :pw6 => [:pw_sample_data] do
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		puts "=== run processing"
+		
+		# @pw_sample --> course_data
+		# 
+		# sample data set => [CatalogLink] 
+		# [CatalogLink] => [CourseInfo] DEBUG
+		course_data = SummerResearch::Sketch.foo11(@catalog, @pw_sample) 
+	end
+
+	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+	# prints extensive information on the types of data being detected.
+	# type signatures and debug information displayed for all entries.
+	# allows you to see errors across all entries (does not stop after the first error)
+	# 
+	# (input dataset: sample dataset)
+	task :pw8 => [:pw_sample_data] do
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		puts "=== run processing"
+		
+		# @pw_sample --> course_data
+		# 
+		# sample data set => [CatalogLink] 
+		# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+		course_data = SummerResearch::Sketch.foo14(@catalog, @pw_sample)
+	end
+
+	# [CatalogLink] => [CourseInfo] DEBUG
+	# (input dataset: ALL courses from ALL majors in the sample set)
+	# 
+	# same core procedure as pw6, but with a much bigger data set
+	task :pw7 do
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		puts "=== load data..."
+		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+		
+		
+		puts "=== cycle through programs of study..."
+		
+		programs = [
+			"Computer Science, BS",
+			"Applied Computer Science, BS",
+			"Biology, BA",
+			"Biology, BS",
+			"Psychology, BA"
+		]
+		programs.each do |degree_name|
+			puts "=== Getting info for: #{degree_name}"
+			url = @programs_of_study[degree_name]
+			courses = all_courses_for_degree(url)
+			# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
+				# url = @env.degrees[degree_name]
+				# course_list = SummerResearch.degree_requirements(url)
+				# puts "test"
+			# failure occurs inside of SummerResearch.degree_requiremnts
+			
+			puts "=== analyzing courses... "
+			course_data = SummerResearch::Sketch.foo11(@catalog, courses)
+		end
+		
+		# errors from: SummerResearch::CourseInfo#fetch
+		# two other page formats:
+			# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
+				# ^ seems to be for more recent courses? not really sure why the markup is different
+			# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
+		
+		
+		
+		# NOTE: perhaps not all majors work right now? so be careful of that too
+		
+		
+		
+		# NOTE: the following programs of study only use Type A or Type B catalog links
+			# "Computer Science, BS",
+			# "Biology, BA",
+		# NOTE: the following programs of study are known to list courses with Type C catalog links
+			# "Applied Computer Science, BS",
+			# "Biology, BS",
+			# "Psychology, BA"
+	end
+end
+
+
+
 
 
