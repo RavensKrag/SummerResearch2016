@@ -17,38 +17,12 @@ class Main
 	
 	# v actually used methods
 	
-		
-	# dependencies: foo1
-	# get the list of courses for one program, based on its name
-	def foo2(degree_name)
-		url = @degrees[degree_name]
-		# url = self.degree_dict["Applied Computer Science, BS"]
-		# url = self.degree_dict["Biology, BA"]
-		# url = self.degree_dict["Biology, BS"]
-		# url = self.degree_dict["Psychology, BA"]
-		
-		course_list = SummerResearch.degree_requirements(url)
-		# puts course_list.to_yaml
-		
-		# TODO: remove dupicate entries in the list of courses
-			# not just as simple as removing duplicates from list
-			# need to remove when two tuples have the same first element
-			# also - want to keep original ordering
-		# NOTE: this may not be necessary if the selection filter on links is improved
-		
-		
-		Utilities.write_csv('./required_courses.csv', course_list)
-		
-		# arr_of_arrs = CSV.parse("CSV,data,String")
-		
-		return course_list
-	end
 	
 	
 	
 	
-	
-	
+	# Roughly imported from python sketch on how to meaningfully extract degree requirements
+	# was only ever called from one pathway in rakefile. that pathway has been removed.
 	# dependencies: foo1
 	def foo6
 		url = @degrees["Computer Science, BS"]
@@ -81,6 +55,18 @@ class Main
 		
 		# sometimes you see a <strong> sometimes you see a <strong><u> which is really bad...
 	end
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	# dependencies: foo1
 	# precursors: foo6, SummerResearch.required_courses, SummerResearch.degree_requirements, foo2

@@ -127,47 +127,29 @@ end
 
 
 
+[
+	"Computer Science, BS",
+	"Applied Computer Science, BS",
+	"Biology, BA",
+	"Biology, BS",
+	"Psychology, BA"
+]
+
+
+
+# query: what is the chain of courses that lead up to this course? 
+@env.foo9(class_dependencies, "CS 465")
+# => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
+
+# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
+# NOTE: "ECE 301" is the old name, IIRC
 
 
 
 
 
-# 1 6
-task :pathway3 => :pathwayA do
-	@env.foo6() # NOTE: foo6 not yet properly ported
-end
 
-# 1 5 7 8 10 9
-task :pathway4 => [:pathwayA, :pathwayB] do
-	# TODO: cache 1 and 5 to speed up evaluation
-	
-	
-	
-	puts "=== run processing"
-	
-	[
-		"Computer Science, BS",
-		"Applied Computer Science, BS",
-		"Biology, BA",
-		"Biology, BS",
-		"Psychology, BA"
-	]
-	
-	# take one degree program, and walk the dependencies for all courses in the degree
-	course_list = @env.foo7("Computer Science, BS")  # get all relevant courses
-	class_dependencies = @env.foo8(course_list)      # construct all dependencies
-	
-	output_filepath = ""
-	@env.foo10(class_dependencies, output_filepath)  # visualize the dependency graph
-	
-	
-	# query: what is the chain of courses that lead up to this course? 
-	@env.foo9(class_dependencies, "CS 465")
-	# => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
-	
-	# TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
-	# NOTE: "ECE 301" is the old name, IIRC
-end
+
 
 # 1 2 13
 task :pathway5 => :pathwayA do
@@ -175,7 +157,7 @@ task :pathway5 => :pathwayA do
 	
 	
 	puts "=== run processing"
-	course_data = @env.foo13(courses)
+	course_data = @env.foo13(courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
 end
 
 # test course parsing with a couple of key examples
@@ -187,8 +169,8 @@ task :pathway6 => :pathwayA do
 	
 	puts "=== run processing"
 	
-	courses = @env.foo12()
-	course_data = @env.foo11(courses)
+	courses = @env.foo12()            # sample data set => [CatalogLink] 
+	course_data = @env.foo11(courses) # [CatalogLink] => [CourseInfo] DEBUG
 end
 
 # test course parsing with a couple of key examples
@@ -200,8 +182,8 @@ task :pathway8 => :pathwayA do
 	
 	puts "=== run processing"
 	
-	courses = @env.foo12()
-	course_data = @env.foo14(courses)
+	courses = @env.foo12()            # sample data set => [CatalogLink] 
+	course_data = @env.foo14(courses) # [CatalogLink] => [CourseInfo] DEBUG VERBOSE
 end
 
 # test all courses across various majors to make sure everything runs correctly
@@ -774,7 +756,6 @@ namespace :db_backend do
 	file 'data/programs_of_study.yaml' do
 		puts "=== setup data"
 		# search for relevant programs of study
-		# (required to run #foo2)
 		
 		list_of_degrees = [
 			"Computer Science",
@@ -794,6 +775,10 @@ namespace :db_backend do
 		@programs_of_study = degrees
 	end
 	
+	
+	# List all the courses required for one particular program of study.
+	# Currently not a very advanced procedure, just grabs all of the links on the page.
+	# (modern equavialent of foo2)
 	file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
 		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
 		

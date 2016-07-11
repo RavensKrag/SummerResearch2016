@@ -1,28 +1,12 @@
 module SummerResearch
-	
-	PROGRAMS_OF_STUDY_URL  = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
-	COURSE_SEARCH_BASE_URL = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6272"
-	
-	CatalogLink = Struct.new("CatalogLink", :id, :description, :url, :link_type)
 
-	class << self
-
-
-def degree_requirements(url)
-	fragment = requirements_subtree(url)
 	
-	out = 
-	fragment.collect do |node|
-		# puts node.class
-		# onclick_scripts = node.xpath('.//a[@onclick]').collect{  |link| link['onclick']  }
-		# onclick_scripts.each do |script|
-		# end
-		
-		get_all_weird_link_urls(node)
-	end
-	
-	return out.flatten
-end
+PROGRAMS_OF_STUDY_URL  = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
+COURSE_SEARCH_BASE_URL = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6272"
+
+CatalogLink = Struct.new("CatalogLink", :id, :description, :url, :link_type)
+
+class << self
 
 def requirements_subtree(url)
 	xml = Nokogiri::HTML(open(url))
