@@ -136,9 +136,8 @@ end
 ]
 
 
-
 # query: what is the chain of courses that lead up to this course? 
-@env.foo9(class_dependencies, "CS 465")
+env.foo9(class_dependencies, "CS 465") if false # want to 'comment out' w/o disabling color
 # => [CS 367, ECE 301, CS 262, CS 211, CS 112, MATH 113, CS 101?]
 
 # TODO: This is actually not properly a list, it is a subgraph. Some dependencies do not lie along the main path. How do you display that information?
@@ -390,7 +389,8 @@ class_dependencies = SummerResearch.foo8(course_list)      # construct all depen
 
 
 
-
+->(){
+	
 
 	puts "Filtering courses..."
 	filtered_list = 
@@ -445,7 +445,7 @@ class_dependencies = SummerResearch.foo8(course_list)      # construct all depen
 	
 	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", all_info_pages.to_yaml)
 	@full_dependency_list = all_info_pages
-end
+}
 
 
 
