@@ -15,44 +15,7 @@ class Main
 	attr_reader :degrees
 	
 	
-	# Test SummerResearch.course_info on various URLs with different sorts of attributes
-	# NOTE: not all courses specify all attributes. 
-	#   ex) If there are no corequisites, the field is omitted
-	def foo3
-		[
-			["CS 330",   "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302788&print"],
-			["STAT 344", "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306778&print"],
-			["PSYC 320", "http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"]
-		].each do |name, url|
-			puts name
-			info = SummerResearch.course_info(url)
-			print info.to_yaml
-			puts "========="
-		end
-	end
-	
-	
-	'CS 101'
-	
-	
-	# TODO: figure out what the anatomy of a course is
-	# * CS 101
-	# * Preview of Computer Science
-	# * Description
-	# * Section ID?
-	# --- these are all different things
-	
-	
-	# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
-	
-	# ^ tests
-	# ===
 	# v actually used methods
-	
-	
-	
-	
-	
 	
 		
 	# dependencies: foo1
