@@ -13,8 +13,8 @@ class << self
 # Roughly imported from python sketch on how to meaningfully extract degree requirements
 # was only ever called from one pathway in rakefile. that pathway has been removed.
 # dependencies: foo1
-def foo6
-	url = @degrees["Computer Science, BS"]
+def foo6(degrees)
+	url = degrees["Computer Science, BS"]
 	# url = @degrees["Applied Computer Science, BS"]
 	# url = @degrees["Biology, BA"]
 	# url = @degrees["Biology, BS"]
@@ -49,8 +49,8 @@ end
 
 # dependencies: foo1
 # precursors: foo6, SummerResearch.required_courses, SummerResearch.degree_requirements, foo2
-def foo7(program_name)
-	url = @degrees[program_name]
+def foo7(degrees, program_name)
+	url = degrees[program_name]
 	
 	# util.degree_requirements(url)
 	
