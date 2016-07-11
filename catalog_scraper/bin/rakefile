@@ -543,397 +543,395 @@ SQLITE_DATABASE_FILEPATH = 'example.db'
 
 
 
-namespace :db_backend do
-	task :create_db do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-			# connect to the SQLite and MongoDB databases
-			
-		@catalog.setup
-			# establish the schema
-		@catalog.fetch_course_listing
-			# download list of possible catalog years
-			# figure out how to search by dept code for each and every catalog year
-			# get lists of courses, based on a subset of dept codes, for each and every year
-	end
+task :create_db do
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		# connect to the SQLite and MongoDB databases
+		
+	@catalog.setup
+		# establish the schema
+	@catalog.fetch_course_listing
+		# download list of possible catalog years
+		# figure out how to search by dept code for each and every catalog year
+		# get lists of courses, based on a subset of dept codes, for each and every year
+end
+
+# file SQLITE_DATABASE_FILEPATH do
+# 	Rake::Task["db_backend:create_db"].invoke
+# end
+
+# run 'create_db' before this to download initial data
+# (can't list as explict dependency at this time, because I don't know how to easily skip processing and entire catalog year)
+task :query_db do
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
-	# file SQLITE_DATABASE_FILEPATH do
-	# 	Rake::Task["db_backend:create_db"].invoke
+	
+	info = @catalog.course_info('CS 101')
+	p info
+	# @catalog.query do |q|
+		
 	# end
+end
+
+task :wipe_mongo do
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
-	# run 'create_db' before this to download initial data
-	# (can't list as explict dependency at this time, because I don't know how to easily skip processing and entire catalog year)
-	task :query_db do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		
-		info = @catalog.course_info('CS 101')
-		p info
-		# @catalog.query do |q|
+	@catalog.course_details_mongo do |db|
+		result = db.delete_many
+		puts result.n
+	end
+end
+
+
+
+
+
+
+
+
+file 'data/programs_of_study.yaml' do
+	puts "=== setup data"
+	# search for relevant programs of study
+	
+	list_of_degrees = [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	
+	degrees = SummerResearch.search_programs_of_study(list_of_degrees)
+	
+	
+	count = degrees.keys.size
+	puts "#{count} programs found for search query."
+	
+	SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
+	@programs_of_study = degrees
+end
+
+
+# List all the courses required for one particular program of study.
+# Currently not a very advanced procedure, just grabs all of the links on the page.
+# (modern equavialent of foo2)
+file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+	
+	
+	# TODO: output data on different degrees to different folders.
+	
+	program_name = "Computer Science, BS"
+	url = @programs_of_study[program_name]
+	course_list = all_courses_for_degree(url)
+	
+	# TODO: remove dupicate entries in the list of courses
+		# not just as simple as removing duplicates from list
+		# need to remove when two tuples have the same first element
+		# also - want to keep original ordering
+	# NOTE: this may not be necessary if the selection filter on links is improved
+	
+	SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
+	
+	@required_courses = course_list
+end
+
+task :cs_requirements => 'data/required_courses.yaml' do
+	@required_courses ||= YAML.load_file('data/required_courses.yaml')
+	
+	
+	mongo_environment do
+	
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	
+	
+	# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
+	
+	main_requirements = 
+		@required_courses
+		.reject{|catalog_link| catalog_link.id == "Mason Core"}
+		.collect do |catalog_link|
+			id = catalog_link.id
 			
-		# end
-	end
-	
-	task :wipe_mongo do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		@catalog.course_details_mongo do |db|
-			result = db.delete_many
-			puts result.n
+			puts "============"
+			p id
+			data = @catalog.course_info(id)
+			p data
+			
+			data
 		end
+		
+		
+		
+		
+		
+		
+		puts "Filtering courses..."
+		better_list = 
+			course_list.reject{  |course| course.id == "Mason Core" }
+			           .uniq{  |a| a.id    }
+			           .sort_by{  |a| a.id.split(' ').first   }
+
+	
+	
+	main_requirements.each do |course|
+		
+		puts course.id
+		get_dependencies(course)
+		
+		
+		
+		# "math placement test"
+		# "Placement Test"
+		# "Mathematics Placement Test"
+		
+		# "algebra tutorial program"
+		
+		
+		
+		
+		# HNRS 122, 130, 131, 230 or 240
+		# CS 262 or 222
+		# ECE 301 or 331
+		# CS 310, 330, and 367
+		# "Grade of C or better in CS 310, 330, and 367."
+		# MATH 123 and 124
+		# "C or better in MATH 113 or in both MATH 123 and 124."
+		
+		
+		
+		
+		# "Completion of 45 credits including the Mason core composition and literature requirements, requires a grade of C or better."
+		# => ["of 45"]
+		
+		# "Score of 13 or better on the Math Placement Test, or Grade of C or better in MATH 105, or Grade of C or better in MATH 108, or Grade of C or better in MATH 113."
+		# => ["of 13", "MATH 105", "MATH 108", "MATH 113"]
+		
+		# "C or higher in STAT 346 and a course in Statistics, or STAT 344."
+		# "a course in Statistics" ???
+			# ACS Gaming specifies that you can take "344 or a course in statistics relevant to your major" [paraphrased] so I have seen precedience for this sort of loose dependency around stat.
+			# (but IIRC there aren't currently any courses like that offered at Mason? so why is there this stipulation at all? future-proofing?)
+			# 
+			# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
 	end
 	
 	
+	end
+end
+
+
+
+
+task :get_info do
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	p @catalog.course_info("STAT 344")
+end
+
+
+
+
+
+
+# ==================
+# v  tests, based on old pathways
+
+
+# === test conversion of CatalogLink object => CourseInfo object
+# (used for fetching detailed information on a specific course from the catalog)
+# (currently does not interface with MongoDB at all, so no caching of any sort is performed)
+# 
+# There are currently 3 different major types of document pages stored in the online catalog
+# CourseInfo should be able to parse all of the differnt variations.
+# These tests throw a considerable variety of data at CourseInfo, and print diagonstics.
+# 
+# Viewing the diagnostic outputs from these tasks should help a person see
+# how the system currently is classifying these documents.
+# (NOTE: this is a manually designed and implemented classification, not machine learning)
+task :pw_sample_data do
+	# NOTE: easily get data for this table from the intermediate file required_courses.csv
+	# (UPDATE: need to figure out a similarly easy way to rip this data out from the DB)
 	
-	
-	
-	
-	
-	
-	file 'data/programs_of_study.yaml' do
-		puts "=== setup data"
-		# search for relevant programs of study
-		
-		list_of_degrees = [
-			"Computer Science",
-			"Information Technology",
-			"Electrical Engineering",
-			"Biology",
-			"Psychology"
+	# NOTE: not all courses specify all attributes. 
+	#   ex) If there are no corequisites, the field is omitted
+	sample = [
+		[
+			"CS 101",
+			"Preview of Computer Science",
+			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302776&print"
+		],
+		[
+			"CS 465",
+			"Computer Systems Architecture",
+			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302800&print"
+		],
+		[
+			"CS 475",
+			"Concurrent and Distributed Systems",
+			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302803&print"
+		],
+		[
+			"CS 330",
+			"Formal Methods and Models",
+			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302788&print"
+		],
+		[
+			"STAT 344",
+			"Probability and Statistics for Engineers and Scientists I",
+			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306778&print"
+		],
+		[
+			"PSYC 320",
+			"Psychological Tests and Measurements",
+			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"
+		],
+		[
+			"EVPP 110",
+			"The Ecosphere: An Introduction to Environmental Science I",
+			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
+		],
+		[
+			"Mason Core UGU",
+			"Global Understanding",
+			"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
 		]
-		
-		degrees = SummerResearch.search_programs_of_study(list_of_degrees)
-		
-		
-		count = degrees.keys.size
-		puts "#{count} programs found for search query."
-		
-		SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
-		@programs_of_study = degrees
-	end
+	].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
 	
-	
-	# List all the courses required for one particular program of study.
-	# Currently not a very advanced procedure, just grabs all of the links on the page.
-	# (modern equavialent of foo2)
-	file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
-		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-		
-		
-		# TODO: output data on different degrees to different folders.
-		
-		program_name = "Computer Science, BS"
-		url = @programs_of_study[program_name]
-		course_list = all_courses_for_degree(url)
-		
-		# TODO: remove dupicate entries in the list of courses
-			# not just as simple as removing duplicates from list
-			# need to remove when two tuples have the same first element
-			# also - want to keep original ordering
-		# NOTE: this may not be necessary if the selection filter on links is improved
-		
-		SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
-		
-		@required_courses = course_list
-	end
-	
-	task :cs_requirements => 'data/required_courses.yaml' do
-		@required_courses ||= YAML.load_file('data/required_courses.yaml')
-		
-		
-		mongo_environment do
-		
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		
-		
-		# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
-		
-		main_requirements = 
-			@required_courses
-			.reject{|catalog_link| catalog_link.id == "Mason Core"}
-			.collect do |catalog_link|
-				id = catalog_link.id
-				
-				puts "============"
-				p id
-				data = @catalog.course_info(id)
-				p data
-				
-				data
-			end
-			
-			
-			
-			
-			
-			
-			puts "Filtering courses..."
-			better_list = 
-				course_list.reject{  |course| course.id == "Mason Core" }
-				           .uniq{  |a| a.id    }
-				           .sort_by{  |a| a.id.split(' ').first   }
+	# TODO: figure out what the anatomy of a course is
+	# * CS 101
+	# * Preview of Computer Science
+	# * Description
+	# * Section ID?
+	# --- these are all different things
 
-		
-		
-		main_requirements.each do |course|
-			
-			puts course.id
-			get_dependencies(course)
-			
-			
-			
-			# "math placement test"
-			# "Placement Test"
-			# "Mathematics Placement Test"
-			
-			# "algebra tutorial program"
-			
-			
-			
-			
-			# HNRS 122, 130, 131, 230 or 240
-			# CS 262 or 222
-			# ECE 301 or 331
-			# CS 310, 330, and 367
-			# "Grade of C or better in CS 310, 330, and 367."
-			# MATH 123 and 124
-			# "C or better in MATH 113 or in both MATH 123 and 124."
-			
-			
-			
-			
-			# "Completion of 45 credits including the Mason core composition and literature requirements, requires a grade of C or better."
-			# => ["of 45"]
-			
-			# "Score of 13 or better on the Math Placement Test, or Grade of C or better in MATH 105, or Grade of C or better in MATH 108, or Grade of C or better in MATH 113."
-			# => ["of 13", "MATH 105", "MATH 108", "MATH 113"]
-			
-			# "C or higher in STAT 346 and a course in Statistics, or STAT 344."
-			# "a course in Statistics" ???
-				# ACS Gaming specifies that you can take "344 or a course in statistics relevant to your major" [paraphrased] so I have seen precedience for this sort of loose dependency around stat.
-				# (but IIRC there aren't currently any courses like that offered at Mason? so why is there this stipulation at all? future-proofing?)
-				# 
-				# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
-		end
-		
-		
-		end
-	end
+
+	# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
+	
+	@pw_sample = sample
+end
+
+
+
+
+# course [CatalogLink] => [CourseInfo] RELEASE VERSION
+# no debug information. just prints the course ids for the classes being downloaded
+# (input dataset: all courses from CS degree)
+task :pw5 => "data/programs_of_study.yaml" do
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+	
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	
+	
+	programs = [
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	
+	program_name = "Computer Science, BS"
+	url = @programs_of_study[program_name]
+	courses = all_courses_for_degree(url)
 	
 	
 	
 	
-	task :get_info do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-		p @catalog.course_info("STAT 344")
-	end
+	puts "=== run processing"
+	course_data = SummerResearch::Sketch.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
 	
+	Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
+end
+
+# [CatalogLink] => [CourseInfo] DEBUG
+# only shows error messages when the system fails to fetch a page
+# otherwise just prints dots to let you know progress is happening
+# allows you to see errors across all entries (does not stop after the first error)
+# 
+# (input dataset: sample dataset)
+task :pw6 => [:pw_sample_data] do
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
+	puts "=== run processing"
 	
-	
-	
-	
-	# ==================
-	# v  tests, based on old pathways
-	
-	
-	# === test conversion of CatalogLink object => CourseInfo object
-	# (used for fetching detailed information on a specific course from the catalog)
-	# (currently does not interface with MongoDB at all, so no caching of any sort is performed)
+	# @pw_sample --> course_data
 	# 
-	# There are currently 3 different major types of document pages stored in the online catalog
-	# CourseInfo should be able to parse all of the differnt variations.
-	# These tests throw a considerable variety of data at CourseInfo, and print diagonstics.
+	# sample data set => [CatalogLink] 
+	# [CatalogLink] => [CourseInfo] DEBUG
+	course_data = SummerResearch::Sketch.foo11(@catalog, @pw_sample) 
+end
+
+# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+# prints extensive information on the types of data being detected.
+# type signatures and debug information displayed for all entries.
+# allows you to see errors across all entries (does not stop after the first error)
+# 
+# (input dataset: sample dataset)
+task :pw8 => [:pw_sample_data] do
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	puts "=== run processing"
+	
+	# @pw_sample --> course_data
 	# 
-	# Viewing the diagnostic outputs from these tasks should help a person see
-	# how the system currently is classifying these documents.
-	# (NOTE: this is a manually designed and implemented classification, not machine learning)
-	task :pw_sample_data do
-		# NOTE: easily get data for this table from the intermediate file required_courses.csv
-		# (UPDATE: need to figure out a similarly easy way to rip this data out from the DB)
-		
-		# NOTE: not all courses specify all attributes. 
-		#   ex) If there are no corequisites, the field is omitted
-		sample = [
-			[
-				"CS 101",
-				"Preview of Computer Science",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302776&print"
-			],
-			[
-				"CS 465",
-				"Computer Systems Architecture",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302800&print"
-			],
-			[
-				"CS 475",
-				"Concurrent and Distributed Systems",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302803&print"
-			],
-			[
-				"CS 330",
-				"Formal Methods and Models",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302788&print"
-			],
-			[
-				"STAT 344",
-				"Probability and Statistics for Engineers and Scientists I",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306778&print"
-			],
-			[
-				"PSYC 320",
-				"Psychological Tests and Measurements",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"
-			],
-			[
-				"EVPP 110",
-				"The Ecosphere: An Introduction to Environmental Science I",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
-			],
-			[
-				"Mason Core UGU",
-				"Global Understanding",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
-			]
-		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
-		
-		# TODO: figure out what the anatomy of a course is
-		# * CS 101
-		# * Preview of Computer Science
-		# * Description
-		# * Section ID?
-		# --- these are all different things
+	# sample data set => [CatalogLink] 
+	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+	course_data = SummerResearch::Sketch.foo14(@catalog, @pw_sample)
+end
 
-
-		# TODO: if department is not found, error should alert the user that list of courses needs to be pulled down from the Catalog for that department before asking for a course.
-		
-		@pw_sample = sample
-	end
+# [CatalogLink] => [CourseInfo] DEBUG
+# (input dataset: ALL courses from ALL majors in the sample set)
+# 
+# same core procedure as pw6, but with a much bigger data set
+task :pw7 do
+	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	puts "=== load data..."
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
 	
 	
+	puts "=== cycle through programs of study..."
 	
-	
-	# course [CatalogLink] => [CourseInfo] RELEASE VERSION
-	# no debug information. just prints the course ids for the classes being downloaded
-	# (input dataset: all courses from CS degree)
-	task :pw5 => "data/programs_of_study.yaml" do
-		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-		
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		
-		
-		programs = [
-			"Computer Science, BS",
-			"Applied Computer Science, BS",
-			"Biology, BA",
-			"Biology, BS",
-			"Psychology, BA"
-		]
-		
-		program_name = "Computer Science, BS"
+	programs = [
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	programs.each do |degree_name|
+		puts "=== Getting info for: #{degree_name}"
 		url = @programs_of_study[program_name]
 		courses = all_courses_for_degree(url)
+		# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
+			# url = @env.degrees[degree_name]
+			# course_list = SummerResearch.degree_requirements(url)
+			# puts "test"
+		# failure occurs inside of SummerResearch.degree_requiremnts
 		
-		
-		
-		
-		puts "=== run processing"
-		course_data = SummerResearch::Sketch.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
-		
-		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
+		puts "=== analyzing courses... "
+		course_data = SummerResearch::Sketch.foo11(@catalog, courses)
 	end
 	
-	# [CatalogLink] => [CourseInfo] DEBUG
-	# only shows error messages when the system fails to fetch a page
-	# otherwise just prints dots to let you know progress is happening
-	# allows you to see errors across all entries (does not stop after the first error)
-	# 
-	# (input dataset: sample dataset)
-	task :pw6 => [:pw_sample_data] do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		puts "=== run processing"
-		
-		# @pw_sample --> course_data
-		# 
-		# sample data set => [CatalogLink] 
-		# [CatalogLink] => [CourseInfo] DEBUG
-		course_data = SummerResearch::Sketch.foo11(@catalog, @pw_sample) 
-	end
+	# errors from: SummerResearch::CourseInfo#fetch
+	# two other page formats:
+		# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
+			# ^ seems to be for more recent courses? not really sure why the markup is different
+		# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
 	
-	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
-	# prints extensive information on the types of data being detected.
-	# type signatures and debug information displayed for all entries.
-	# allows you to see errors across all entries (does not stop after the first error)
-	# 
-	# (input dataset: sample dataset)
-	task :pw8 => [:pw_sample_data] do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		puts "=== run processing"
-		
-		# @pw_sample --> course_data
-		# 
-		# sample data set => [CatalogLink] 
-		# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
-		course_data = SummerResearch::Sketch.foo14(@catalog, @pw_sample)
-	end
 	
-	# [CatalogLink] => [CourseInfo] DEBUG
-	# (input dataset: ALL courses from ALL majors in the sample set)
-	# 
-	# same core procedure as pw6, but with a much bigger data set
-	task :pw7 do
-		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		puts "=== load data..."
-		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-		
-		
-		puts "=== cycle through programs of study..."
-		
-		programs = [
-			"Computer Science, BS",
-			"Applied Computer Science, BS",
-			"Biology, BA",
-			"Biology, BS",
-			"Psychology, BA"
-		]
-		programs.each do |degree_name|
-			puts "=== Getting info for: #{degree_name}"
-			url = @programs_of_study[program_name]
-			courses = all_courses_for_degree(url)
-			# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
-				# url = @env.degrees[degree_name]
-				# course_list = SummerResearch.degree_requirements(url)
-				# puts "test"
-			# failure occurs inside of SummerResearch.degree_requiremnts
-			
-			puts "=== analyzing courses... "
-			course_data = SummerResearch::Sketch.foo11(@catalog, courses)
-		end
-		
-		# errors from: SummerResearch::CourseInfo#fetch
-		# two other page formats:
-			# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
-				# ^ seems to be for more recent courses? not really sure why the markup is different
-			# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
-		
-		
-		
-		# NOTE: perhaps not all majors work right now? so be careful of that too
-		
-		
-		
-		# NOTE: the following programs of study only use Type A or Type B catalog links
-			# "Computer Science, BS",
-			# "Biology, BA",
-		# NOTE: the following programs of study are known to list courses with Type C catalog links
-			# "Applied Computer Science, BS",
-			# "Biology, BS",
-			# "Psychology, BA"
-	end
+	
+	# NOTE: perhaps not all majors work right now? so be careful of that too
+	
+	
+	
+	# NOTE: the following programs of study only use Type A or Type B catalog links
+		# "Computer Science, BS",
+		# "Biology, BA",
+	# NOTE: the following programs of study are known to list courses with Type C catalog links
+		# "Applied Computer Science, BS",
+		# "Biology, BS",
+		# "Psychology, BA"
 end
 
 
