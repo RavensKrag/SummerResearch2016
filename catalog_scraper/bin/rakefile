@@ -622,16 +622,6 @@ namespace :db_backend do
 		
 		
 		# TODO: output data on different degrees to different folders.
-		# probably need to restructure some other code, such that the output directory is configurable?
-		
-		[
-			"Computer Science, BS",
-			"Applied Computer Science, BS",
-			"Biology, BA",
-			"Biology, BS",
-			"Psychology, BA"
-		]
-		
 		
 		program_name = "Computer Science, BS"
 		url = @programs_of_study[program_name]
@@ -867,8 +857,11 @@ namespace :db_backend do
 		
 		puts "=== run processing"
 		
-		@pw_sample                           # sample data set => [CatalogLink] 
-		course_data = SummerResearch::Main.foo11(@catalog, @pw_sample) # [CatalogLink] => [CourseInfo] DEBUG
+		# @pw_sample --> course_data
+		# 
+		# sample data set => [CatalogLink] 
+		# [CatalogLink] => [CourseInfo] DEBUG
+		course_data = SummerResearch::Main.foo11(@catalog, @pw_sample) 
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
@@ -882,8 +875,11 @@ namespace :db_backend do
 		
 		puts "=== run processing"
 		
-		@pw_sample                           # sample data set => [CatalogLink] 
-		course_data = SummerResearch::Main.foo14(@catalog, @pw_sample) # [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+		# @pw_sample --> course_data
+		# 
+		# sample data set => [CatalogLink] 
+		# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+		course_data = SummerResearch::Main.foo14(@catalog, @pw_sample)
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG

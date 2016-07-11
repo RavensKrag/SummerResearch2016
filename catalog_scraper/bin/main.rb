@@ -58,16 +58,6 @@ class Main
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	# dependencies: foo1
 	# precursors: foo6, SummerResearch.required_courses, SummerResearch.degree_requirements, foo2
 	def foo7(program_name)
@@ -135,42 +125,6 @@ class Main
 	# visualization
 	def foo10(class_dependencies, output_filepath)
 		
-	end
-	
-	# Test the CatalogLink struct
-	# 	basically, foo3 == foo12 + foo13
-	# 	but foo12 and foo13 use actually use the Struct
-	# (splitting it this way makes it easy to switch from test data to real data)
-	def foo12()
-		# NOTE: easily get data for this table from the intermediate file required_courses.csv
-		sample = [
-			[
-				"CS 101",
-				"Preview of Computer Science",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302776&print"
-			],
-			[
-				"CS 465",
-				"Computer Systems Architecture",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302800&print"
-			],
-			[
-				"CS 475",
-				"Concurrent and Distributed Systems",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302803&print"
-			],
-			[
-				"EVPP 110",
-				"The Ecosphere: An Introduction to Environmental Science I",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
-			],
-			[
-				"Mason Core UGU",
-				"Global Understanding",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
-			]
-		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
-		return sample
 	end
 	
 	
