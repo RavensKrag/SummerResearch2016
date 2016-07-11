@@ -927,6 +927,12 @@ namespace :db_backend do
 	end
 	
 	
+	
+	
+	
+	
+	
+	
 	file 'data/programs_of_study.yaml' do
 		puts "=== setup data"
 		# search for relevant programs of study
@@ -1001,11 +1007,138 @@ namespace :db_backend do
 		
 		
 		
+		# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
+		
+		main_requirements = 
+			@required_courses
+			.reject{|catalog_link| catalog_link.id == "Mason Core"}
+			.collect do |catalog_link|
+				id = catalog_link.id
+				
+				puts "============"
+				p id
+				data = @catalog.course_info(id)
+				p data
+				
+				data
+			end
+		
+		
+		main_requirements.each do |course|
+			
+			puts course.id
+			get_dependencies(course)
+			
+			
+			
+			# "math placement test"
+			# "Placement Test"
+			# "Mathematics Placement Test"
+			
+			# "algebra tutorial program"
+			
+			
+			
+			
+			# HNRS 122, 130, 131, 230 or 240
+			# CS 262 or 222
+			# ECE 301 or 331
+			# CS 310, 330, and 367
+			# "Grade of C or better in CS 310, 330, and 367."
+			# MATH 123 and 124
+			# "C or better in MATH 113 or in both MATH 123 and 124."
+			
+			
+			
+			
+			# "Completion of 45 credits including the Mason core composition and literature requirements, requires a grade of C or better."
+			# => ["of 45"]
+			
+			# "Score of 13 or better on the Math Placement Test, or Grade of C or better in MATH 105, or Grade of C or better in MATH 108, or Grade of C or better in MATH 113."
+			# => ["of 13", "MATH 105", "MATH 108", "MATH 113"]
+			
+			# "C or higher in STAT 346 and a course in Statistics, or STAT 344."
+			# "a course in Statistics" ???
+				# ACS Gaming specifies that you can take "344 or a course in statistics relevant to your major" [paraphrased] so I have seen precedience for this sort of loose dependency around stat.
+				# (but IIRC there aren't currently any courses like that offered at Mason? so why is there this stipulation at all? future-proofing?)
+				# 
+				# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
+		end
+	end
+	
+	
+	
+	
+	task :get_info do
+		@catalog = Catalog.new(DATABASE_FILEPATH)
+		p @catalog.course_info("STAT 344")
 	end
 end
 
 
-
+def get_dependencies(course_info)
+	regexp = /(\p{L}+ \d+)/ # look for course codes in the requirements lists
+	
+	
+	hard_deps =
+	%w[Prerequisite(s) Corequisite(s)]
+		.collect do |x|
+			requirements = course_info[x]
+			p requirements
+			next unless requirements
+			requirements.scan(regexp)
+		end
+		
+	
+	# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
+	# ERROR: can't deal with 'or 240'
+	# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
+	
+	# "Grade of C or better in CS 310, 330, and 367."
+	# ERROR: can't deal with 'CS 310, 330, and 367' => 'and 367'
+	
+	# CS 499 
+	# Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
+	
+	# PHIL 371 - Philosophy of Natural Sciences
+	# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
+	
+	
+	
+	
+	# SWE 443 - Software Architectures
+	# Prerequisite(s): Grade of C or better in CS 321 or CS 421 or SWE 321 or SWE 421.
+	# IIRC, 421 was re-numbered to 321.
+	# Notice that the numbers are the same for CS and SWE
+	# this is a cross-listed course.
+		# (note that some cross listed courses are exactly the same, but there's some OR course that's not? depending on if you take it as OR or MATH, there are a different number of seats avaiable in the class, and the prereqs are fairly different. This is despite it being the exact same physical lecture section.)
+	
+	
+	
+	
+	# "#{course} with grade of C or better"
+	# "Minimum grade of C in #{course}"
+	soft_deps = 
+		if course_info["Notes"]
+			# [0] PHYS 161
+			# [1] PHYS
+			# [2] 161
+			
+			# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
+			[] # pseudo-return empty array to stub this out
+		else
+			[] # if "Notes" attribute not set, return empty Array
+		end
+	
+	
+	# p hard_deps
+	# p soft_deps
+	dependencies = hard_deps + soft_deps
+	
+	
+	p dependencies.flatten.compact.uniq
+	puts "---------"
+end
 
 
 

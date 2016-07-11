@@ -390,7 +390,18 @@ class Catalog
 			
 			if course_id.include? "Mason Core"
 				dept_code = "Mason Core"
-				course_number = course_id.match(/Mason Core (.*)/)[1]
+				
+				matchdata = course_id.match(/Mason Core (.*)/)
+				
+				course_number = 
+					if matchdata
+						matchdata[1]
+					else
+						nil
+					end
+				
+				# don't want it to trip up on just getting "Mason Core"
+				# but not sure what to do, because this isn't really course?
 			else
 				dept_code, course_number = course_id.split(' ')
 				course_number = course_number
