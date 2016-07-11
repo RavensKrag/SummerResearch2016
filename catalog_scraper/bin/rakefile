@@ -528,53 +528,34 @@ end
 
 
 
-
-
-
-
-
-
-
-
-def mongo_environment()
-	# how to start and run MongoDB:
+# how to start and run MongoDB:
 	# https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/
-	
-	mongo_db_storage_path = File.expand_path("bin/data/mongo",          PATH_TO_ROOT)
-	mongo_db_logfile      = File.expand_path("bin/data/mongo_logs/log", PATH_TO_ROOT)
-	
-	p mongo_db_storage_path
-	mongo_command = 
-		"mongod --dbpath '#{mongo_db_storage_path}' --port 12345 --fork --logpath '#{mongo_db_logfile}'"
-	
-	# launch mongo as a daemon
-		# mongod --fork --logpath /var/log/mongodb.log
-	`#{mongo_command}`
-	
-	# run whatever needs to get done while mongo is up
-	yield
-	
-	# stop mongo
-	# (needs to know just the dbpath so it knows what DB to stop, but may as well pass everything)
-	`#{mongo_command} --shutdown`
-end
+mongo_db_storage_path = File.expand_path("bin/data/mongo",          PATH_TO_ROOT)
+
+puts "Start up mongo in another terminal with the following command:"
+puts "mongod --dbpath '#{mongo_db_storage_path}' --port 12345"
+
+puts "and if necessary, mongo can be stopped with this command:"
+puts "mongod --dbpath '#{mongo_db_storage_path}' --port 12345 --shutdown"
+# (needs to know just the dbpath so it knows what DB to stop, but may as well pass everything)
+
 
 
 SQLITE_DATABASE_FILEPATH = 'example.db'
 
+
+
 namespace :db_backend do
 	task :create_db do
-		mongo_environment do
-			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-				# connect to the SQLite and MongoDB databases
-				
-			@catalog.setup
-				# establish the schema
-			@catalog.fetch_course_listing
-				# download list of possible catalog years
-				# figure out how to search by dept code for each and every catalog year
-				# get lists of courses, based on a subset of dept codes, for each and every year
-		end
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+			# connect to the SQLite and MongoDB databases
+			
+		@catalog.setup
+			# establish the schema
+		@catalog.fetch_course_listing
+			# download list of possible catalog years
+			# figure out how to search by dept code for each and every catalog year
+			# get lists of courses, based on a subset of dept codes, for each and every year
 	end
 	
 	# file SQLITE_DATABASE_FILEPATH do
@@ -584,26 +565,22 @@ namespace :db_backend do
 	# run 'create_db' before this to download initial data
 	# (can't list as explict dependency at this time, because I don't know how to easily skip processing and entire catalog year)
 	task :query_db do
-		mongo_environment do
-			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		info = @catalog.course_info('CS 101')
+		p info
+		# @catalog.query do |q|
 			
-			
-			info = @catalog.course_info('CS 101')
-			p info
-			# @catalog.query do |q|
-				
-			# end
-		end
+		# end
 	end
 	
 	task :wipe_mongo do
-		mongo_environment do
-			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-			
-			@catalog.course_details_mongo do |db|
-				result = db.delete_many
-				puts result.n
-			end
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		@catalog.course_details_mongo do |db|
+			result = db.delete_many
+			puts result.n
 		end
 	end
 	
@@ -759,10 +736,8 @@ namespace :db_backend do
 	
 	
 	task :get_info do
-		mongo_environment do
-			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-			p @catalog.course_info("STAT 344")
-		end
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		p @catalog.course_info("STAT 344")
 	end
 	
 	
@@ -828,31 +803,29 @@ namespace :db_backend do
 	task :pw5 => "data/programs_of_study.yaml" do
 		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
 		
-		mongo_environment do
-			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-			
-			
-			
-			programs = [
-				"Computer Science, BS",
-				"Applied Computer Science, BS",
-				"Biology, BA",
-				"Biology, BS",
-				"Psychology, BA"
-			]
-			
-			program_name = "Computer Science, BS"
-			url = @programs_of_study[program_name]
-			courses = all_courses_for_degree(url)
-			
-			
-			
-			
-			puts "=== run processing"
-			course_data = SummerResearch::Main.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
-			
-			Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
-		end
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		
+		programs = [
+			"Computer Science, BS",
+			"Applied Computer Science, BS",
+			"Biology, BA",
+			"Biology, BS",
+			"Psychology, BA"
+		]
+		
+		program_name = "Computer Science, BS"
+		url = @programs_of_study[program_name]
+		courses = all_courses_for_degree(url)
+		
+		
+		
+		
+		puts "=== run processing"
+		course_data = SummerResearch::Main.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
+		
+		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
@@ -862,14 +835,12 @@ namespace :db_backend do
 	# 
 	# (input dataset: sample dataset)
 	task :pw6 => [:pw_sample_data] do
-		mongo_environment do
-			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-			
-			puts "=== run processing"
-			
-			@pw_sample                           # sample data set => [CatalogLink] 
-			course_data = SummerResearch::Main.foo11(@catalog, @pw_sample) # [CatalogLink] => [CourseInfo] DEBUG
-		end
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		puts "=== run processing"
+		
+		@pw_sample                           # sample data set => [CatalogLink] 
+		course_data = SummerResearch::Main.foo11(@catalog, @pw_sample) # [CatalogLink] => [CourseInfo] DEBUG
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
@@ -879,14 +850,12 @@ namespace :db_backend do
 	# 
 	# (input dataset: sample dataset)
 	task :pw8 => [:pw_sample_data] do
-		mongo_environment do
-			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
-			
-			puts "=== run processing"
-			
-			@pw_sample                           # sample data set => [CatalogLink] 
-			course_data = SummerResearch::Main.foo14(@catalog, @pw_sample) # [CatalogLink] => [CourseInfo] DEBUG VERBOSE
-		end
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		puts "=== run processing"
+		
+		@pw_sample                           # sample data set => [CatalogLink] 
+		course_data = SummerResearch::Main.foo14(@catalog, @pw_sample) # [CatalogLink] => [CourseInfo] DEBUG VERBOSE
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
@@ -894,56 +863,54 @@ namespace :db_backend do
 	# 
 	# same core procedure as pw6, but with a much bigger data set
 	task :pw7 do
-		mongo_environment do
-			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		puts "=== load data..."
+		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+		
+		
+		puts "=== cycle through programs of study..."
+		
+		programs = [
+			"Computer Science, BS",
+			"Applied Computer Science, BS",
+			"Biology, BA",
+			"Biology, BS",
+			"Psychology, BA"
+		]
+		programs.each do |degree_name|
+			puts "=== Getting info for: #{degree_name}"
+			url = @programs_of_study[program_name]
+			courses = all_courses_for_degree(url)
+			# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
+				# url = @env.degrees[degree_name]
+				# course_list = SummerResearch.degree_requirements(url)
+				# puts "test"
+			# failure occurs inside of SummerResearch.degree_requiremnts
 			
-			puts "=== load data..."
-			@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-			
-			
-			puts "=== cycle through programs of study..."
-			
-			programs = [
-				"Computer Science, BS",
-				"Applied Computer Science, BS",
-				"Biology, BA",
-				"Biology, BS",
-				"Psychology, BA"
-			]
-			programs.each do |degree_name|
-				puts "=== Getting info for: #{degree_name}"
-				url = @programs_of_study[program_name]
-				courses = all_courses_for_degree(url)
-				# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
-					# url = @env.degrees[degree_name]
-					# course_list = SummerResearch.degree_requirements(url)
-					# puts "test"
-				# failure occurs inside of SummerResearch.degree_requiremnts
-				
-				puts "=== analyzing courses... "
-				course_data = SummerResearch::Main.foo11(@catalog, courses)
-			end
-			
-			# errors from: SummerResearch::CourseInfo#fetch
-			# two other page formats:
-				# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
-					# ^ seems to be for more recent courses? not really sure why the markup is different
-				# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
-			
-			
-			
-			# NOTE: perhaps not all majors work right now? so be careful of that too
-			
-			
-			
-			# NOTE: the following programs of study only use Type A or Type B catalog links
-				# "Computer Science, BS",
-				# "Biology, BA",
-			# NOTE: the following programs of study are known to list courses with Type C catalog links
-				# "Applied Computer Science, BS",
-				# "Biology, BS",
-				# "Psychology, BA"
+			puts "=== analyzing courses... "
+			course_data = SummerResearch::Main.foo11(@catalog, courses)
 		end
+		
+		# errors from: SummerResearch::CourseInfo#fetch
+		# two other page formats:
+			# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
+				# ^ seems to be for more recent courses? not really sure why the markup is different
+			# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
+		
+		
+		
+		# NOTE: perhaps not all majors work right now? so be careful of that too
+		
+		
+		
+		# NOTE: the following programs of study only use Type A or Type B catalog links
+			# "Computer Science, BS",
+			# "Biology, BA",
+		# NOTE: the following programs of study are known to list courses with Type C catalog links
+			# "Applied Computer Science, BS",
+			# "Biology, BS",
+			# "Psychology, BA"
 	end
 end
 
