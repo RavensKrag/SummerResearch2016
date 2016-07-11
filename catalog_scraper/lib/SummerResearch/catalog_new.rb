@@ -1,13 +1,6 @@
 class Catalog
-	def initialize(database_filepath, log_filepath='database.log')
-		ActiveRecord::Base.logger = Logger.new(File.open(log_filepath, 'w'))
-		
-		ActiveRecord::Base.establish_connection(
-			:adapter  => 'sqlite3',
-			:database => database_filepath
-			# :database => ':memory:'
-		)
-		
+	def initialize(database_filepath, log_filepath='database.log')		
+		SQLite.setup(database_filepath, log_filepath)
 		
 		@mongo_ip      = "127.0.0.1"
 		@mongo_port    = "12345"
@@ -17,7 +10,8 @@ class Catalog
 	
 	def setup
 		ActiveRecord::Schema.define do
-			unless ActiveRecord::Base.connection.tables.include? 'courses'
+			# NOTE: this schema definition may have problems with mulitple DBs? Not totally sure
+			unless SQLite.connection.tables.include? 'courses'
 				create_table :courses do |table|
 					table.column :dept,          :string
 					table.column :course_number, :string
@@ -26,7 +20,7 @@ class Catalog
 				end
 			end
 			
-			unless ActiveRecord::Base.connection.tables.include? 'catalog_years'
+			unless SQLite.connection.tables.include? 'catalog_years'
 				create_table :catalog_years do |table|
 					table.column :catoid,         :string
 					table.column :courses_navoid, :string
@@ -431,8 +425,33 @@ class Catalog
 	
 	
 	
+	
+	
+	
+	
+	class SQLite < ActiveRecord::Base
+		class << self
+			def setup(database_filepath, log_filepath)
+				self.logger = Logger.new(File.open(log_filepath, 'w'))
+				
+				self.establish_connection(
+					:adapter  => 'sqlite3',
+					:database => database_filepath
+					# :database => ':memory:'
+				)
+				
+				warn("Warning: ActiveRecord connection established by #{self} during #initialize")
+				# want to let people know what's happening, because has implications
+				# for using Catalog inside of other systems.
+			end
+		end
+		
+		self.abstract_class = true
+	end
+	private_constant :SQLite
+	
 	# backs to SQL (relational logic)
-	class Course < ActiveRecord::Base
+	class Course < SQLite
 		# self.primary_keys = :dept, :course_number
 		belongs_to :catalog_year, :foreign_key => 'catoid'
 		
@@ -453,13 +472,20 @@ class Catalog
 	private_constant :Course
 	
 	# backs to SQL (relational logic)
-	class CatalogYear < ActiveRecord::Base
+	class CatalogYear < SQLite
 		# TODO: link to Course with foreign key constraint (catoid)
 		self.primary_keys = :catoid
 		
 		has_many :courses, :foreign_key => 'catoid'
 	end
 	private_constant :CatalogYear
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
