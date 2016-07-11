@@ -301,7 +301,7 @@ class Catalog
 	
 	# catoid => 'catolog year' (e.g. "2016-2017" as is stored on CourseInfo objects)
 	def catoid_to_catalog_year(catoid)
-		return CatalogYear.find_by(:catoid => catoid).first.year_range
+		return CatalogYear.find_by(:catoid => catoid).year_range
 	end
 	
 	
@@ -408,12 +408,12 @@ class Catalog
 		
 		# url => coid
 		def coid_from_url(url)			
-			return parse_course_description_url(url)[0]
+			return parse_course_description_url(url)[1]
 		end
 		
 		# url => catoid
 		def catoid_from_url(url)
-			parse_course_description_url(url)[1]
+			parse_course_description_url(url)[0]
 		end
 		
 		# # url => catoid, coid

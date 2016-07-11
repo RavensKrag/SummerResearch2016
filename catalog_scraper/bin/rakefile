@@ -828,26 +828,31 @@ namespace :db_backend do
 	task :pw5 => "data/programs_of_study.yaml" do
 		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
 		
-		
-		programs = [
-			"Computer Science, BS",
-			"Applied Computer Science, BS",
-			"Biology, BA",
-			"Biology, BS",
-			"Psychology, BA"
-		]
-		
-		program_name = "Computer Science, BS"
-		url = @programs_of_study[program_name]
-		courses = all_courses_for_degree(url)
-		
-		
-		
-		
-		puts "=== run processing"
-		course_data = SummerResearch::Main.foo13(courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
-		
-		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
+		mongo_environment do
+			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+			
+			
+			
+			programs = [
+				"Computer Science, BS",
+				"Applied Computer Science, BS",
+				"Biology, BA",
+				"Biology, BS",
+				"Psychology, BA"
+			]
+			
+			program_name = "Computer Science, BS"
+			url = @programs_of_study[program_name]
+			courses = all_courses_for_degree(url)
+			
+			
+			
+			
+			puts "=== run processing"
+			course_data = SummerResearch::Main.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
+			
+			Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
+		end
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
@@ -857,10 +862,14 @@ namespace :db_backend do
 	# 
 	# (input dataset: sample dataset)
 	task :pw6 => [:pw_sample_data] do
-		puts "=== run processing"
-		
-		@pw_sample                           # sample data set => [CatalogLink] 
-		course_data = SummerResearch::Main.foo11(@pw_sample) # [CatalogLink] => [CourseInfo] DEBUG
+		mongo_environment do
+			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+			
+			puts "=== run processing"
+			
+			@pw_sample                           # sample data set => [CatalogLink] 
+			course_data = SummerResearch::Main.foo11(@catalog, @pw_sample) # [CatalogLink] => [CourseInfo] DEBUG
+		end
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
@@ -870,10 +879,14 @@ namespace :db_backend do
 	# 
 	# (input dataset: sample dataset)
 	task :pw8 => [:pw_sample_data] do
-		puts "=== run processing"
-		
-		@pw_sample                           # sample data set => [CatalogLink] 
-		course_data = SummerResearch::Main.foo14(@pw_sample) # [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+		mongo_environment do
+			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
+			
+			puts "=== run processing"
+			
+			@pw_sample                           # sample data set => [CatalogLink] 
+			course_data = SummerResearch::Main.foo14(@catalog, @pw_sample) # [CatalogLink] => [CourseInfo] DEBUG VERBOSE
+		end
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
@@ -881,52 +894,56 @@ namespace :db_backend do
 	# 
 	# same core procedure as pw6, but with a much bigger data set
 	task :pw7 do
-		puts "=== load data..."
-		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-		
-		
-		puts "=== cycle through programs of study..."
-		
-		programs = [
-			"Computer Science, BS",
-			"Applied Computer Science, BS",
-			"Biology, BA",
-			"Biology, BS",
-			"Psychology, BA"
-		]
-		programs.each do |degree_name|
-			puts "=== Getting info for: #{degree_name}"
-			url = @programs_of_study[program_name]
-			courses = all_courses_for_degree(url)
-			# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
-				# url = @env.degrees[degree_name]
-				# course_list = SummerResearch.degree_requirements(url)
-				# puts "test"
-			# failure occurs inside of SummerResearch.degree_requiremnts
+		mongo_environment do
+			@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 			
-			puts "=== analyzing courses... "
-			course_data = SummerResearch::Main.foo11(courses)
+			puts "=== load data..."
+			@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+			
+			
+			puts "=== cycle through programs of study..."
+			
+			programs = [
+				"Computer Science, BS",
+				"Applied Computer Science, BS",
+				"Biology, BA",
+				"Biology, BS",
+				"Psychology, BA"
+			]
+			programs.each do |degree_name|
+				puts "=== Getting info for: #{degree_name}"
+				url = @programs_of_study[program_name]
+				courses = all_courses_for_degree(url)
+				# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
+					# url = @env.degrees[degree_name]
+					# course_list = SummerResearch.degree_requirements(url)
+					# puts "test"
+				# failure occurs inside of SummerResearch.degree_requiremnts
+				
+				puts "=== analyzing courses... "
+				course_data = SummerResearch::Main.foo11(@catalog, courses)
+			end
+			
+			# errors from: SummerResearch::CourseInfo#fetch
+			# two other page formats:
+				# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
+					# ^ seems to be for more recent courses? not really sure why the markup is different
+				# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
+			
+			
+			
+			# NOTE: perhaps not all majors work right now? so be careful of that too
+			
+			
+			
+			# NOTE: the following programs of study only use Type A or Type B catalog links
+				# "Computer Science, BS",
+				# "Biology, BA",
+			# NOTE: the following programs of study are known to list courses with Type C catalog links
+				# "Applied Computer Science, BS",
+				# "Biology, BS",
+				# "Psychology, BA"
 		end
-		
-		# errors from: SummerResearch::CourseInfo#fetch
-		# two other page formats:
-			# +  new page format: attemps to give more structure using <p> to separate into sub-regions, but actually malformed
-				# ^ seems to be for more recent courses? not really sure why the markup is different
-			# +  Mason Core pages: Totally different pages, because these are not actually courses. They are "aliases" of sorts for entire lists of courses.
-		
-		
-		
-		# NOTE: perhaps not all majors work right now? so be careful of that too
-		
-		
-		
-		# NOTE: the following programs of study only use Type A or Type B catalog links
-			# "Computer Science, BS",
-			# "Biology, BA",
-		# NOTE: the following programs of study are known to list courses with Type C catalog links
-			# "Applied Computer Science, BS",
-			# "Biology, BS",
-			# "Psychology, BA"
 	end
 end
 

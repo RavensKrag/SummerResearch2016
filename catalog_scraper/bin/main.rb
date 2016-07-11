@@ -178,11 +178,11 @@ class Main
 	
 	class << self
 	
-	def foo13(course_list)
+	def foo13(catalog, course_list)
 		output_data = 
 			course_list.collect do |course|
 				puts course.id
-				SummerResearch::CourseInfo.new(course).fetch
+				course_info_from_catalog_link(catalog, course).fetch
 			end
 		
 		return output_data
@@ -196,21 +196,21 @@ class Main
 	# only prints out courses that are "weird"
 	# 
 	# Does basicaly the same thing as foo13, but includes extra code to help report errors.
-	def foo11(course_list)
+	def foo11(catalog, course_list)
 		flag = true
 		
 		course_list.each do |course|
 			begin
-				SummerResearch::CourseInfo.new(course).fetch
+				course_info_from_catalog_link(catalog, course).fetch
 			rescue StandardError => e
 				if flag
 					puts ""
 					flag = false
 				end
 				
-				puts course.id
-				puts course.description
-				puts course.url
+				puts "course id:   #{course.id}"
+				puts "description: #{course.description}"
+				puts "url:         #{course.url}"
 				puts "Catalog Link format: #{course.link_type}"
 				# throw e
 				
@@ -239,21 +239,21 @@ class Main
 	# 
 	# most of the code in this method comes directly from foo11 above
 	# only the method call on CouseInfo has been changed from #fetch to #test_types
-	def foo14(course_list)
+	def foo14(catalog, course_list)
 		flag = true
 		
 		course_list.each do |course|
 			begin
-				SummerResearch::CourseInfo.new(course).test_types
+				course_info_from_catalog_link(catalog, course).test_types
 			rescue StandardError => e
 				if flag
 					puts ""
 					flag = false
 				end
 				
-				puts course.id
-				puts course.description
-				puts course.url
+				puts "course id:   #{course.id}"
+				puts "description: #{course.description}"
+				puts "url:         #{course.url}"
 				puts "Catalog Link format: #{course.link_type}"
 			else
 				flag = true
@@ -265,6 +265,25 @@ class Main
 		end
 		
 		puts ""
+	end
+	
+	
+	
+	# NOTE: this connects to the SQLite DB to convert between catoid => 'catalog year'
+	def course_info_from_catalog_link(catalog, catalog_link)
+		course = catalog_link
+		
+		
+		dept, course_number = Catalog.parse_course_id(course.id)
+		
+		url = course.url
+		
+		catoid = Catalog.catoid_from_url(url)
+		# convert catoid => 'catalog year' using the data in the new Catalog class
+		catalog_year = catalog.catoid_to_catalog_year(catoid)
+		
+		
+		return CourseInfo.new(dept, course_number, catalog_year, url)
 	end
 	
 	end
