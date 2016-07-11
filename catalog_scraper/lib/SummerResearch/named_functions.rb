@@ -262,23 +262,9 @@ def search_programs_of_study(target_fields)
 end
 
 
-def all_department_codes
-	xml = Nokogiri::HTML(open(COURSE_SEARCH_BASE_URL))
-	
-	#course_search > table > tbody > tr:nth-child(4) > td:nth-child(1) > select
-	segment = xml.css('#course_search table tr:nth-child(4) > td:nth-child(1) > select > option')
-		# Utilities.write_to_file("./department_codes_fragment.html", segment)
-	
-	departments = segment.collect{  |option_node|  option_node["value"]  } 
-	departments.shift # remove the first one, which is just -1, the default nonsense value
-	
-	return departments
-end
-
-
 def list_dependencies(course_info)
 	# much code for this method taken from pathway10
-	
+	# (much of this code is repeated in #get_dependencies in the rakefile)
 	
 	puts "#{course_info.id} - #{course_info.title}"
 	
@@ -342,35 +328,6 @@ def list_dependencies(course_info)
 	# dependencies.reject!{|x| x.is_lower? }
 	
 	return dependencies
-end
-
-
-
-
-
-
-
-# Backend dependency graph construction.
-# given a list of courses, figure out all of the dependencies
-def foo8(list_of_courses)
-	list_of_courses.each do |course|
-		# p course
-		# puts course.id
-	end
-	
-	# course_list = util.read_csv("./tmp/required_courses.csv")
-	
-	
-	# out = dict()
-	
-	# for course in list_of_courses:
-	# 	name, desc, url_fragment = course
-		
-	# 	dependencies = []
-	# 	print self.get_dependencies(course)
-	# 	out[name] = dependencies
-	
-	# return out
 end
 
 
