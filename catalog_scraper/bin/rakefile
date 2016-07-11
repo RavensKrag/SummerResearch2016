@@ -253,12 +253,6 @@ file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
 	url = @programs_of_study[program_name]
 	course_list = all_courses_for_degree(url)
 	
-	# TODO: remove dupicate entries in the list of courses
-		# not just as simple as removing duplicates from list
-		# need to remove when two tuples have the same first element
-		# also - want to keep original ordering
-	# NOTE: this may not be necessary if the selection filter on links is improved
-	
 	SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
 	
 	@required_courses = course_list
@@ -267,8 +261,6 @@ end
 task :cs_requirements => 'data/required_courses.yaml' do
 	@required_courses ||= YAML.load_file('data/required_courses.yaml')
 	
-	
-	mongo_environment do
 	
 	@catalog = Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
@@ -295,11 +287,7 @@ task :cs_requirements => 'data/required_courses.yaml' do
 		
 		
 		
-		puts "Filtering courses..."
-		better_list = 
-			course_list.reject{  |course| course.id == "Mason Core" }
-			           .uniq{  |a| a.id    }
-			           .sort_by{  |a| a.id.split(' ').first   }
+		
 
 	
 	
@@ -342,9 +330,6 @@ task :cs_requirements => 'data/required_courses.yaml' do
 			# (but IIRC there aren't currently any courses like that offered at Mason? so why is there this stipulation at all? future-proofing?)
 			# 
 			# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
-	end
-	
-	
 	end
 end
 
@@ -431,19 +416,8 @@ end
 
 
 
-->(){
-	
-# =====
-puts "Filtering courses..."
-better_list = 
-	course_list.reject{  |course| course.id == "Mason Core" }
-	           .uniq{  |a| a.id    }
-	           .sort_by{  |a| a.id.split(' ').first   }
 
 
-# TODO: print list of courses for a degree, chunked by what sector they appear in in the Program of Study page. This, in conjunction with the dependency info printed in pathway10, can be used to generate visualizations.
-
-}
 
 
 
@@ -461,6 +435,16 @@ def all_courses_for_degree(url_to_program_requirements_page)
 	# TODO: need to improve this selector. catching some false positives.
 	# wait, variable 'fragment' is a list...
 	course_list = SummerResearch.get_all_weird_link_urls(fragment)
+	
+	
+	
+	
+	# TODO: remove dupicate entries in the list of courses
+		# not just as simple as removing duplicates from list
+		# need to remove when two tuples have the same first element
+		# also - want to keep original ordering
+	# NOTE: this may not be necessary if the selection filter on links is improved
+	
 	
 	return course_list
 end
