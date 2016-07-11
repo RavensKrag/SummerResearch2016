@@ -38,71 +38,9 @@ end
 # load main
 require './main'
 
-puts "=== setup environment"
-@env = SummerResearch::Main.new
-
-task :default => :run
-
-# run the program
-task :run do
-	p @env
-	# consider different forms of caching
-	# -- instance variable: cache for the session
-	# -- save to disk: cache for multiple sessions
-	
-	# TODO: consider promoting pathway4 as the default?
-end
-
-task :all => [
-	:pathway1,
-	:pathway2,
-	:pathway3,
-	:pathway4,
-	:pathway5,
-	:pathway6,
-	:pathway8,
-	:pathway7
-]
 
 
 
-
-
-# 1
-task :pathwayA do
-	puts "=== setup data"
-	# search for relevant programs of study
-	# (required to run #foo2)
-	@env.foo1 [
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	]
-end
-
-# 5
-task :pathwayB do
-	# search catalog for even more data?
-	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
-	@env.foo5(deparments)
-end
-
-
-
-# 1 2 3
-task :pathway1 => :pathwayA do
-	courses = @env.foo2("Computer Science, BS")
-	
-	@env.foo3()
-end
-
-# 5 4
-task :pathway2 do
-	@env.foo5(["CS"])	
-	@env.foo4()
-end
 
 # 1 6
 task :pathway3 => :pathwayA do
@@ -227,90 +165,33 @@ end
 
 
 
-file "data/checkpoint001.yaml" do
-	puts "=== setup data"
-	# search for relevant programs of study
-	# (required to run #foo2)
-	@env.foo1 [
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	]
-	
-	
-	
-	
-	# search catalog for even more data?
-	deparments = ["CS", "BIOL", "CHEM", "PSYC"]
-	@env.foo5(deparments)
-	
-	
-	
-	SummerResearch::Utilities.write_to_file("./checkpoint001.yaml", @env.to_yaml)
-end
 
-# Now that we have the data, actually start to walk it and do something interesting with it.
-# (actually, may want to just go back to pathway4 instead)
-# precedesssor: pathway4
-# 1 5 7 8 10 9
-file "data/all_course_data.yaml" => "data/checkpoint001.yaml" do
-	puts "=== loading @env from checkpoint001..."
-	@env = YAML.load_file("data/checkpoint001.yaml")
-	
-	
-	
-	puts "=== run processing"
-	
-	
-	# TODO: output data on different degrees to different folders.
-	# probably need to restructure some other code, such that the output directory is configurable?
-	
-	[
-		"Computer Science, BS",
-		"Applied Computer Science, BS",
-		"Biology, BA",
-		"Biology, BS",
-		"Psychology, BA"
-	]
-	
-	# take one degree program, and walk the dependencies for all courses in the degree
-	course_list = @env.foo7("Computer Science, BS")  # get all relevant courses
-	class_dependencies = @env.foo8(course_list)      # construct all dependencies
-	
-	puts "============"
-	
-	
-	# =====
-	puts "Filtering courses..."
-	better_list = 
-		course_list.reject{  |course| course.id == "Mason Core" }
-		           .uniq{  |a| a.id    }
-		           .sort_by{  |a| a.id.split(' ').first   }
-	
-	puts "=== download individual course data..."
-	course_info_list = better_list.collect do |x|
-		print '.'
-		SummerResearch::CourseInfo.new(x).fetch
-	end
-	
-	SummerResearch::Utilities.write_to_file("./all_course_data.yaml", course_info_list.to_yaml)
-	
-	# could pull down *list* of all courses associated with a dept
-	# if courses in a major have prereqs in that department?
-	# (definitely don't actually pull down each and every course before filtering though...)
-	
-	# under the current pipeline, I think this is the only way to do things?
-	# can't ask for a single class by course ID until you have a list of all courses by dept
-	# (foo4 experiments with this, but currently does not except a parameter)
-	
-	# department_codes = better_list.collect{ |course| course.id.split(' ').first }.uniq
-end
 
-task :pathway9 => "data/all_course_data.yaml" do
-	puts "=== pathway9"
-end
+
+
+# could pull down *list* of all courses associated with a dept
+# if courses in a major have prereqs in that department?
+# (definitely don't actually pull down each and every course before filtering though...)
+
+# under the current pipeline, I think this is the only way to do things?
+# can't ask for a single class by course ID until you have a list of all courses by dept
+# (foo4 experiments with this, but currently does not except a parameter)
+
+# department_codes = better_list.collect{ |course| course.id.split(' ').first }.uniq
+
+
+
+# =====
+puts "Filtering courses..."
+better_list = 
+	course_list.reject{  |course| course.id == "Mason Core" }
+	           .uniq{  |a| a.id    }
+	           .sort_by{  |a| a.id.split(' ').first   }
+
+
+
+
+
 
 # must run pathway9 before this, but can't list as explict dependency,
 # because I want to be able to run pathway9 and pathway10 in separate executions
@@ -446,9 +327,8 @@ end
 
 
 
-task :setup_data do
 
-end
+
 
 # ok, this is pretty solid...
 # but what happens when you get mulitple intermediates out of one process?
@@ -519,118 +399,62 @@ end
 
 
 
-multi_file ["data/programs_of_study.yaml", "data/catalog.yaml"] => [] do
-	puts "=== setup data"
-	# search for relevant programs of study
-	# (required to run #foo2)
-	
-	list_of_degrees = [
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	]
-	
-	degrees = SummerResearch.search_programs_of_study(list_of_degrees)
-	
-	
-	count = degrees.keys.size
-	puts "#{count} programs found for search query."
-	
-	SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
-	@programs_of_study = degrees
-	
-	
-	# search catalog for even more data?
-	@catalog = SummerResearch::Catalog.new
-	@catalog.fetch
-	@catalog.dump("data/catalog")
-end
+list_of_degrees = [
+	"Computer Science",
+	"Information Technology",
+	"Electrical Engineering",
+	"Biology",
+	"Psychology"
+]
 
-# test recursive dependency resolution using new Catalog class
-task :new_pathway1 => ["data/catalog.yaml"] do
-	@catalog ||= SummerResearch::Catalog.load("data/catalog")
-	
-	
-	# TODO: move much of this logic into named_functions.rb as foo8() and then rename that function
-	p @catalog.download_course_info("CS 101")
-	
-	
-	info = @catalog.download_course_info("SWE 443")
-	p info
-	
-	p info["Prerequisite(s)"]
-end
+degrees = SummerResearch.search_programs_of_study(list_of_degrees)
+
+
+count = degrees.keys.size
+puts "#{count} programs found for search query."
+
+SummerResearch::Utilities.write_to_file("./programs_of_study.yaml", degrees.to_yaml)
+@programs_of_study = degrees
 
 
 
-file "data/required_courses.yaml" => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
-	puts "=== load data..."
-	
-	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-	@catalog           ||= SummerResearch::Catalog.load("data/catalog")
-	
-	
-	
-	puts "=== run processing"
-	
-	
-	# TODO: output data on different degrees to different folders.
-	# probably need to restructure some other code, such that the output directory is configurable?
-	
-	[
-		"Computer Science, BS",
-		"Applied Computer Science, BS",
-		"Biology, BA",
-		"Biology, BS",
-		"Psychology, BA"
-	]
-	
-	
-	
-	# === take one degree program, and walk the dependencies for all courses in the degree
-	# (get all relevant courses)
-	
-	program_name = "Computer Science, BS"
-	url = @programs_of_study[program_name]
-	
-	fragment = SummerResearch.requirements_subtree(url)
-	
-	# TODO: need to improve this selector. catching some false positives.
-	# wait, variable 'fragment' is a list...
-	course_list = SummerResearch.get_all_weird_link_urls(fragment)
-	
-	
-	
-	# TODO: remove dupicate entries in the list of courses
-		# not just as simple as removing duplicates from list
-		# need to remove when two tuples have the same first element
-		# also - want to keep original ordering
-	# NOTE: this may not be necessary if the selection filter on links is improved
-	
-	SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
-	
-	@required_courses = course_list
-	
-	
-	
-	class_dependencies = SummerResearch.foo8(course_list)      # construct all dependencies
-	
-	puts "============"
-	
-	
-	
-end
 
 
-# file "data/all_course_data.yaml" => ["data/required_courses.yaml", "data/catalog.yaml"] do
-task :new_pathway2 => ["data/required_courses.yaml", "data/catalog.yaml"] do
-	@required_courses ||= YAML.load_file('data/required_courses.yaml')
-	@catalog          ||= SummerResearch::Catalog.load("data/catalog")
+
 	
-	# =====
 	
+# === take one degree program, and walk the dependencies for all courses in the degree
+# (get all relevant courses)
+
+program_name = "Computer Science, BS"
+url = @programs_of_study[program_name]
+
+fragment = SummerResearch.requirements_subtree(url)
+
+# TODO: need to improve this selector. catching some false positives.
+# wait, variable 'fragment' is a list...
+course_list = SummerResearch.get_all_weird_link_urls(fragment)
+
+
+
+# TODO: remove dupicate entries in the list of courses
+	# not just as simple as removing duplicates from list
+	# need to remove when two tuples have the same first element
+	# also - want to keep original ordering
+# NOTE: this may not be necessary if the selection filter on links is improved
+
+SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
+
+@required_courses = course_list
+
+
+
+class_dependencies = SummerResearch.foo8(course_list)      # construct all dependencies
+
+
+
+
+
 	puts "Filtering courses..."
 	filtered_list = 
 		@required_courses.reject{  |course| course.id == "Mason Core" }
@@ -686,13 +510,8 @@ task :new_pathway2 => ["data/required_courses.yaml", "data/catalog.yaml"] do
 	@full_dependency_list = all_info_pages
 end
 
-task :new_pathway3 => ["data/all_course_data.yaml"] do 
-	@full_dependency_list ||= YAML.load_file("data/all_course_data.yaml")
-	
-	
-	
-	
-end
+
+
 
 
 # file "data/all_course_data.yaml" => ["data/required_courses.yaml", "data/catalog.yaml"] do
@@ -853,6 +672,54 @@ task :new_pathway5 => ["data/programs_of_study.yaml", "data/catalog.yaml"] do
 	
 	SummerResearch::Utilities.write_to_file("./all_degree_requirements.yaml", out.to_yaml)
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1041,6 +908,18 @@ namespace :db_backend do
 				
 				data
 			end
+			
+			
+			
+			
+			
+			
+			puts "Filtering courses..."
+			better_list = 
+				course_list.reject{  |course| course.id == "Mason Core" }
+				           .uniq{  |a| a.id    }
+				           .sort_by{  |a| a.id.split(' ').first   }
+
 		
 		
 		main_requirements.each do |course|
