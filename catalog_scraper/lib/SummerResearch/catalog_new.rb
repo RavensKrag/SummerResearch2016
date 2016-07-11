@@ -1,6 +1,6 @@
 class Catalog
-	def initialize(database_filepath, log_filepath='database.log')		
-		SQLite.setup(database_filepath, log_filepath)
+	def initialize(sql_db_filepath, sql_log_filepath='database.log')		
+		SQLite.setup(sql_db_filepath, sql_log_filepath)
 		
 		@mongo_ip      = "127.0.0.1"
 		@mongo_port    = "12345"
@@ -46,6 +46,7 @@ class Catalog
 		                                             # ["29",        "2016-2017"]
 		data = node.first.css('option').collect{  |x|  [x['value'],    x.inner_text.split.first]  }
 		
+		# === Save all of the possible catalog years to the SQLite DB
 		data.each do |catoid, year_range_string|
 			next if CatalogYear.find_by(:catoid => catoid)
 			
@@ -57,10 +58,7 @@ class Catalog
 		end
 		
 		
-		
-		
-		
-		# For each available catalog year, navigate to the Course search page
+		# === For each available catalog year, navigate to the Course search page
 		# (Set 'courses_navoid' field for each CatalogYear record. Enables link to course search)
 		CatalogYear.all.each do |record|
 			next unless record.courses_navoid.nil?
@@ -123,7 +121,7 @@ class Catalog
 		
 		
 		
-		# Restrict departments to a useful subset.
+		# === Restrict departments to a useful subset.
 		# Should include all deparments necessary to evaulate CS EE IT Psyc and Bio degrees.
 		restricted_set = (%w[BIOL CHEM MATH CS SWE IT PSYC CDS ASTR GEOL PHYS GGS NEUR CRIM PHIL ENGH STAT ECE COMM ECON BENG MBUS HAP OR SEOR OM SYST EVPP] + ["Mason Core"]).to_set
 		
