@@ -9,7 +9,7 @@ class Sketch
 class << self
 
 
-	
+
 # Roughly imported from python sketch on how to meaningfully extract degree requirements
 # was only ever called from one pathway in rakefile. that pathway has been removed.
 # dependencies: foo1

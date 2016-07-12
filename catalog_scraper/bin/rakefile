@@ -281,14 +281,11 @@ task :cs_requirements => 'data/required_courses.yaml' do
 			
 			data
 		end
-		
-		
-		
-		
-		
-		
-		
-
+	
+	
+	
+	
+	
 	
 	
 	main_requirements.each do |course|
