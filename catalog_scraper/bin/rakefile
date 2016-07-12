@@ -560,36 +560,7 @@ namespace :test_course_info_fetch do
 		@pw_sample = sample
 	end
 	
-	# course [CatalogLink] => [CourseInfo] RELEASE VERSION
-	# no debug information. just prints the course ids for the classes being downloaded
-	# (input dataset: all courses from CS degree)
-	task :one_degree => "data/programs_of_study.yaml" do
-		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-		
-		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		
-		
-		programs = [
-			"Computer Science, BS",
-			"Applied Computer Science, BS",
-			"Biology, BA",
-			"Biology, BS",
-			"Psychology, BA"
-		]
-		
-		program_name = "Computer Science, BS"
-		url = @programs_of_study[program_name]
-		courses = all_courses_for_degree(url)
-		
-		
-		
-		
-		puts "=== run processing"
-		course_data = SummerResearch::Sketch.foo13(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
-		
-		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
-	end
+	
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
 	# only shows error messages when the system fails to fetch a page
@@ -625,6 +596,38 @@ namespace :test_course_info_fetch do
 		# sample data set => [CatalogLink] 
 		# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
 		course_data = SummerResearch::Sketch.foo14(@catalog, @pw_sample)
+	end
+	
+	
+	# course [CatalogLink] => [CourseInfo] DEBUG
+	# no debug information. just prints the course ids for the classes being downloaded
+	# (input dataset: all courses from CS degree)
+	task :one_degree_debug => "data/programs_of_study.yaml" do
+		@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+		
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		
+		programs = [
+			"Computer Science, BS",
+			"Applied Computer Science, BS",
+			"Biology, BA",
+			"Biology, BS",
+			"Psychology, BA"
+		]
+		
+		program_name = "Computer Science, BS"
+		url = @programs_of_study[program_name]
+		courses = all_courses_for_degree(url)
+		
+		
+		
+		
+		puts "=== run processing"
+		course_data = SummerResearch::Sketch.foo11(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
+		
+		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG

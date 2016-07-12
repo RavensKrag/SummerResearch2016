@@ -121,6 +121,15 @@ end
 
 
 
+
+# ====
+# Below this point, I have a bunch of diagnostics.
+# 
+
+
+# I think foo13 is just a precursor to the other ones?
+# like, really why would I ever want to run this variant?
+# It's just gonna fail to give any useful diagnostic information whatsoever
 def foo13(catalog, course_list)
 	output_data = 
 		course_list.collect do |course|
