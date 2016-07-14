@@ -1,10 +1,18 @@
 # === Personal ignores
+Gemfile.lock
+
+
+
 # Ignore automatic cache
 # TODO: move all these files to some temporary directory
+
 catalog_scraper/tmp
 
 catalog_scraper/bin/data
-Gemfile.lock
+catalog_scraper/bin/data/mongo_logs/
+
+
+
 
 departments/data/dept_codes.csv
 
