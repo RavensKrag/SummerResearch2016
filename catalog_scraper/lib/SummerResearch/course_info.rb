@@ -2,23 +2,40 @@ module SummerResearch
 
 
 class CourseInfo
-	attr_reader :url, :id, :title, :credits, :attempts, :department, :catalog_version
+	attr_reader :url, :catalog_year, :id, :title, :credits, :attempts, :department
 	
-	def initialize(course)
+	def initialize(dept, course_number, catalog_year, url)
 		@storage = nil
 		
-		@url = course.url
-			regex = /catoid=(\d+)/
-			@catalog_version = @url.scan(regex).first[0].to_i
-		@id  = course.id
+		
+		@catalog_year = catalog_year
+		@url          = url
+		
+		@id           = dept + ' ' + course_number
 	end
 	
 	def ==(other)
 		return false unless other.is_a? self.class
 		
-		@catalog_version == other.catalog_version and @id == other.id
+		@catalog_year == other.catalog_year and @id == other.id
 	end
 	
+	def to_h
+		attributes = [:url, :catalog_year, :id, :title, :credits, :attempts, :department]
+		
+		values = 
+			attributes.collect do |x|
+				instance_variable_get("@#{x}")
+			end
+		
+		attribute_strings = attributes.collect{  |x| x.to_s }
+		attribute_strings.collect!{  |x| x == "id" ? "course_id" : x  }
+		
+		return attribute_strings.zip(values).to_h.merge(@storage)
+	end
+	
+	# TODO: implement deserialization from MongoDB
+	# TODO: maybe implement serialization *to* Mongo in this class as well? just pass in the Mongo object and do things that way?
 	
 	
 	# get from the online Catalog
@@ -36,7 +53,7 @@ class CourseInfo
 		# GET THE DATA USING NOKOGIRI
 		xml = Nokogiri::HTML(open(@url))
 		chunk = xml.css('td.block_content_popup')
-			Utilities.write_to_file("./course.html", chunk)
+			# SummerResearch::Utilities.write_to_file("./course.html", chunk)
 		
 		
 		# === figure out where the interesting section is, and store in 'segment' variable
@@ -132,7 +149,7 @@ class CourseInfo
 					top     = segment[1].children
 					rest    = segment[4].children
 					
-					# Utilities.write_to_file("./course_info_type_b", rest)
+					# SummerResearch::Utilities.write_to_file("./course_info_type_b", rest)
 					
 					
 					# Unified processing, regaurdless of where the pieces are located
@@ -228,9 +245,50 @@ class CourseInfo
 	end
 	
 	class << self
-		# read from the disk
-		def load
+		# values set on init
+		INITIAL_ATTRIBUTES = [:catalog_year, :url, :id].collect{|x| x.to_s }
+		
+		# values set in #fetch
+		LATTER_ATTRIBUTES  = [:title, :credits, :attempts, :department].collect{|x| x.to_s }
+		
+		
+		# load from object with hash-style interface
+		# (actually expects a BSON::Document)
+		def load(data)
+			dept, course_number = Catalog.parse_course_id(data['course_id'])
+			catalog_year        = data['catalog_year']
+			url                 = data['url']
 			
+			
+			obj = self.new(dept, course_number, catalog_year, url)
+			
+			obj.instance_eval do
+				# set instance variables not specified by the constructor
+				LATTER_ATTRIBUTES.each do |attribute|
+					instance_variable_set "@#{attribute}", data[attribute]
+				end
+				
+				
+				
+				# restore the storage hash
+				@storage = Hash.new
+				
+				keys = (data.keys - (INITIAL_ATTRIBUTES + LATTER_ATTRIBUTES))
+				       .to_set
+				
+				keys.delete "_id"       # MongoDB key
+				keys.delete "course_id" # represents @id in mongo ('id' and '_id' too similar)
+				
+				
+				data.each do |k, v|
+					if keys.include? k
+						@storage[k] = v
+					end
+				end
+			end
+			
+			return obj
+			# ---
 		end
 	end
 	
@@ -253,7 +311,7 @@ class CourseInfo
 		# GET THE DATA USING NOKOGIRI
 		xml = Nokogiri::HTML(open(@url))
 		chunk = xml.css('td.block_content_popup')
-			Utilities.write_to_file("./course.html", chunk)
+			# SummerResearch::Utilities.write_to_file("./course.html", chunk)
 		
 		
 		

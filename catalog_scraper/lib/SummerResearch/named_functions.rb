@@ -1,28 +1,12 @@
 module SummerResearch
-	
-	PROGRAMS_OF_STUDY_URL  = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
-	COURSE_SEARCH_BASE_URL = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6272"
-	
-	CatalogLink = Struct.new("CatalogLink", :id, :description, :url, :link_type)
 
-	class << self
-
-
-def degree_requirements(url)
-	fragment = requirements_subtree(url)
 	
-	out = 
-	fragment.collect do |node|
-		# puts node.class
-		# onclick_scripts = node.xpath('.//a[@onclick]').collect{  |link| link['onclick']  }
-		# onclick_scripts.each do |script|
-		# end
-		
-		get_all_weird_link_urls(node)
-	end
-	
-	return out.flatten
-end
+PROGRAMS_OF_STUDY_URL  = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6270"
+COURSE_SEARCH_BASE_URL = "http://catalog.gmu.edu/content.php?catoid=29&navoid=6272"
+
+CatalogLink = Struct.new("CatalogLink", :id, :description, :url, :link_type)
+
+class << self
 
 def requirements_subtree(url)
 	xml = Nokogiri::HTML(open(url))
@@ -277,72 +261,10 @@ def search_programs_of_study(target_fields)
 	return programs_of_study
 end
 
-# get a list of classes using the catalog search
-# ex) "BIOL", "CS", etc
-# returns a list of CatalogLink objects
-def search_by_department(dept_code)
-	# use this url to search for courses
-	# may return mulitple pages of results, but should be pretty clear
-	
-	# TODO: modify url to use COURSE_SEARCH_BASE_URL constant (reorder url args)
-	url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=#{dept_code}&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter"
-	
-	xml = Nokogiri::HTML(open(url))
-	
-	puts "searching for classes under: #{dept_code} ..."
-	
-	node = xml.css('td.block_content_outer table')[3]
-		Utilities.write_to_file("./search.html", xml) if node.nil?
-	# NOTE: sometimes fails to find courses.
-	# just retry the request again, and you should be able to get it.
-	while node.nil?
-		"retrying #{dept_code}..."
-		sleep(1.0) # wait a bit before retrying
-		
-		xml = Nokogiri::HTML(open(url))
-		node = xml.css('td.block_content_outer table')[3]
-	end
-		
-	
-	# NOTE: results are paginated. Should get info from ALL pages, not just the first one.
-	
-	tr_list = node.css('tr')[2..-1]
-	
-	# tr_list.each{|x| puts x.class }
-	return tr_list.collect{  |x| get_all_weird_link_urls(x)  }.flatten
-	
-	
-	
-	
-	# As noted in notes on how the Catalog URL works:
-	# corresponding pages in different versions of the catalog DO NOT have analogous numbers.
-	# This makes scraping the catalog considerably more tedious.
-	
-	#[29, 27, 25] # etc
-	# http://catalog.gmu.edu/index.php?catoid=25   (base page)
-	# in the left sidebar, there is a link for "Courses"
-	# href: http://catalog.gmu.edu/content.php?catoid=25&navoid=4962
-	# need to extract that navoid value
-end
-
-
-def all_department_codes
-	xml = Nokogiri::HTML(open(COURSE_SEARCH_BASE_URL))
-	
-	#course_search > table > tbody > tr:nth-child(4) > td:nth-child(1) > select
-	segment = xml.css('#course_search table tr:nth-child(4) > td:nth-child(1) > select > option')
-		# Utilities.write_to_file("./department_codes_fragment.html", segment)
-	
-	departments = segment.collect{  |option_node|  option_node["value"]  } 
-	departments.shift # remove the first one, which is just -1, the default nonsense value
-	
-	return departments
-end
-
 
 def list_dependencies(course_info)
 	# much code for this method taken from pathway10
-	
+	# (much of this code is repeated in #get_dependencies in the rakefile)
 	
 	puts "#{course_info.id} - #{course_info.title}"
 	
@@ -406,35 +328,6 @@ def list_dependencies(course_info)
 	# dependencies.reject!{|x| x.is_lower? }
 	
 	return dependencies
-end
-
-
-
-
-
-
-
-# Backend dependency graph construction.
-# given a list of courses, figure out all of the dependencies
-def foo8(list_of_courses)
-	list_of_courses.each do |course|
-		# p course
-		# puts course.id
-	end
-	
-	# course_list = util.read_csv("./tmp/required_courses.csv")
-	
-	
-	# out = dict()
-	
-	# for course in list_of_courses:
-	# 	name, desc, url_fragment = course
-		
-	# 	dependencies = []
-	# 	print self.get_dependencies(course)
-	# 	out[name] = dependencies
-	
-	# return out
 end
 
 
