@@ -1,4 +1,4 @@
-console.log("hello world")
+// console.log("hello world")
 
 
 
@@ -40,30 +40,21 @@ var canvas = {width: 700, height: 400};
 
 
 // Create the SVG
-var svg = d3.select("body").append("svg")
+var svg = d3.select("svg")
   .attr("width",  canvas.width)
   .attr("height", canvas.height)
   .on("click", click);
 
-// var svg = d3.select("body").select("svg")
-//   .attr("width",  canvas.width)
-//   .attr("height", canvas.height)
-//   .on("click", click);
 
 // Add a background
-svg.append("rect")
+svg.insert("rect", ":first-child") // add at start of the SVG
   .attr("width",  canvas.width)
   .attr("height", canvas.height)
-  .style("stroke", "#999999")
-  .style("fill", "#F6F6F6")
+  .attr("class",  "background")
 
 // Define drag beavior
 var drag = d3.drag()
     .on("drag", dragmove);
-
-
-
-// console.log("yayaya")
 
 
 
@@ -89,18 +80,19 @@ var jsonCircles = [
   { "x_axis": 110, "y_axis": 100, "radius": 20, "color" : "red"}];
 
 var circles = svg.selectAll("circle")
-                          .data(jsonCircles)
-                          .enter()
-                          .append("circle");
+                 .data(jsonCircles)
+                 .enter()
+                 .append("circle");
 
-var circleAttributes = circles
-                       // .attr("cx", function (d) { return d.x_axis; })
-                       // .attr("cy", function (d) { return d.y_axis; })
-                       .attr("transform", function (d, i) { 
-                       			return "translate(" + d.x_axis + "," + d.y_axis + ")"; 
-                       	})
-                       .attr("r", function (d) { return d.radius; })
-                       .style("fill", function(d) { return d.color; });
+var circleAttributes = 
+  circles
+       // .attr("cx", function (d) { return d.x_axis; })
+       // .attr("cy", function (d) { return d.y_axis; })
+       .attr("transform", function (d, i) { 
+       			return "translate(" + d.x_axis + "," + d.y_axis + ")"; 
+       	})
+       .attr("r", function (d) { return d.radius; })
+       .style("fill", function(d) { return d.color; });
 
 
 
@@ -150,15 +142,19 @@ svg.selectAll("text").call(drag);
 
 
 d3.json('api/foo2.json', function(err, data){
-  var new_circles = svg
+  console.log("foo2.json callback")
+  svg.selectAll("json_data")
+  // ^ not an HTML tag name, but a name you want to give this data
      .data(data)
      .enter()
-     .append("circle")
-  
-  new_circles
-        .attr("transform", function(p){ return "translate(" + p.x + "," + p.y + ")"; }  )
-        .attr("r", "5")
-        .attr("class", "dot")
-        .style("cursor", "pointer")
-        .call(drag);
+       .append("circle")
+         .attr("transform", function(d){ return "translate(" + d.x + "," + d.y + ")"; }  )
+         .attr("r", "10")
+         .attr("class", "dot")
+         .style("cursor", "pointer")
+         .call(drag);
 })
+// var circles = svg.selectAll("circle")
+//                           .data(jsonCircles)
+//                           .enter()
+//                           .append("circle");

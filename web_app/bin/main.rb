@@ -98,9 +98,9 @@ end
 get '/api/foo2.json' do
 	
 	data = [
-		[200, 200],
+		[150, 300],
 		[300, 300],
-		[400, 400]
+		[450, 300]
 	].collect{ |pair|
 		{ 'x' => pair[0], 'y' => pair[1] }
 	}
