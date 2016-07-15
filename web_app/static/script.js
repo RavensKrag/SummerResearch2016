@@ -145,3 +145,20 @@ svg.selectAll("text").call(drag);
 // 		.attr("x", x)
 //         .attr("y", y)
 // });
+
+
+
+
+d3.json('api/foo2.json', function(err, data){
+  var new_circles = svg
+     .data(data)
+     .enter()
+     .append("circle")
+  
+  new_circles
+        .attr("transform", function(p){ return "translate(" + p.x + "," + p.y + ")"; }  )
+        .attr("r", "5")
+        .attr("class", "dot")
+        .style("cursor", "pointer")
+        .call(drag);
+})
