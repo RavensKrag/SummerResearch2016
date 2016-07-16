@@ -689,121 +689,116 @@ end
 
 module CourseInfoDiagnostic
 class << self
-
-
-# I think foo13 is just a precursor to the other ones?
-# like, really why would I ever want to run this variant?
-# It's just gonna fail to give any useful diagnostic information whatsoever
-def foo13(catalog, course_list)
-	output_data = 
-		course_list.collect do |course|
-			puts course.id
-			course_info_from_catalog_link(catalog, course).fetch
-		end
-	
-	return output_data
-end
-
-
-# find courses that fail parsing
-# want to see some examples of the unexpected
-# 
-# prints dots to let you know something is happening
-# only prints out courses that are "weird"
-# 
-# Does basicaly the same thing as foo13, but includes extra code to help report errors.
-def foo11(catalog, course_list)
-	flag = true
-	
-	course_list.each do |course|
-		begin
-			course_info_from_catalog_link(catalog, course).fetch
-		rescue StandardError => e
-			if flag
-				puts ""
-				flag = false
+	# I think foo13 is just a precursor to the other ones?
+	# like, really why would I ever want to run this variant?
+	# It's just gonna fail to give any useful diagnostic information whatsoever
+	def foo13(catalog, course_list)
+		output_data = 
+			course_list.collect do |course|
+				puts course.id
+				course_info_from_catalog_link(catalog, course).fetch
 			end
-			
-			puts "course id:   #{course.id}"
-			puts "description: #{course.description}"
-			puts "url:         #{course.url}"
-			puts "Catalog Link format: #{course.link_type}"
-			# throw e
-			
-			# output the data from the exception
-			# (the program will still continue to run)
-			# (resulting in all errors printed in one place)
-			puts e.message
-			e.backtrace.each do |line|
-				puts "\t" + line
-				# indent the lines of the backtrace.
-				# makes it easier to see things when you start getting multiple errors
-			end
-			puts "=============="
-			puts
-			puts
-		else
-			flag = true
-			print "."
-		end
+		
+		return output_data
 	end
-	
-	puts ""
-end
 
-# Like foo11, but with even more debug information. 
-# 
-# most of the code in this method comes directly from foo11 above
-# only the method call on CouseInfo has been changed from #fetch to #test_types
-def foo14(catalog, course_list)
-	flag = true
-	
-	course_list.each do |course|
-		begin
-			course_info_from_catalog_link(catalog, course).test_types
-		rescue StandardError => e
-			if flag
-				puts ""
-				flag = false
+
+	# find courses that fail parsing
+	# want to see some examples of the unexpected
+	# 
+	# prints dots to let you know something is happening
+	# only prints out courses that are "weird"
+	# 
+	# Does basicaly the same thing as foo13, but includes extra code to help report errors.
+	def foo11(catalog, course_list)
+		flag = true
+		
+		course_list.each do |course|
+			begin
+				course_info_from_catalog_link(catalog, course).fetch
+			rescue StandardError => e
+				if flag
+					puts ""
+					flag = false
+				end
+				
+				puts "course id:   #{course.id}"
+				puts "description: #{course.description}"
+				puts "url:         #{course.url}"
+				puts "Catalog Link format: #{course.link_type}"
+				# throw e
+				
+				# output the data from the exception
+				# (the program will still continue to run)
+				# (resulting in all errors printed in one place)
+				puts e.message
+				e.backtrace.each do |line|
+					puts "\t" + line
+					# indent the lines of the backtrace.
+					# makes it easier to see things when you start getting multiple errors
+				end
+				puts "=============="
+				puts
+				puts
+			else
+				flag = true
+				print "."
 			end
-			
-			puts "course id:   #{course.id}"
-			puts "description: #{course.description}"
-			puts "url:         #{course.url}"
-			puts "Catalog Link format: #{course.link_type}"
-		else
-			flag = true
-		ensure
-			puts "=============="
-			puts
-			puts
 		end
+		
+		puts ""
 	end
-	
-	puts ""
-end
+
+	# Like foo11, but with even more debug information. 
+	# 
+	# most of the code in this method comes directly from foo11 above
+	# only the method call on CouseInfo has been changed from #fetch to #test_types
+	def foo14(catalog, course_list)
+		flag = true
+		
+		course_list.each do |course|
+			begin
+				course_info_from_catalog_link(catalog, course).test_types
+			rescue StandardError => e
+				if flag
+					puts ""
+					flag = false
+				end
+				
+				puts "course id:   #{course.id}"
+				puts "description: #{course.description}"
+				puts "url:         #{course.url}"
+				puts "Catalog Link format: #{course.link_type}"
+			else
+				flag = true
+			ensure
+				puts "=============="
+				puts
+				puts
+			end
+		end
+		
+		puts ""
+	end
 
 
 
-# NOTE: this connects to the SQLite DB to convert between catoid => 'catalog year'
-def course_info_from_catalog_link(catalog, catalog_link)
-	course = catalog_link
-	
-	
-	dept, course_number = Catalog.parse_course_id(course.id)
-	
-	url = course.url
-	
-	catoid = Catalog.catoid_from_url(url)
-	# convert catoid => 'catalog year' using the data in the new Catalog class
-	catalog_year = catalog.catoid_to_catalog_year(catoid)
-	
-	
-	return CourseInfo.new(dept, course_number, catalog_year, url)
-end
-
-
-
+	# NOTE: this connects to the SQLite DB to convert between catoid => 'catalog year'
+	def course_info_from_catalog_link(catalog, catalog_link)
+		course = catalog_link
+		
+		
+		dept, course_number = Catalog.parse_course_id(course.id)
+		
+		url = course.url
+		
+		catoid = Catalog.catoid_from_url(url)
+		# convert catoid => 'catalog year' using the data in the new Catalog class
+		catalog_year = catalog.catoid_to_catalog_year(catoid)
+		
+		
+		return CourseInfo.new(dept, course_number, catalog_year, url)
+	end
 end
 end
 
