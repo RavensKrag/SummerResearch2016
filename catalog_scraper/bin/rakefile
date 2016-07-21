@@ -529,6 +529,7 @@ def parse_dependencies(all_deps_text)
 				else
 					nil
 			end
+			# NOTE: assuming the only usage of three-digit numbers is in course codes. However, some courses gate by the number of credits, so maybe a three-digit number could appear there? It seems unlikely, (60 and 90 seem like better choices, given 120 to graduate) but making a note in case an error comes up in the future.
 		end
 	tokens.compact!
 	
@@ -565,6 +566,71 @@ def parse_dependencies(all_deps_text)
 	return out
 end
 
+
+
+# prereq information only, specific format
+# CS 330 : CS 101, CS 212
+# COURSE : DEP1, DEP2
+# (only show direct dependencies)
+# (these numbers are only for demonstration, I don't know this is real data or not)
+task :qian_hu_data => 'data/required_courses.yaml' do
+	@required_courses ||= YAML.load_file('data/required_courses.yaml')
+	
+	
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	
+	
+	# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
+	
+	# === get requirements for the CS major
+	# (just a dump of all the links on the page. this set is bigger than the real set)
+	main_requirements = 
+		@required_courses
+		.reject{|catalog_link| catalog_link.id == "Mason Core"}
+		.collect do |catalog_link|
+			id = catalog_link.id
+			
+			# puts "============"
+			# p id
+			data = @catalog.course_info(id)
+			# p data
+			
+			data
+		end
+	
+	main_requirements.uniq!{  |course_info|  course_info.id  }
+	
+	
+	# === parse direct prereqs for each and every class
+	p main_requirements.collect{  |course_info| course_info.id  }
+	data = 
+		main_requirements.uniq.collect do |course_info|
+			name = course_info.id
+			
+			puts "-=-=-=-=-=-=-=-="
+			deps = course_info["Prerequisite(s)"]
+				puts "=>  #{deps.inspect}"
+			deps = deps.nil? ? [] : parse_dependencies(deps)
+				puts "=>  #{deps.inspect}"
+			deps = [] if deps.nil?
+				puts "=>  #{deps.inspect}"
+			
+			# oooh yeah. parse_dependencies can return nil, even if the dependecies field is set
+				# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
+			
+			
+			raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
+			
+			[name, deps]
+		end
+	p data
+	
+	# === convert to desired output format
+	data.collect do |name, deps|
+		puts "#{name} : #{deps.join(', ')}"
+	end
+end
 
 
 
