@@ -522,6 +522,9 @@ def parse_dependencies(all_deps_text)
 					# Exhaustive search for all "mason core" category keys
 					# (must trigger before searching for department codes)
 					[:core_category,   $1]
+				when /(\d{3}-level)/
+					# ex: 600-level course
+					[:year_level_category, $1]
 				when /(\p{Lu}{2,4})/ # 2-4 capital letters
 					[:department_code, $1]
 				when /(\d{3})/       # 3 digits
@@ -543,7 +546,11 @@ def parse_dependencies(all_deps_text)
 	
 	
 	unless tokens.first[0] == :department_code
-		raise "ERROR: first token should be a department code"
+		# Expect that the first token is a department code
+		# Need to specify department codes if there are any course numbers specified
+		if tokens.any?{|type, token| type == :course_number }
+			raise "ERROR: first token should be a department code"
+		end
 	end
 	
 	
@@ -599,6 +606,16 @@ task :qian_hu_data => 'data/required_courses.yaml' do
 			data
 		end
 	
+	
+	all_cs_courses = 
+		%w[CS-100 CS-112 CS-211 CS-222 CS-310 CS-332 CS-367 CS-391 CS-450 CS-455 CS-483 CS-484 CS-504 CS-530 CS-550 CS-555 CS-584 CS-633 CS-635 CS-650 CS-657 CS-672 CS-674 CS-684 CS-685 CS-689 CS-700 CS-773 CS-774 CS-782]
+	all_cs_courses.collect! do |course_id_string|
+		id = course_id_string.tr('-', ' ')
+		@catalog.course_info(id)
+	end
+	
+	main_requirements += all_cs_courses
+	
 	main_requirements.uniq!{  |course_info|  course_info.id  }
 	
 	
@@ -627,9 +644,17 @@ task :qian_hu_data => 'data/required_courses.yaml' do
 	p data
 	
 	# === convert to desired output format
-	data.collect do |name, deps|
-		puts "#{name} : #{deps.join(', ')}"
+	filepath = File.expand_path('./qian_sample_2.txt', SummerResearch::Utilities::DATA_DIR)
+	File.open(filepath, 'w') do |f|
+		data.each do |name, deps|
+			name = name.tr(' ', '-')
+			deps.collect!{  |x| x.tr(' ', '-')  }
+			
+			
+			f.puts "#{name}:#{deps.join(',')}"
+		end
 	end
+	
 end
 
 

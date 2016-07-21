@@ -1,9 +1,11 @@
 module SummerResearch
 	module Utilities
+
+DATA_DIR = File.join(PATH_TO_ROOT, 'bin', 'data')
+
 		class << self
 
 
-DATA_DIR = File.join(PATH_TO_ROOT, 'bin', 'data')
 
 # helpers
 def write_to_file(relative_filepath, data)
