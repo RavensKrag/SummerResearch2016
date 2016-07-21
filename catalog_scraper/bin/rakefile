@@ -168,7 +168,7 @@ puts "========="
 
 
 
-SQLITE_DATABASE_FILEPATH = 'example.db'
+SQLITE_DATABASE_FILEPATH = 'data/example.db'
 
 
 
