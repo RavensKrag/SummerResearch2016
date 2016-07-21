@@ -36,21 +36,25 @@ function dragmove(d) {
 
 
 // // overall size of the SVG work-area
-var canvas = {width: 700, height: 400};
-
+var canvas = {width: 700, height: 500};
 
 // Create the SVG
+// var svg = d3.select("body").append("svg")
+//   .attr("width",  canvas.width)
+//   .attr("height", canvas.height)
+//   .on("click", click);
+
+
+
+// NOTE: SVG z-ordering is based on the order of tags in the document
+
+// NOTE: getting some unexpected behaviors on drag again, for both circle and text. Need to really figure this out.
+
+
+// Size the SVG element, and set the click handler.
+// (click handler spawns new circles wherever you click)
 var svg = d3.select("svg")
-  .attr("width",  canvas.width)
-  .attr("height", canvas.height)
   .on("click", click);
-
-
-// Add a background
-svg.insert("rect", ":first-child") // add at start of the SVG
-  .attr("width",  canvas.width)
-  .attr("height", canvas.height)
-  .attr("class",  "background")
 
 // Define drag beavior
 var drag = d3.drag()
@@ -108,7 +112,7 @@ svg.selectAll("circle").call(drag);
 
 
 var data = [
-	{x: 20, y: 20, font_family:"sans-serif", font_size:"20px", color:"red", text:"hello world!"}
+	{x: 20, y: 20, text:"hello world!"}
 ]
 
 var text_objects = svg.selectAll("text")
@@ -121,8 +125,6 @@ text_objects.attr("transform", function (d, i) {
             })
             // .attr("x", function (d) { return d.x; })
             // .attr("y", function (d) { return d.y; })
-            // .attr("x", function (d) { return d.x; })
-            .style("fill", function(d) { return d.color; })
             .text(function(d){ return d.text })
 
 svg.selectAll("text").call(drag);
@@ -158,3 +160,25 @@ d3.json('api/foo2.json', function(err, data){
 //                           .data(jsonCircles)
 //                           .enter()
 //                           .append("circle");
+
+
+// sketch out just dumping the data from the backend on the canvas
+var computer_science_api = 'api/required_courses/ComputerScienceBS';
+d3.json(computer_science_api, function(err, data){
+  console.log("CS BS callback")
+  
+  svg.selectAll("CS BS")
+  // ^ not an HTML tag name, but a name you want to give this data
+     .data(data)
+     .enter()
+       .append("text")
+         .attr("transform", function (d, i) { 
+            var a = Math.floor((100 + i*20) / canvas.height)
+            var y = ((100 + i*20) % canvas.height);
+            var x = 10 + 80 * a ;
+            return "translate(" + x + "," + y + ")"; 
+         })
+         .text(function(d){ return d.id })
+         .style("cursor", "pointer")
+         .call(drag);
+})

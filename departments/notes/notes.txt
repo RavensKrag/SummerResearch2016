@@ -44,3 +44,40 @@ if you go into the individual data for each course in the catalog,
 the catalog will tell you what department is offering a specific course
 
 (I just did it manually, because I just wanted a rough overview)
+
+
+
+
+
+
+
+
+
+
+
+create columns for each dept code that you may want to find
+create rows for each year
+
+tick a cell at each intersection to show when dept is valid for that year
+
+output this in excel spreadsheet using roo ?
+
+
+(much lower noise, much easier to see what departments are offered when)
+(could even colorize at this stage)
+
+
+
+
+=== runtime speed test
+
+6:37 download start
+
+
+6:45 projected end?
+6:43 end
+
+
+6 min running time
+~12000 rows
+318.5 kB

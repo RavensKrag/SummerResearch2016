@@ -22,10 +22,18 @@ require 'rubygems'
 # NOTE: can't actually load the rakefile here, because loading 'rake' inhibits Sinatra from starting
 
 
+
 require 'bundler'
 Bundler.require(:default)
 require 'bundler/setup'
 
+# other libs for 'catalog_scraper'
+require 'yaml'
+require 'csv'
+require 'set'
+require 'open-uri'
+
+# other libs for this main thing
 require 'json'
 
 
@@ -108,6 +116,51 @@ get '/api/foo2.json' do
 	
 	JSON.generate data
 end
+
+
+# code copied over from the rakefile for 'catalog_scraper'
+# not final implementation, just a sketch of getting program overview
+get '/api/required_courses/ComputerScienceBS' do
+	puts "=== setup data"
+	# search for relevant programs of study
+	
+	list_of_degrees = [
+		"Computer Science",
+		"Information Technology",
+		"Electrical Engineering",
+		"Biology",
+		"Psychology"
+	]
+	
+	degrees = SummerResearch.search_programs_of_study(list_of_degrees)
+	
+	
+	count = degrees.keys.size
+	puts "#{count} programs found for search query."
+	
+	
+	programs_of_study = degrees
+	
+	# TODO: output data on different degrees to different folders.
+	
+	program_name = "Computer Science, BS"
+	url = programs_of_study[program_name]
+	
+	
+	fragment = SummerResearch.requirements_subtree(url)
+	
+	course_list = SummerResearch.get_all_weird_link_urls(fragment)
+	
+	p course_list.first.class
+	data = 
+		course_list.collect do |catalog_link| 
+			# catalog_link.to_h
+			{  "id" => catalog_link.id  }
+		end
+	
+	JSON.generate data
+end
+
 
 # bin/database.log
 # what the heck is this file? what is it a log of? SQLite? Mongo?
