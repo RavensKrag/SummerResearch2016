@@ -667,6 +667,76 @@ task :get_info do
 end
 
 
+namespace :catalog_test do
+	task 'data/CS_course_list.html' do
+		# little bit of code to get the page where the CS courses 
+		# copied from Catalog#search_by_department()
+		catoid, navoid, dept_code = %w[29 6272 CS]
+		
+		url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=#{dept_code}&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=#{catoid}&expand=&navoid=#{navoid}&search_database=Filter#acalog_template_course_filter"
+		
+		xml = Nokogiri::HTML(open(url))
+		
+		
+		# cache data on the disk
+		SummerResearch::Utilities.write_to_file("./CS_course_list.html", xml)
+	end
+	
+	task :multiple_page_iteration => 'data/CS_course_list.html' do
+		filepath = File.expand_path("./CS_course_list.html", SummerResearch::Utilities::DATA_DIR)
+		xml = Nokogiri::HTML(open(filepath))
+		
+		fragment = xml.css('td.block_content_outer table')
+		page_navigation = fragment.css('td').last
+		
+		puts page_navigation
+		
+		
+		relative_links = page_navigation.xpath('a/@href')
+		puts relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
+	end
+	
+	
+	# show the page counts for various degrees in the catalog
+	task :page_counts do
+		departments_with_999 = %w[ASTR BIOD BENG BINF BIOS CHEM CEIE CLIM COMM CSI CSS CS CONF CRIM CULT ECON EDUC ECE ENGH EVPP GGS GOVT HAP HE HIST IT LING MATH MUSI NEUR NURS PSCI PHYS PSYC PUBP RHBS SOCI STAT SEOR]
+		departments_with_999.each do |dept_code|
+			# little bit of code to get the page where the CS courses 
+			# copied from Catalog#search_by_department()
+			catoid, navoid = %w[29 6272]
+			
+			url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=#{dept_code}&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=#{catoid}&expand=&navoid=#{navoid}&search_database=Filter#acalog_template_course_filter"
+			
+			xml = Nokogiri::HTML(open(url))
+			
+			
+			
+			
+			
+			# copied from :multiple_page_iteration task above
+			fragment = xml.css('td.block_content_outer table')
+			page_navigation = fragment.css('td').last
+			
+			# puts page_navigation
+			
+			
+			relative_links = page_navigation.xpath('a/@href')
+			pages = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }.length + 1
+			
+			puts pages
+			# need to add 1 to page count, because there is no link to the current page, ie the first page
+			
+			
+			
+			# query all dept codes at once to see how many pages will fit before elipsis is inserted
+			# http://catalog.gmu.edu/content.php?filter%5B27%5D=-1&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter
+			
+			# => as long as there are 11 or fewer pages, should be able to traverse without any problems
+		end
+	end
+end
+
+
 
 
 
