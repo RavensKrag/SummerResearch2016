@@ -607,11 +607,12 @@ task :qian_hu_data => 'data/required_courses.yaml' do
 			data
 		end
 	
+	# @catalog.activerecord_query do |course_model, catologyear_model|
+	# 	course_model
+	# end
 	
-	all_cs_courses = 
-		%w[CS-100 CS-112 CS-211 CS-222 CS-310 CS-332 CS-367 CS-391 CS-450 CS-455 CS-483 CS-484 CS-504 CS-530 CS-550 CS-555 CS-584 CS-633 CS-635 CS-650 CS-657 CS-672 CS-674 CS-684 CS-685 CS-689 CS-700 CS-773 CS-774 CS-782]
-	all_cs_courses.collect! do |course_id_string|
-		id = course_id_string.tr('-', ' ')
+	all_cs_courses = @catalog.all_courses_in_department("CS", catalog_year=:most_recent)
+	all_cs_courses.collect! do |id|
 		@catalog.course_info(id)
 	end
 	
@@ -645,7 +646,7 @@ task :qian_hu_data => 'data/required_courses.yaml' do
 	p data
 	
 	# === convert to desired output format
-	filepath = File.expand_path('./qian_sample_2.txt', SummerResearch::Utilities::DATA_DIR)
+	filepath = File.expand_path('./qian_sample_3.txt', SummerResearch::Utilities::DATA_DIR)
 	File.open(filepath, 'w') do |f|
 		data.each do |name, deps|
 			name = name.tr(' ', '-')

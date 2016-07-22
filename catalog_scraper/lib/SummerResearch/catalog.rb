@@ -287,10 +287,29 @@ class Catalog
 		end
 	end
 	
+	def all_courses_in_department(dept_code, catalog_year=:most_recent)
+		if catalog_year == :most_recent
+			year_record = 
+				CatalogYear.all
+				           .order("year_range DESC").first
+			
+			course_records = Course.where(:catoid => year_record.catoid, :dept => dept_code)
+			out =
+				course_records.collect do |record|
+					[record.dept, record.course_number].join(' ')
+				end
+			
+			return out
+		else
+			raise "ERROR: NOT IMPLEMENTED YET"
+		end
+	end
+	
 	# expose the database to the block.
 	# should automatically handle "normalization" of switching between SQL and Mongo
 	def query(&block)
-		
+		# probably should evaluate the block within the context of the Catalog object
+		# would make this actually useful for prototyping new behavior
 	end
 	
 	
