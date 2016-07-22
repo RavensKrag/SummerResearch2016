@@ -688,14 +688,7 @@ namespace :catalog_test do
 		filepath = File.expand_path("./CS_course_list.html", SummerResearch::Utilities::DATA_DIR)
 		xml = Nokogiri::HTML(open(filepath))
 		
-		fragment = xml.css('td.block_content_outer table')
-		page_navigation = fragment.css('td').last
-		
-		puts page_navigation
-		
-		
-		relative_links = page_navigation.xpath('a/@href')
-		puts relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
+		links = CatalogTest.page_links(xml)
 	end
 	
 	
@@ -720,14 +713,7 @@ namespace :catalog_test do
 			
 			
 			# copied from :multiple_page_iteration task above
-			fragment = xml.css('td.block_content_outer table')
-			page_navigation = fragment.css('td').last
-			
-			# puts page_navigation
-			
-			
-			relative_links = page_navigation.xpath('a/@href')
-			links          = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
+			links = CatalogTest.page_links(xml)
 			page_count = links.length + 1
 			
 			puts page_count
@@ -744,7 +730,10 @@ namespace :catalog_test do
 			
 			
 			# can easily chuck the numbers that get printed into a histogram for easy viewing
-			# => http://www.shodor.org/interactivate/activities/Histogram/
+			# http://www.shodor.org/interactivate/activities/Histogram/
+			# => 1 page  => 140
+			#    2 pages => ~20
+			#    3 pages => a couple
 		end
 	end
 end
@@ -768,6 +757,17 @@ module CatalogTest
 			departments.shift # remove the first one, which is just -1, the default nonsense value
 			
 			return departments
+		end
+		
+		def page_links(nokogiri_html)
+			fragment = nokogiri_html.css('td.block_content_outer table')
+			page_navigation = fragment.css('td').last
+			
+			# puts page_navigation
+			
+			
+			relative_links = page_navigation.xpath('a/@href')
+			links          = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
 		end
 	end
 end
