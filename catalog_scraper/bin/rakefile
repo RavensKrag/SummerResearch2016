@@ -689,6 +689,44 @@ namespace :catalog_test do
 		xml = Nokogiri::HTML(open(filepath))
 		
 		links = CatalogTest.page_links(xml)
+		
+		puts links
+		pages = links.collect{  |url|  Nokogiri::HTML(open(url))  }
+		
+		
+		# add the original page to the set of all pages
+		pages.unshift(xml)
+		
+		
+		# === Get all links from each and every page
+		data = 
+			pages.collect do |xml|
+				# === copied from Catalog#search_by_department()
+				
+				node = xml.css('td.block_content_outer table')[3]
+					# SummerResearch::Utilities.write_to_file("./search.html", xml) if node.nil?
+				# NOTE: sometimes fails to find courses.
+				# just retry the request again, and you should be able to get it.
+				while node.nil?
+					puts "nope. wait a sec..."
+					sleep(3.0) # wait a bit before retrying
+					puts "retrying #{dept_code}..."
+					
+					xml = Nokogiri::HTML(open(url))
+					node = xml.css('td.block_content_outer table')[3]
+				end
+				
+				
+				# NOTE: results are paginated. Should get info from ALL pages, not just the first one.
+				
+				tr_list = node.css('tr')[2..-1]
+				
+				# tr_list.each{|x| puts x.class }
+				tr_list.collect{  |x| SummerResearch.get_all_weird_link_urls(x)  }.flatten
+			end
+		
+		# === Show the courses gathered from the links
+		puts data.flatten.collect{  |catalog_link|  catalog_link.id  }
 	end
 	
 	
