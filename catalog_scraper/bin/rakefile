@@ -667,6 +667,8 @@ task :get_info do
 end
 
 
+# TODO: reimplement these tests calling actual code from Catalog
+# maybe use instance_eval? probably need to break up the code in Catalog a little better, to allow for testing without having to just copy the code over like this
 namespace :catalog_test do
 	# all of these tests use the 2016-2017 catalog year, catoid = "29"
 	
@@ -806,6 +808,8 @@ module CatalogTest
 			
 			relative_links = page_navigation.xpath('a/@href')
 			links          = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
+			
+			return links
 		end
 	end
 end

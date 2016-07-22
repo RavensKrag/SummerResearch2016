@@ -350,26 +350,53 @@ class Catalog
 		
 		puts "searching for classes under: #{dept_code} ..."
 		
-		node = xml.css('td.block_content_outer table')[3]
-			# SummerResearch::Utilities.write_to_file("./search.html", xml) if node.nil?
-		# NOTE: sometimes fails to find courses.
-		# just retry the request again, and you should be able to get it.
-		while node.nil?
-			puts "nope. wait a sec..."
-			sleep(3.0) # wait a bit before retrying
-			puts "retrying #{dept_code}..."
-			
-			xml = Nokogiri::HTML(open(url))
-			node = xml.css('td.block_content_outer table')[3]
-		end
-			
 		
-		# NOTE: results are paginated. Should get info from ALL pages, not just the first one.
 		
-		tr_list = node.css('tr')[2..-1]
+		# === Figure out links to all of the pages
+		links = page_links(xml)
 		
-		# tr_list.each{|x| puts x.class }
-		return tr_list.collect{  |x| SummerResearch.get_all_weird_link_urls(x)  }.flatten
+		# add the original page url to the set of all page urls
+		# (this is the full set of pages to look at when trying to scrape for courses)
+		links.unshift(url)
+		
+		
+		# NOTE: this variation downloads the first page twice, which is not very efficient
+		# === Get all courses from each and every page
+		data = 
+			links.collect do |url|
+				xml = Nokogiri::HTML(open(url))
+				
+				
+				node = xml.css('td.block_content_outer table')[3]
+					# SummerResearch::Utilities.write_to_file("./search.html", xml) if node.nil?
+				# NOTE: sometimes fails to find courses.
+				# just retry the request again, and you should be able to get it.
+				while node.nil?
+					puts "nope. wait a sec..."
+					sleep(3.0) # wait a bit before retrying
+					puts "retrying #{dept_code}..."
+					
+					xml = Nokogiri::HTML(open(url))
+					node = xml.css('td.block_content_outer table')[3]
+				end
+				
+				
+				# NOTE: results are paginated. Should get info from ALL pages, not just the first one.
+				
+				tr_list = node.css('tr')[2..-1]
+				
+				# tr_list.each{|x| puts x.class }
+				tr_list.collect{  |x| SummerResearch.get_all_weird_link_urls(x)  }.flatten
+			end
+		
+		# === Show the courses gathered from the links
+		puts data.flatten.collect{  |catalog_link|  catalog_link.id  }
+		
+		
+		
+		
+		
+		
 		
 		
 		
@@ -383,7 +410,24 @@ class Catalog
 		# in the left sidebar, there is a link for "Courses"
 		# href: http://catalog.gmu.edu/content.php?catoid=25&navoid=4962
 		# need to extract that navoid value
+		
+		return data.flatten
 	end
+	
+	def page_links(nokogiri_html)
+		fragment = nokogiri_html.css('td.block_content_outer table')
+		page_navigation = fragment.css('td').last
+		
+		# puts page_navigation
+		
+		
+		relative_links = page_navigation.xpath('a/@href')
+		links          = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
+		
+		return links
+	end
+	
+	public
 	
 	
 	class << self
