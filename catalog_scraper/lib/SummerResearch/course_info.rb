@@ -222,6 +222,9 @@ class CourseInfo
 		# ---
 		unless success_flag
 			puts "=== Data dump"
+			p @catalog_year
+			p @id
+			p @url
 			p chunk.children.collect{|x| x.name}[3..-1].join(' ')
 			puts "====="
 			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below. Use foo14 (pathway8) for detailed analysis."

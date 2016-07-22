@@ -576,49 +576,54 @@ end
 
 
 
-# prereq information only, specific format
+# prereq information only, specific format, for all classes in the 2016-2017 catalog year
 # CS 330 : CS 101, CS 212
 # COURSE : DEP1, DEP2
 # (only show direct dependencies)
 # (these numbers are only for demonstration, I don't know this is real data or not)
-task :qian_hu_data => 'data/required_courses.yaml' do
-	@required_courses ||= YAML.load_file('data/required_courses.yaml')
-	
-	
+task :qian_hu_data do
 	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	
 	
-	# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
 	
-	# === get requirements for the CS major
-	# (just a dump of all the links on the page. this set is bigger than the real set)
-	main_requirements = 
-		@required_courses
-		.reject{|catalog_link| catalog_link.id == "Mason Core"}
-		.collect do |catalog_link|
-			id = catalog_link.id
-			
-			# puts "============"
-			# p id
-			data = @catalog.course_info(id)
-			# p data
-			
-			data
-		end
 	
-	# @catalog.activerecord_query do |course_model, catologyear_model|
-	# 	course_model
-	# end
+	# this is kinda bad form, because you don't want to be able to call this class outside of the context of @catalog, because the database may not be created yet, or there may not be a connection, etc etc etc
+	# catalog_year = SummerResearch::Catalog::CatalogYear.where(:year_range => '2016-2017')
 	
-	all_cs_courses = @catalog.all_courses_in_department("CS", catalog_year=:most_recent)
-	all_cs_courses.collect! do |id|
-		@catalog.course_info(id)
+	
+	
+	out = nil
+	
+	@catalog.activerecord_query do |course_model, catologyear_model|
+		# === update index with ALL DEPARTMENTS for the most recent catalog year
+		catalog_year = catologyear_model.where(:year_range => '2016-2017')
+		
+		@catalog.populate_course_index(catalog_year)
+		
+		
+		# === fetch specific information of ALL CLASSES in the current year
+		all_courses_in_year = 
+			catologyear_model.where(:year_range => '2016-2017')
+			                 .first.courses
+		
+		p all_courses_in_year
+		raise "ERROR: expected a course_model" unless all_courses_in_year.first.is_a? course_model
+		
+		
+		# filter out the main Mason Core pages.
+		# These do not have the same structure as other "real courses", and may cause problems.
+		all_courses_in_year = all_courses_in_year.reject{|course| course.dept == "Mason Core"}
+		
+		
+		out = 
+			all_courses_in_year.collect do |course_record|
+				@catalog.fetch_course_info(course_record)
+			end
 	end
 	
-	main_requirements += all_cs_courses
+	main_requirements = out
 	
-	main_requirements.uniq!{  |course_info|  course_info.id  }
 	
 	
 	# === parse direct prereqs for each and every class
@@ -646,7 +651,7 @@ task :qian_hu_data => 'data/required_courses.yaml' do
 	p data
 	
 	# === convert to desired output format
-	filepath = File.expand_path('./qian_sample_3.txt', SummerResearch::Utilities::DATA_DIR)
+	filepath = File.expand_path('./qian_sample_4.txt', SummerResearch::Utilities::DATA_DIR)
 	File.open(filepath, 'w') do |f|
 		data.each do |name, deps|
 			name = name.tr(' ', '-')
