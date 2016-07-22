@@ -668,6 +668,8 @@ end
 
 
 namespace :catalog_test do
+	# all of these tests use the 2016-2017 catalog year, catoid = "29"
+	
 	task 'data/CS_course_list.html' do
 		# little bit of code to get the page where the CS courses 
 		# copied from Catalog#search_by_department()
@@ -700,7 +702,11 @@ namespace :catalog_test do
 	# show the page counts for various degrees in the catalog
 	task :page_counts do
 		departments_with_999 = %w[ASTR BIOD BENG BINF BIOS CHEM CEIE CLIM COMM CSI CSS CS CONF CRIM CULT ECON EDUC ECE ENGH EVPP GGS GOVT HAP HE HIST IT LING MATH MUSI NEUR NURS PSCI PHYS PSYC PUBP RHBS SOCI STAT SEOR]
-		departments_with_999.each do |dept_code|
+		
+		# department_codes = departments_with_999
+		department_codes = CatalogTest.all_department_codes()
+		
+		department_codes.each do |dept_code|
 			# little bit of code to get the page where the CS courses 
 			# copied from Catalog#search_by_department()
 			catoid, navoid = %w[29 6272]
@@ -721,21 +727,50 @@ namespace :catalog_test do
 			
 			
 			relative_links = page_navigation.xpath('a/@href')
-			pages = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }.length + 1
+			links          = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
+			page_count = links.length + 1
 			
-			puts pages
+			puts page_count
 			# need to add 1 to page count, because there is no link to the current page, ie the first page
+			
 			
 			
 			
 			# query all dept codes at once to see how many pages will fit before elipsis is inserted
 			# http://catalog.gmu.edu/content.php?filter%5B27%5D=-1&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter
+			# 
+			# => as long as there are 11 or fewer pages,
+			#    should be able to traverse without any problems
 			
-			# => as long as there are 11 or fewer pages, should be able to traverse without any problems
+			
+			# can easily chuck the numbers that get printed into a histogram for easy viewing
+			# => http://www.shodor.org/interactivate/activities/Histogram/
 		end
 	end
 end
-
+module CatalogTest
+	class << self
+		def all_department_codes
+			# === copied from Catalog#fetch_course_listing()
+			catoid         = "29"
+			courses_navoid = "6272"
+			url = "http://catalog.gmu.edu/content.php?catoid=#{catoid}&navoid=#{courses_navoid}"
+			
+			
+			# === copied from Catalog#all_department_codes()
+			xml = Nokogiri::HTML(open(url))
+			
+			#course_search > table > tbody > tr:nth-child(4) > td:nth-child(1) > select
+			segment = xml.css('#course_search table tr:nth-child(4) > td:nth-child(1) > select > option')
+				# Utilities.write_to_file("./department_codes_fragment.html", segment)
+			
+			departments = segment.collect{  |option_node|  option_node["value"]  } 
+			departments.shift # remove the first one, which is just -1, the default nonsense value
+			
+			return departments
+		end
+	end
+end
 
 
 
