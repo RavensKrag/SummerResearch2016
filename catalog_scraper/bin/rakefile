@@ -171,8 +171,9 @@ puts "========="
 SQLITE_DATABASE_FILEPATH = 'data/example.db'
 
 
+task :create_db => SQLITE_DATABASE_FILEPATH
 
-task :create_db do
+file SQLITE_DATABASE_FILEPATH do
 	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		# connect to the SQLite and MongoDB databases
 		
@@ -190,7 +191,7 @@ end
 
 # run 'create_db' before this to download initial data
 # (can't list as explict dependency at this time, because I don't know how to easily skip processing an entire catalog year)
-task :query_db do
+task :query_db => [SQLITE_DATABASE_FILEPATH] do
 	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	
@@ -201,7 +202,7 @@ task :query_db do
 	# end
 end
 
-task :wipe_mongo do
+task :wipe_mongo => [SQLITE_DATABASE_FILEPATH] do
 	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	@catalog.course_details_mongo do |db|
@@ -258,7 +259,7 @@ file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
 	@required_courses = course_list
 end
 
-task :cs_requirements => 'data/required_courses.yaml' do
+task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH] do
 	@required_courses ||= YAML.load_file('data/required_courses.yaml')
 	
 	

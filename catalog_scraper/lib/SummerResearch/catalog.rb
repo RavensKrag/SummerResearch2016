@@ -5,6 +5,7 @@ class Catalog
 	def initialize(sql_db_filepath, sql_log_filepath='database.log')		
 		SQLite.setup(sql_db_filepath, sql_log_filepath)
 		
+		
 		@mongo_ip      = "127.0.0.1"
 		@mongo_port    = "12345"
 		@mongo_address = [@mongo_ip, @mongo_port].join(':')
@@ -13,6 +14,10 @@ class Catalog
 	
 	def setup
 		ActiveRecord::Schema.define do
+			@connection = SQLite.connection
+			# ^ need to do this when using a custom subclass of ActiveRecord::Base
+			
+			
 			# NOTE: this schema definition may have problems with mulitple DBs? Not totally sure
 			unless SQLite.connection.tables.include? 'courses'
 				create_table :courses do |table|
