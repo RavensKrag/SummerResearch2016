@@ -175,7 +175,7 @@ class CourseInfo
 			p @url
 			p chunk.children.collect{|x| x.name}[3..-1].join(' ')
 			puts "====="
-			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below. Use foo14 (pathway8) for detailed analysis."
+			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below. Use CourseInfoDiagnostic.debug() / debug_verbose() for detailed analysis."
 		else
 			if @storage.nil?
 				# TODO: need a new way to check that the proper data is coming out of the callback
@@ -259,7 +259,7 @@ class CourseInfo
 		# ---
 		
 		unless success_flag
-			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below. Use foo14 (pathway8) for detailed analysis."
+			raise "ERROR: Course info page in an unexpected format. See data dump above, or stack trace below. Use CourseInfoDiagnostic.debug() / debug_verbose() for detailed analysis."
 		end
 		
 		

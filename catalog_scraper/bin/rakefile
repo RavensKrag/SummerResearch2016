@@ -987,7 +987,7 @@ namespace :test_course_info_fetch do
 		# 
 		# sample data set => [CatalogLink] 
 		# [CatalogLink] => [CourseInfo] DEBUG
-		course_data = CourseInfoDiagnostic.foo11(@catalog, @pw_sample) 
+		course_data = CourseInfoDiagnostic.debug(@catalog, @pw_sample) 
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
@@ -1005,7 +1005,7 @@ namespace :test_course_info_fetch do
 		# 
 		# sample data set => [CatalogLink] 
 		# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
-		course_data = CourseInfoDiagnostic.foo14(@catalog, @pw_sample)
+		course_data = CourseInfoDiagnostic.debug_verbose(@catalog, @pw_sample)
 	end
 	
 	
@@ -1035,9 +1035,9 @@ namespace :test_course_info_fetch do
 		
 		
 		puts "=== run processing"
-		course_data = CourseInfoDiagnostic.foo11(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
+		course_data = CourseInfoDiagnostic.debug(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
 		
-		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
+		SummerResearch::Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
@@ -1071,7 +1071,7 @@ namespace :test_course_info_fetch do
 			# failure occurs inside of SummerResearch.degree_requiremnts
 			
 			puts "=== analyzing courses... "
-			course_data = CourseInfoDiagnostic.foo11(@catalog, courses)
+			course_data = CourseInfoDiagnostic.debug(@catalog, courses)
 		end
 		
 		# errors from: SummerResearch::CourseInfo#fetch
@@ -1093,6 +1093,30 @@ namespace :test_course_info_fetch do
 			# "Applied Computer Science, BS",
 			# "Biology, BS",
 			# "Psychology, BA"
+	end
+	
+	
+	task :extended_set => [:sample_data] do
+		# ASSUME: requires that you load up ALL COURSES for the current catalog year, as was done when generating Qian Hu's dataset. Not going to copy that code here, just assuming it has been done already.
+			# (This only uses the index data, it should not use data from Mongo)
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		sample = [
+			[
+				"MATH 551",
+				"???",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305092"
+			]
+		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
+		
+		# dataset = @pw_sample + sample
+		dataset = sample
+		
+		
+		# NOTE: if @catalog is not set, debug_verbose() still works, but actually outputs far less data that debug()
+		course_data = CourseInfoDiagnostic.debug(@catalog, dataset)
+		course_data = CourseInfoDiagnostic.debug_verbose(@catalog, dataset)
 	end
 end
 
@@ -1120,7 +1144,7 @@ class << self
 	# only prints out courses that are "weird"
 	# 
 	# Does basicaly the same thing as foo13, but includes extra code to help report errors.
-	def foo11(catalog, course_list)
+	def debug(catalog, course_list)
 		flag = true
 		
 		course_list.each do |course|
@@ -1159,11 +1183,11 @@ class << self
 		puts ""
 	end
 	
-	# Like foo11, but with even more debug information. 
+	# Like debug, but with even more debug information. 
 	# 
-	# most of the code in this method comes directly from foo11 above
+	# most of the code in this method comes directly from 'debug()' above
 	# only the method call on CouseInfo has been changed from #fetch to #test_types
-	def foo14(catalog, course_list)
+	def debug_verbose(catalog, course_list)
 		flag = true
 		
 		course_list.each do |course|
