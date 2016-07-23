@@ -1111,8 +1111,8 @@ class << self
 		
 		return output_data
 	end
-
-
+	
+	
 	# find courses that fail parsing
 	# want to see some examples of the unexpected
 	# 
@@ -1158,7 +1158,7 @@ class << self
 		
 		puts ""
 	end
-
+	
 	# Like foo11, but with even more debug information. 
 	# 
 	# most of the code in this method comes directly from foo11 above
@@ -1190,24 +1190,24 @@ class << self
 		
 		puts ""
 	end
-
-
-
+	
+	
+	
 	# NOTE: this connects to the SQLite DB to convert between catoid => 'catalog year'
 	def course_info_from_catalog_link(catalog, catalog_link)
 		course = catalog_link
 		
 		
-		dept, course_number = Catalog.parse_course_id(course.id)
+		dept, course_number = SummerResearch::Catalog.parse_course_id(course.id)
 		
 		url = course.url
 		
-		catoid = Catalog.catoid_from_url(url)
+		catoid = SummerResearch::Catalog.catoid_from_url(url)
 		# convert catoid => 'catalog year' using the data in the new Catalog class
 		catalog_year = catalog.catoid_to_catalog_year(catoid)
 		
 		
-		return CourseInfo.new(dept, course_number, catalog_year, url)
+		return SummerResearch::CourseInfo.new(dept, course_number, catalog_year, url)
 	end
 end
 end

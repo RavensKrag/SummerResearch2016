@@ -380,10 +380,7 @@ class Catalog
 	end
 	
 	
-	# catoid => 'catolog year' (e.g. "2016-2017" as is stored on CourseInfo objects)
-	def catoid_to_catalog_year(catoid)
-		return CatalogYear.find_by(:catoid => catoid).year_range
-	end
+	
 	
 	
 	
@@ -507,6 +504,12 @@ class Catalog
 	
 	public
 	
+	
+	
+	# catoid => 'catolog year' (e.g. "2016-2017" as is stored on CourseInfo objects)
+	def catoid_to_catalog_year(catoid)
+		return CatalogYear.find_by(:catoid => catoid).year_range
+	end
 	
 	class << self
 		# TODO: consider case of Mason Core classes
