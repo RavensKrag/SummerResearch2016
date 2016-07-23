@@ -1105,7 +1105,7 @@ namespace :test_course_info_fetch do
 		sample = [
 			[
 				"MATH 551",
-				"???",
+				"Regression and Time Series",
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305092"
 			]
 		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
@@ -1117,6 +1117,108 @@ namespace :test_course_info_fetch do
 		# NOTE: if @catalog is not set, debug_verbose() still works, but actually outputs far less data that debug()
 		course_data = CourseInfoDiagnostic.debug(@catalog, dataset)
 		course_data = CourseInfoDiagnostic.debug_verbose(@catalog, dataset)
+	end
+	
+	
+	# dump some course data with the expected types out of Mongo and to YAML for easy viewing
+	task :sample_dump do
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		data = 
+			[
+				'PSYC 320',
+				'EVPP 110',
+				'Mason Core UGU',
+				# 'Math 551',
+			].collect do |course|
+				# @catalog.course_info(course, force_download: false)
+				@catalog.course_info(course, force_download: true)
+			end
+		data.collect!{  |x| x.to_h  }
+		
+		SummerResearch::Utilities.write_to_file('./sample_dump.yaml', data.to_yaml)
+	end
+	
+	
+	task :group_by_type do
+		# TODO: store the type of the CourseInfo object in Mongo. would make this a whole lot easier
+		
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		course_list = nil
+		@catalog.activerecord_query do |course_model, catologyear_model|
+			all_courses_in_year = 
+				catologyear_model.where(:year_range => '2016-2017')
+				                 .first.courses
+			
+			course_list = all_courses_in_year
+		end
+		
+		
+		course_list.collect!{  |x| x.to_CourseInfo()  }
+		
+		out = 
+			course_list.group_by do |course|
+				course_type = nil
+				
+				# === based on code copied from CourseInfo#fetch()
+				
+				url = course.url
+				
+				
+				# GET THE DATA USING NOKOGIRI
+				xml = Nokogiri::HTML(open(url))
+				chunk = xml.css('td.block_content_popup')
+					# SummerResearch::Utilities.write_to_file("./course.html", chunk)
+				
+				
+				# === figure out where the interesting section is, and store in 'segment' variable
+				list = chunk.children
+				# puts list.size
+				
+				# list.each do |node|
+				# 	puts node.class
+				# 	if node.class == Nokogiri::XML::Element
+				# 		# p node.name
+				# 		# p node.methods
+				# 		break
+				# 	end
+				# end
+				
+				i_start = list.find_index{  |x| x.name == "h1" }
+				i_end   = list.find_index{  |x| x.name == "div" and x["style"] == "float: right" }
+				
+				
+				segment = list[(i_start..i_end)]
+				
+				
+				
+				
+				type_search_order = SummerResearch::CourseInfo::TYPE_SEARCH_ORDER
+				
+				# ---
+				type_search_order.each do |type_class|
+					type = type_class.new(course)
+					course_type = type_class
+					
+					if type.signature_match?(segment)
+						# when a matching signature is found...
+						course_type = type_class
+						p course_type
+						
+						break
+					end
+				end
+				# ---
+				
+				
+				course_type # pseudo-return for block
+			end
+		
+		out.values.each{  |arr|  arr.collect!{|x| x.id }   }
+		
+		p out
 	end
 end
 
@@ -1187,6 +1289,7 @@ class << self
 	# 
 	# most of the code in this method comes directly from 'debug()' above
 	# only the method call on CouseInfo has been changed from #fetch to #test_types
+	# (will show more detailed type signature information, but may supress some informative errors)
 	def debug_verbose(catalog, course_list)
 		flag = true
 		

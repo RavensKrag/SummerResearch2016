@@ -232,7 +232,7 @@ class Catalog
 	# 
 	# May fetch data over the network as needed.
 	# Assuming that catalog data never changes once the catalog has been published.
-	def course_info(course_id, catalog_year=:most_recent)
+	def course_info(course_id, catalog_year: :most_recent, force_download: true)
 		sql_course_info = 
 			if catalog_year == :most_recent
 				# puts "Select a year"
@@ -295,13 +295,13 @@ class Catalog
 		# (need to downlad the data if necessary)
 		# ==================
 		
-		return fetch_course_info(sql_course_info)
+		return fetch_course_info(sql_course_info, force_download: force_download)
 	end
 	
 	
 	# retrive specific course information from the online catalog, caching it in Mongo DB.
 	# The course to be downloaded is specified with an ActiveRecord object
-	def fetch_course_info(sql_course_record)
+	def fetch_course_info(sql_course_record, force_download:true)
 		record = sql_course_record
 		url = record.url
 		catalog_year = record.catalog_year.year_range
@@ -317,7 +317,7 @@ class Catalog
 		
 		
 		info = 
-			if document.nil?
+			if document.nil? or force_download
 				# Document not found. Fetch data and add it to DB.
 				# Return the original CourseInfo object, which is still in memory.
 				info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
@@ -612,6 +612,13 @@ class Catalog
 		
 		def url
 			return Catalog.course_description_url(self.catoid, self.coid)
+		end
+		
+		def to_CourseInfo
+			url = self.url
+			catalog_year = self.catalog_year.year_range
+			
+			return SummerResearch::CourseInfo.new(self.dept, self.course_number, catalog_year, url)
 		end
 	end
 	private_constant :Course

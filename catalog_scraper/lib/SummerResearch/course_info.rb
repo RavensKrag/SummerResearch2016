@@ -154,7 +154,7 @@ class CourseInfo
 		# ---
 		success_flag = 
 			type_search_order.any? do |type_class|
-				type = type_class.new()
+				type = type_class.new(self)
 				
 				if type.signature_match?(segment)
 					# when a matching signature is found,
@@ -234,7 +234,7 @@ class CourseInfo
 		# p @title # NOTE: you can't always get the title, because that needs to be parsed
 		p @url
 		p chunk.children.collect{|x| x.name}[3..-1].join(' ')
-		
+		# p segment.collect{|x| x.name}.join(' ') # is this the same signature? nope...
 		
 		
 		
@@ -245,7 +245,7 @@ class CourseInfo
 		# ---
 		success_flag = 
 			type_search_order.any? do |type_class|
-				type = type_class.new()
+				type = type_class.new(self)
 				
 				if type.test_signature_match?(segment)
 					# when a matching signature is found,
@@ -290,9 +290,33 @@ class CourseInfo
 	# initialization doesn't really do anything right now,
 	# but using class methods may have weird side effects when combined with inheritance,
 	# so just leave it like this.
+	
+	
+	
+	
+	# Think of the pages as having 4 sectors:
+	# 
+	# * heading --- course name - description
+	# * top     --- credits, repetition, department
+	# * middle  --- long description
+	# * bottom  --- various tags: prereqs, coreqs
+	# 
+	# 
+	# these sections may or may not be wrapped in containers
+	# 
+	# (headers as of now are always raw, 'n' => no container / 'y' => wrapped in container)
+	#           top, mid, bot
+	# A: heading, n,  n,  n
+	# B: heading, n,  y,  y
+	# C: heading, n,  n,  y
+	# D: heading, y,  y,  n
+	# 
+	# (This is not a rigourous enough definiton to actually separate the types, especially in the case of Type B, but this helps to understand generally what is going on. Take a look at some examples of all the types to further undertand. Examples can be found in the CourseInfo diagnostic in the project Rakefile)
+	
+	
 	class BaseType
-		def initialize
-			
+		def initialize(course_info_object)
+			@context = course_info_object
 		end
 		
 		def signature_match?(node_list)
@@ -342,16 +366,21 @@ class CourseInfo
 		# doesn't make sense for the interitance heiarchy to but this code here.
 		private
 		
+		# TODO: should probably do away with using instance_eval to set values like this. The interface for CourseInfo should probably become more uniformly hash-like as well, instead of using some hash access, and object-like access for the properties that "always exist".
 		def parse_heading(h1_node)
-			@title = h1_node.inner_text.strip # <h1>
-			
-			@title = @title.split(' - ').last
+			@context.instance_eval do
+				@title = h1_node.inner_text.strip # <h1>
+				
+				@title = @title.split(' - ').last
+			end
 		end
 		
 		def parse_top_chunk(segment)
-			@credits    = segment[0].inner_text.split(':').last.strip
-			@attempts   = segment[2].inner_text.strip
-			@department = segment[5].inner_text.strip # <a>, href dept. page in the catalog
+			@context.instance_eval do
+				@credits    = segment[0].inner_text.split(':').last.strip
+				@attempts   = segment[2].inner_text.strip
+				@department = segment[5].inner_text.strip # <a>, href dept. page in the catalog
+			end
 		end
 		
 		def parse_body(segment)
@@ -533,10 +562,31 @@ class CourseInfo
 	end
 	
 	class TypeD < BaseType
-		SIGNATURE = %w[]
+		SIGNATURE = %w[h1 p hr p text br br br]
 		
 		def callback(segment)
+			# at first glance, seems similar to Type B
 			
+			# p segment.collect{|x| x.name }.join(' ')
+			# => "h1 p hr p text br br br strong text br strong text br strong text br strong text br p p text p text br br hr text div text div text div text"
+			#     0  1 2  3
+
+			
+			heading = segment[0]
+			top     = segment[1].children
+			rest    = segment[4].children
+			
+			# SummerResearch::Utilities.write_to_file("./course_info_type_b", rest)
+			
+			
+			# Unified processing, regaurdless of where the pieces are located
+			parse_heading(heading)
+			parse_top_chunk(top)
+			body_data    = parse_body(rest)
+			
+			# p [heading_data.class, top_data.class, body_data.class]
+			
+			return body_data
 		end
 	end
 	
@@ -548,7 +598,8 @@ class CourseInfo
 	TYPE_SEARCH_ORDER = [
 		TypeA,
 		TypeB,
-		TypeC
+		TypeC,
+		TypeD
 	]
 	
 	
