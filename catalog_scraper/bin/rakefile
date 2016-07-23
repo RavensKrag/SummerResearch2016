@@ -616,11 +616,48 @@ task :qian_hu_data do
 		all_courses_in_year = all_courses_in_year.reject{|course| course.dept == "Mason Core"}
 		
 		
-		out = 
-			all_courses_in_year.collect do |course_record|
-				@catalog.fetch_course_info(course_record)
-			end
+		
+		
+		
+		# TODO: would be nice if you could have some sort of progress indicator for this.
+		out = nil
+		
+		filepath = File.expand_path(
+			'./all_courses_2016_new_catalog_info_types.txt',
+			SummerResearch::Utilities::DATA_DIR
+		)
+		File.open(filepath, 'a') do |f|
+			out = 
+				all_courses_in_year.collect do |course_record|					
+					begin
+						@catalog.fetch_course_info(course_record)
+					rescue StandardError => e
+						f.puts "course id:   #{course_record.course_id}"
+						# TODO: Add short description to index
+						# f.puts "description: #{course.description}"
+						f.puts "url:         #{course_record.url}"
+						
+						# output the data from the exception
+						# (the program will still continue to run)
+						# (resulting in all errors printed in one place)
+						f.puts e.message
+						e.backtrace.each do |line|
+							f.puts "\t" + line
+							# indent the lines of the backtrace.
+							# makes it easier to see things when you start getting multiple errors
+						end
+						f.puts "=============="
+						f.puts
+						f.puts
+					else
+						# do nothing
+					end
+				end
+			
+		end
 	end
+	
+	raise "ERROR: Not all course info types recognized. Define new types and try again." if out.include? nil
 	
 	main_requirements = out
 	
@@ -1096,28 +1133,93 @@ namespace :test_course_info_fetch do
 	end
 	
 	
-	task :extended_set => [:sample_data] do
+	task :extended_set => "data/all_courses_2016_anomalies.txt" do
 		# ASSUME: requires that you load up ALL COURSES for the current catalog year, as was done when generating Qian Hu's dataset. Not going to copy that code here, just assuming it has been done already.
 			# (This only uses the index data, it should not use data from Mongo)
 		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
 		
-		sample = [
-			[
-				"MATH 551",
-				"Regression and Time Series",
-				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305092"
-			]
-		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
+		# read from file
+		filepath = File.expand_path(
+			"./all_courses_2016_anomalies.txt",
+			SummerResearch::Utilities::DATA_DIR
+		)
+		data = File.readlines(filepath)
 		
-		# dataset = @pw_sample + sample
-		dataset = sample
+		# chunk the data
+		chunk_size = 3
+		number_of_records = 98
+		data = data.collect{ |line| line.chomp }
+		           .each_slice(chunk_size).to_a
+		data.pop() # remove the last entry
+		
+		data.each{|list| list.pop } # remove the last line of each cluster, which is just empty
+		
+		p data.last(3)
+		
+		data.collect! do |course_id, url|
+			# remove the part at the beginning of the line that explains what this field is
+			course_id = course_id.split(':').last.strip
+			name      = '???'
+			url       = url.split.last
+			
+			# do actual processing
+			SummerResearch::CatalogLink.new(course_id, name, url, 'manual')
+		end
 		
 		
-		# NOTE: if @catalog is not set, debug_verbose() still works, but actually outputs far less data that debug()
-		course_data = CourseInfoDiagnostic.debug(@catalog, dataset)
-		course_data = CourseInfoDiagnostic.debug_verbose(@catalog, dataset)
+		
+		
+		# # NOTE: if @catalog is not set, debug_verbose() still works, but actually outputs far less data that debug()
+		# course_data = CourseInfoDiagnostic.debug(@catalog, data)
+		course_data = CourseInfoDiagnostic.debug_verbose(@catalog, data)
 	end
+	
+	task :extended_set_type_signatures => "data/all_courses_2016_anomalies_types.txt" do
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		# read from file
+		filepath = File.expand_path(
+			"./all_courses_2016_anomalies_types.txt",
+			SummerResearch::Utilities::DATA_DIR
+		)
+		data = File.readlines(filepath)
+		
+		# chunk the data
+		chunk_size = 3
+		number_of_records = 98
+		data = data.collect{ |line| line.chomp }
+		           .each_slice(chunk_size).to_a
+		data.pop() # remove the last entry
+		
+		data.each{|list| list.pop } # remove the last line of each cluster, which is just empty
+		
+		
+		# extra processing
+		data.each{|list| list.collect!{|x| x.tr('"', '')} } # remove unnecessary double quotes
+		
+		p data.last(3)
+		
+		
+		# actually use the data
+		out = 
+			data.group_by do |name, signature|
+				arr = signature.split()
+				i = arr.rindex('hr')
+				
+				arr[0..i]
+			end
+		
+		out.values.each{|arr| arr.collect!{|a,b| a }}
+		
+		puts out.to_yaml
+		puts "number of types:   #{out.size}"
+		puts "number of entries: #{data.size}"
+		puts "#{out.size.to_f / data.size * 100}%"
+	end
+	
+	
 	
 	
 	# dump some course data with the expected types out of Mongo and to YAML for easy viewing
