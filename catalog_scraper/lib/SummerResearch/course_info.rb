@@ -3,6 +3,7 @@ module SummerResearch
 
 class CourseInfo
 	attr_reader :url, :catalog_year, :id, :title, :credits, :attempts, :department
+	attr_reader :type
 	
 	def initialize(dept, course_number, catalog_year, url)
 		@storage = nil
@@ -26,7 +27,7 @@ class CourseInfo
 	# TODO: maybe implement serialization *to* Mongo in this class as well? just pass in the Mongo object and do things that way?
 	
 	def to_h
-		attributes = [:url, :catalog_year, :id, :title, :credits, :attempts, :department]
+		attributes = [:type, :url, :catalog_year, :id, :title, :credits, :attempts, :department]
 		
 		values = 
 			attributes.collect do |x|
@@ -160,7 +161,7 @@ class CourseInfo
 					# when a matching signature is found,
 					# run the callback, and then do not look for any other potential callbacks
 					@storage = type.callback(segment)
-					
+					@type    = type.class.to_s.split('::').last
 					# pseudo-return for the block
 					true
 				end
