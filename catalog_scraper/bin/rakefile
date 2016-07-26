@@ -630,7 +630,7 @@ task :qian_hu_data do
 		)
 		File.open(filepath, 'a') do |f|
 			out = 
-				all_courses_in_year.collect do |course_record|					
+				all_courses_in_year.collect do |course_record|			
 					begin
 						@catalog.fetch_course_info(course_record)
 					rescue StandardError => e
@@ -651,17 +651,14 @@ task :qian_hu_data do
 						f.puts "=============="
 						f.puts
 						f.puts
-					else
-						# do nothing
 					end
 				end
-			
 		end
 	end
 	
-	raise "ERROR: Not all course info types recognized. Define new types and try again." if out.include? nil
+	# raise "ERROR: Not all course info types recognized. Define new types and try again." if out.include? nil
 	
-	main_requirements = out
+	main_requirements = out.compact
 	
 	
 	
@@ -1044,14 +1041,71 @@ namespace :test_course_info_fetch do
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"
 			],
 			[
-				"EVPP 110",
+				"EVPP 110", # 'sustainable mason' badge
 				"The Ecosphere: An Introduction to Environmental Science I",
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
+			],
+			[
+				"GGS 103",  # 'sustainable mason' badge
+				"Human Geography",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=304295"
 			],
 			[
 				"Mason Core UGU",
 				"Global Understanding",
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
+			],
+			
+			
+			[
+				"OM 210",
+				"Statistical Analysis for Management",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305751"
+			],
+			[
+				"OR 574",
+				"Quality Control and Process Management",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305770"
+			],
+			[
+				"CEIE 450",
+				"Environmental Engineering Systems",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302280"
+			],
+			[
+				"CLIM 102",
+				"Introduction to Global Climate Change Science",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=307948"
+			],
+			[
+				"SOM 301",
+				"Business Models: A Communication Approach",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306669"
+			],
+			[
+				"CEIE 501",
+				"Sustainable Development",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302288"
+			],
+			[
+				"REAL 796",
+				"Directed Reading",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306438"
+			],
+			[
+				"MATH 551",
+				"Regression and Time Series",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305092"
+			],
+			[
+				"MLSC 302",
+				"Applied Leadership II",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=307989"
+			],
+			[
+				"PHYS 440",
+				"Nuclear and Particle Physics",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305999"
 			]
 		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
 		
