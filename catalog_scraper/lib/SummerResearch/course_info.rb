@@ -251,7 +251,9 @@ class CourseInfo
 				if type.test_signature_match?(segment)
 					# when a matching signature is found,
 					# run the callback, and then do not look for any other potential callbacks
-					@storage = type.test_callback(segment)
+					@storage = type.callback(segment)
+					@type    = type.class.to_s.split('::').last
+					puts "=> #{@type}"
 					
 					# pseudo-return for the block
 					true
@@ -308,9 +310,8 @@ class CourseInfo
 	# (headers as of now are always raw, 'n' => no container / 'y' => wrapped in container)
 	#           top, mid, bot
 	# A: heading, n,  n,  n
-	# B: heading, n,  y,  y
+	# B: heading, n,  y,  y        technically, B just cuts the middle in half, b/c it's v. weird
 	# C: heading, n,  n,  y
-	# D: heading, y,  y,  n
 	# 
 	# (This is not a rigourous enough definiton to actually separate the types, especially in the case of Type B, but this helps to understand generally what is going on. Take a look at some examples of all the types to further undertand. Examples can be found in the CourseInfo diagnostic in the project Rakefile)
 	
@@ -352,9 +353,9 @@ class CourseInfo
 			return flag
 		end
 		
-		def test_callback(segment)
-			puts "=> #{self.class.name}"
-		end
+		# def test_callback(segment)
+		# 	puts "=> #{self.class.name}"
+		# end
 		
 		def callback(segment)
 			raise "ERROR: #{self.class.name}#callback() needs to be defined with custom behavior."
@@ -377,10 +378,36 @@ class CourseInfo
 		end
 		
 		def parse_top_chunk(segment)
+			# NOTE: should parses the top regaurdless of specific formatting, assuming all elements are at the same level of the tree.
 			@context.instance_eval do
-				@credits    = segment[0].inner_text.split(':').last.strip
-				@attempts   = segment[2].inner_text.strip
-				@department = segment[5].inner_text.strip # <a>, href dept. page in the catalog
+				segment = segment.select{  |tag| tag.respond_to? :inner_text  }
+				                 .reject{  |tag| tag.inner_text.empty?  }
+				                 .reject{  |tag| tag.inner_text == '&nbsp;'  }
+				
+				
+				# puts "parts: #{segment.size}"
+				# p segment.collect{|x| x.name }
+				
+				
+				data = segment[0..2].collect{  |x| x.inner_text  }
+				if segment.last.name == 'a'
+					# if the last item is a link, fuse it with the second-to-last thing
+					# <a>, href dept. page in the catalog
+					data[2] += segment[3].inner_text
+				end
+				
+				
+				
+				@credits    = data[0].split(':').last.strip
+				@attempts   = data[1].strip
+				@department = data[2].tr(' ', ' ').strip
+				# the first character here is not a normal space. the second one is normal.
+				# it's not a tab either
+				
+				# (sometimes the department has a weird whitespace character at the end.)
+				# (take that off)
+				
+				p [@credits, @attempts, @department]
 			end
 		end
 		
@@ -562,22 +589,41 @@ class CourseInfo
 		end
 	end
 	
-	class TypeD < BaseType
-		SIGNATURE = %w[h1 p hr p text br br br]
+	
+	
+	class TypeD < BaseType # Similar to Type A (no link to department)
+		SIGNATURE = %w[h1 text br text br text hr]
 		
 		def callback(segment)
-			# at first glance, seems similar to Type B
-			
-			# p segment.collect{|x| x.name }.join(' ')
-			# => "h1 p hr p text br br br strong text br strong text br strong text br strong text br p p text p text br br hr text div text div text div text"
-			#     0  1 2  3
-
-			
 			heading = segment[0]
-			top     = segment[1].children
-			rest    = segment[4].children
+			top     = segment[1..6]
+			rest    = segment[7..-1]
 			
-			# SummerResearch::Utilities.write_to_file("./course_info_type_b", rest)
+			# TODO: consider that some code from #parse_body may need to move into this section
+			# parse_body() should only contain "universal" code
+			
+			
+			# Unified processing, regaurdless of where the pieces are located
+			parse_heading(heading)
+			parse_top_chunk(top)
+			body_data    = parse_body(rest)
+			
+			# p [heading_data.class, top_data.class, body_data.class]
+			
+			return body_data
+		end
+	end
+	
+	class TypeE < BaseType # Similar to Type A, very similar to Type D
+		SIGNATURE = %w[h1 text br text br text a span hr]
+		
+		def callback(segment)
+			heading = segment[0]
+			top     = segment[1..6]
+			rest    = segment[7..-1]
+			
+			# TODO: consider that some code from #parse_body may need to move into this section
+			# parse_body() should only contain "universal" code
 			
 			
 			# Unified processing, regaurdless of where the pieces are located
@@ -600,7 +646,8 @@ class CourseInfo
 		TypeA,
 		TypeB,
 		TypeC,
-		TypeD
+		TypeD,
+		TypeE
 	]
 	
 	
