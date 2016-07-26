@@ -618,7 +618,9 @@ task :qian_hu_data do
 		
 		
 		
-		
+		# --- Try to fetch information for all courses in the desired set.
+		#     If you can't process a course, just keep going, but log some error data.
+		#     This error log can be examined later to determine new CatalogInfo Types.
 		# TODO: would be nice if you could have some sort of progress indicator for this.
 		out = nil
 		
@@ -818,7 +820,7 @@ namespace :catalog_test do
 			#    2 pages => ~20
 			#    3 pages => a couple
 		end
-	end
+	end	
 end
 module CatalogTest
 	class << self
@@ -895,6 +897,65 @@ end
 
 
 
+
+
+task :restricted_set_size do
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	
+	
+	@catalog.activerecord_query do |course_model, catologyear_model|
+		count =
+			SummerResearch::Catalog::CASE_STUDY_DEPARTMENT_SET
+				.collect{  |dept|
+					course_model.where(:dept => dept).size
+				}
+				.reduce(&:+)
+		
+		puts "Count of all courses in the case study department set: #{count}"
+	end
+	
+	
+	# @catalog.mongo_query :course_info do |mongo|
+	# 	
+	# 	mongo.find(
+	# 		:course_id => record.course_id
+	# 	)
+	# end
+	
+	
+	
+	
+	
+	puts "=== load data..."
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+	
+	
+	puts "=== cycle through programs of study..."
+	
+	programs = [
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	programs.each do |degree_name|
+		puts "=== Getting info for: #{degree_name}"
+		url = @programs_of_study[degree_name]
+		courses = all_courses_for_degree(url)
+		# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
+			# url = @env.degrees[degree_name]
+			# course_list = SummerResearch.degree_requirements(url)
+			# puts "test"
+		# failure occurs inside of SummerResearch.degree_requiremnts
+		
+		
+		
+		p courses.size
+		# => 474 total courses across all degrees being studied, assuming no overlap (which is probably wrong)
+	end
+end
 
 
 
@@ -1171,8 +1232,8 @@ namespace :test_course_info_fetch do
 		
 		
 		# # NOTE: if @catalog is not set, debug_verbose() still works, but actually outputs far less data that debug()
-		# course_data = CourseInfoDiagnostic.debug(@catalog, data)
-		course_data = CourseInfoDiagnostic.debug_verbose(@catalog, data)
+		CourseInfoDiagnostic.debug(@catalog, data)
+		# CourseInfoDiagnostic.debug_verbose(@catalog, data)
 	end
 	
 	task :extended_set_type_signatures => "data/all_courses_2016_anomalies_types.txt" do
@@ -1397,7 +1458,7 @@ class << self
 		
 		course_list.each do |course|
 			begin
-				course_info_from_catalog_link(catalog, course).test_types
+				data = course_info_from_catalog_link(catalog, course).test_types
 			rescue StandardError => e
 				if flag
 					puts ""
