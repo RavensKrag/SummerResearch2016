@@ -293,22 +293,6 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 	
 	
 	main_requirements.each do |course_info|
-		
-		puts course_info.id
-		
-		regexp = /(\p{L}+ \d+)/ # look for course codes in the requirements lists
-		
-		
-		hard_deps =
-		%w[Prerequisite(s) Corequisite(s)]
-			.collect do |x|
-				requirements = course_info[x]
-				# p requirements
-				next unless requirements
-				requirements.scan(regexp)
-			end
-			
-		
 		# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
 		# ERROR: can't deal with 'or 240'
 		# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
@@ -335,28 +319,7 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 		
 		
 		
-		# "#{course} with grade of C or better"
-		# "Minimum grade of C in #{course}"
-		soft_deps = 
-			if course_info["Notes"]
-				# [0] PHYS 161
-				# [1] PHYS
-				# [2] 161
-				
-				# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
-				[] # pseudo-return empty array to stub this out
-			else
-				[] # if "Notes" attribute not set, return empty Array
-			end
 		
-		
-		# p hard_deps
-		# p soft_deps
-		dependencies = hard_deps + soft_deps
-		
-		
-		# p dependencies.flatten.compact.uniq
-		puts "---------"
 		
 		
 		
@@ -397,6 +360,32 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 		
 		
 		
+		
+		# # "#{course} with grade of C or better"
+		# # "Minimum grade of C in #{course}"
+		# soft_deps = 
+		# 	if course_info["Notes"]
+		# 		# [0] PHYS 161
+		# 		# [1] PHYS
+		# 		# [2] 161
+				
+		# 		# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
+		# 		[] # pseudo-return empty array to stub this out
+		# 	else
+		# 		[] # if "Notes" attribute not set, return empty Array
+		# 	end
+		
+		
+		# # p hard_deps
+		# # p soft_deps
+		# dependencies = hard_deps + soft_deps
+		
+		
+		# # p dependencies.flatten.compact.uniq
+		# puts "---------"
+		
+		
+		
 		# === generate "source code"
 		puts ">>>>>>>>>>"
 		all_deps_text =
@@ -412,12 +401,191 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 		# p enum.to_a
 		
 		parse_dependencies(all_deps_text)
+	end
+	
+	
+	
+	
+	degree_requirements = {
+		"Computer science core (36 credits)" => [
+			"CS 101",
+			"CS 105",
+			"CS 112",
+			"CS 211",
+			"CS 262",
+			"CS 306",
+			"CS 310",
+			"CS 321",
+			"CS 330",
+			"CS 367",
+			"CS 465",
+			"CS 483",
+			"ECE 301"
+		],
+		
+		"Senior computer science (15 credits)" => {
+			"One of the following:" => [
+				"CS 463",
+				"CS 471",
+				"CS 475"
+			],
+			
+			"And four additional courses chosen from:" => [
+				"CS 425",
+				"CS 440",
+				"CS 450",
+				"CS 451",
+				"CS 455",
+				"CS 463",
+				"CS 468",
+				"CS 469",
+				"CS 471",
+				"CS 475",
+				"CS 477",
+				"CS 480",
+				"CS 482",
+				"CS 484",
+				"CS 485",
+				"CS 490",
+				"CS 499",
+				"MATH 446 or OR 481" # FIGURE THIS OUT
+			],
+			
+			"Note:" => "Only three credits of CS 499 can be used toward the senior computer science requirement."
+		},
+		
+		"Mathematics (17 credits)" => [
+			"MATH 113",
+			"MATH 114",
+			"MATH 125",
+			"MATH 203",
+			"MATH 213"
+		],
+		
+		"Statistics (3 credits)" => [
+			"STAT 344"
+		],
+		
+		"Computer science-related courses (6 credits)" => {
+			"Two courses chosen from:" => [
+				"CS 463",
+				"CS 471",
+				"CS 475"
+			],
+			
+			"And four additional courses chosen from:" => [
+				"STAT 354",
+				"OR 335",
+				"OR 441",
+				"OR 442",
+				"ECE 280",
+				"ECE 431",
+				"ECE 447",
+				"ECE 450",
+				"ECE 511",
+				"SWE 432",
+				"SWE 437",
+				"SWE 443",
+				"SYST 371",
+				"SYST 470",
+				"PHIL 371",
+				"ENGH 388",
+				"MATH >300 (except MATH 351), or CS >300", # FIGURE THIS OUT
+				"PHIL 376"
+			],
+			
+			"Note:" => "Students may need to choose electives to satisfy prerequisites for these courses. Those planning to take MATH 352 may replace STAT 344 with MATH 351."
+		},
+		
+		"Natural Science (12 credits)" => {
+			:description => "The BS in Computer Science requires 12 credits of natural science.  The courses should be intended for science and engineering students and must include a two course sequence with laboratories.  Some approved combinations have a total of more than 12 hours.  Approved two course sequences with laboratories are:",
+			
+			
+			"Astronomy:" => [
+				"ASTR 111", "ASTR 112",
+				"ASTR 113", "ASTR 114"
+			],
+			 
+			"Biology:" => [
+				"BIOL 103", "BIOL 104"
+				 
+			],
+			"Chemistry:" => [
+				"CHEM 211", "CHEM 213",
+				"CHEM 212", "CHEM 214"
+			],
+			 
+			"Environmental Science:" => [
+				"EVPP 110", "EVPP 111"
+				 
+			],
+			"Geology:" => [
+				"GEOL 101", "GEOL 102"
+				 
+			],
+			"Physics:" => [
+				"PHYS 160", "PHYS 161",
+				"PHYS 260", "PHYS 261"
+			]
+		},
+		
+		"Communication (3 credits)" => [
+			"COMM 100"
+		],
+		# Computer Science students must make a technical presentation.  This course fulfills the  Mason Core requirement in oral communication.
+		# ^ TODO: figure out how to encode this data
+		
+		"Additional Humanities (3 credits)" => {
+			:description => "Students must complete three additional credits of Humanities courses.  This can be fulfilled by any Mason Core course except those listed under Information Technology, Synthesis, Quantitative Reasoning, or Natural Science.  Students wishing to substitute alternate courses for this requirement must obtain departmental approval.",
+			
+			
+			:data => {
+				"3 credits in humanities" => [
+					"ANY Mason Core
+					EXCEPT Information Technology
+					       Synthesis
+					       Quantitative Reasoning
+					       Natural Science",
+					
+					"or alternates with departmental approval"
+				]
+			}
+		},
+		
+		"Additional Mason Core (21 credits)" => {
+			:description => "Students must complete all Mason Core requirements not fulfilled by major requirements.",
+			
+			:data => [
+				"Written Communication: 6 credits",
+				"Literature: 3 credits",
+				"Arts: 3 credits",
+				"Western Civilization/World History: 3 credits",
+				"Social and Behavioral Science: 3 credits",
+				"Global Understanding: 3 credits"
+			],
+			
+			"Note:" => "CS majors must take the Natural Sciences section of ENGH 302."
+		},
+		
+		"Electives (4 credits)" => "Students must complete 4 elective credits."
+	}
+	
+	
+	degree_requirements["Computer science core (36 credits)"]
+	.collect{  |x| @catalog.course_info(x)  }
+	.each do |course_info|
+		puts ">>>>>>>>>>"
+		puts "#{course_info.id} - #{course_info.title}"
+		
+		all_deps_text_list =
+			%w[Prerequisite(s) Corequisite(s)]
+				.collect do |x|
+					requirements = course_info[x]
+				end
+		all_deps_text = all_deps_text_list.join("\n")
 		
 		
-		
-		
-		
-		dependencies # <-- pseudo-return for block
+		p parse_dependencies(all_deps_text)
 	end
 end
 
@@ -609,7 +777,7 @@ def parse(tokens)
 	# [1151, 1154, :course_number, ["100"]]
 	# [1158, 1167, :year_level_category, ["200", "-level"]]
 	# [1168, 1172, :department_code, ["COMM"]]
-
+	
 	foo_data_new = Array.new
 	
 	
