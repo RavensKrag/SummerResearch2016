@@ -570,23 +570,28 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 		"Electives (4 credits)" => "Students must complete 4 elective credits."
 	}
 	
+	course_info_list = 
+		degree_requirements["Computer science core (36 credits)"]
+		.collect{  |x| @catalog.course_info(x)  }
 	
-	degree_requirements["Computer science core (36 credits)"]
-	.collect{  |x| @catalog.course_info(x)  }
-	.each do |course_info|
-		puts ">>>>>>>>>>"
-		puts "#{course_info.id} - #{course_info.title}"
-		
-		all_deps_text_list =
-			%w[Prerequisite(s) Corequisite(s)]
-				.collect do |x|
-					requirements = course_info[x]
-				end
-		all_deps_text = all_deps_text_list.join("\n")
-		
-		
-		p parse_dependencies(all_deps_text)
-	end
+	dependency_list = 
+		course_info_list.collect do |course_info|
+			puts ">>>>>>>>>>"
+			puts "#{course_info.id} - #{course_info.title}"
+			
+			all_deps_text_list =
+				%w[Prerequisite(s) Corequisite(s)]
+					.collect do |x|
+						requirements = course_info[x]
+					end
+			all_deps_text = all_deps_text_list.join("\n")
+			
+			
+			parse_dependencies(all_deps_text) || []
+		end
+	
+	dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
+	p dependency_map
 end
 
 task :parser_test do
