@@ -185,7 +185,11 @@ get '/api/program_of_study/CS_BS' do
 		end
 	links =
 		links.flatten(1).collect do |course, dependency|
-			{'source' => dependency, 'target' => course}
+			{
+				'source' => dependency,
+				'target' => course,
+				'color'  => '#3399FF'
+			}
 		end
 	
 	

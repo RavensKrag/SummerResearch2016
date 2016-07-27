@@ -221,7 +221,8 @@ function canvas_arrow(context, fromx, fromy, tox, toy){
 }
 
 
-
+var tick = 0
+var tick_threshold = 50
 
 // code below taken d3v4 example code
 // src: http://bl.ocks.org/mbostock/ad70335eeef6d167bc36fd3c04378048
@@ -265,11 +266,21 @@ d3.json(program_of_study, function(error, graph){
     
     context.beginPath();
     graph.links.forEach(drawLink);
-    context.strokeStyle = "#aaa";
+    context.strokeStyle = '#3399FF';
+    if(tick < tick_threshold){
+      console.log("standard context");
+      console.log(context);
+      tick += 1;
+    }
     context.stroke();
+      // ^ batch and render. just like OpenGL.
+      //   set state, and then consume it.
+    
+    
     
     context.beginPath();
     graph.nodes.forEach(drawNode);
+    // context.fillStyle = '#3399FF'
     context.fill();
     context.strokeStyle = "#fff";
     context.stroke();
@@ -302,11 +313,38 @@ function drawLink(d) {
   // context.lineTo(d.target.x, d.target.y);
   
   
+  v1 = $V([d.source.x, d.source.y]);
+  v2 = $V([d.target.x, d.target.y]);
+  displacement = v2.subtract(v1);
+  
+  r = 5 // this 'r' should be greater than the 'r' for each node
+  // NOTE: maybe the displacement from each end is dependent on the size of the node at that end? that gets pretty complicated though...
+    // but ultimately, what I want is to be able to dodge the circle
+  difference = displacement.toUnitVector().multiply(r)
+  v1 = v1.add(difference);
+  v2 = v2.subtract(difference);
+  
   canvas_arrow(
     context,
-    d.source.x, d.source.y,
-    d.target.x, d.target.y
+    v1.elements[0], v1.elements[1],
+    v2.elements[0], v2.elements[1]
   );
+  
+  // canvas_arrow(
+  //   context,
+  //   d.source.x, d.source.y,
+  //   d.target.x, d.target.y
+  // );
+  
+  // context.strokeStyle = d.color;
+  // context.stroke();
+    // ^ if you render here,
+    //   don't get any AA, and lines seem oddly thick
+  if(tick < tick_threshold){
+    console.log("link context");
+    console.log(context);
+    tick += 1;
+  }
   
   // canvas_arrow(
   //   context,
