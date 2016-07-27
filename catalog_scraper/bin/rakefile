@@ -599,6 +599,67 @@ def parse(tokens)
 	return if tokens.empty?
 	# puts "running"
 	
+	
+	out = Array.new
+	
+	
+	# --- parse complex generalized case like '3 credits of 100 or 200-level COMM'
+	
+	# [1138, 1147, :credit_count, ["3 credits", "credits"]]
+	# [1151, 1154, :course_number, ["100"]]
+	# [1158, 1167, :year_level_category, ["200", "-level"]]
+	# [1168, 1172, :department_code, ["COMM"]]
+
+	foo_data_new = Array.new
+	
+	
+	tokens.each_with_index do |t, i|
+		break if i == tokens.size-1 # need to read one past 'i', so abort when 'i' is max
+		
+		start_pos, end_pos, type, captures = t
+		
+		next unless type == :year_level_category
+		end_index = i+1
+		
+		
+		
+		next unless tokens[end_index][2] == :department_code
+		
+		# walk backwards towards the front, until you hit :credit_count
+		tokens[0..i].reverse_each.each_with_index do |t2, distance|
+			if t2[2] == :credit_count
+				# note: 'j' is further down the array than 'i'
+				j = i - distance
+				# p [j, end_index]
+				
+				
+				foo_data_new << tokens[j..end_index]
+				
+				break
+			end
+		end
+	end
+	
+	p foo_data_new
+	
+	# data = 
+	# 	tokens.collect{  |start_pos, end_pos, type, captures|  type }
+	# 		.join(' ')
+	# 		.match(/(credit_count(.*?)year_level_category department_code)/)
+	# p data.captures[0]
+	
+	
+	# consume these tokens so no other steps can use them
+	foo_data_new.flatten(1).each do |t|
+		# p t
+		tokens.delete t
+	end
+	
+	# out += foo_data_new
+	
+	
+	
+	
 	# unless tokens.first[1] == :department_code
 	# 	# Expect that the first token is a department code
 	# 	# Need to specify department codes if there are any course numbers specified
@@ -607,67 +668,30 @@ def parse(tokens)
 	# 	end
 	# end
 	
-	
-	most_recent_dept_code = tokens.first[1]
-	
-	out = 
-		tokens.collect do |start_pos, end_pos, type, captures|
-			token = captures[0]
-			
-			most_recent_dept_code = token if type == :department_code
-			
-			if type == :course_number
-				[most_recent_dept_code, token].join(' ')
-			end
-		end
-	out.compact!
-	
-	
-	[1138, 1147, :credit_count, ["3 credits", "credits"]]
-	[1151, 1154, :course_number, ["100"]]
-	[1158, 1167, :year_level_category, ["200", "-level"]]
-	[1168, 1172, :department_code, ["COMM"]]
-
-	foo_data_new = Array.new
-
-	tokens.each_with_index do |t, i|
-		start_pos, end_pos, type, captures = t
-		if type == :year_level_category
-			end_index = i+1
-			
-			if tokens[end_index][2] == :department_code
-				# walk backwards towards the front, until you hit :credit_count
-				tokens[0..i].reverse_each.each_with_index do |t2, distance|
-					
-					if t2[2] == :credit_count
-						# note: 'j' is further down the array than 'i'
-						j = i - distance
-						# p [j, end_index]
-						
-						
-						foo_data_new << tokens[j..end_index]
-						
-						break
-					end
+	# --- parse standard department codes. ex) 'CS 367'
+	unless tokens.empty?
+		most_recent_dept_code = tokens.first[1]
+		
+		new_data = 
+			tokens.collect do |start_pos, end_pos, type, captures|
+				token = captures[0]
+				
+				most_recent_dept_code = token if type == :department_code
+				
+				if type == :course_number
+					[most_recent_dept_code, token].join(' ')
 				end
 			end
-		end
+		new_data.compact!
+		
+		
+		out += new_data 
 	end
-	
-	p foo_data_new
-
-	
-	data = 
-		tokens.collect{  |start_pos, end_pos, type, captures|  type }
-			.join(' ')
-			.match(/(credit_count(.*?)year_level_category department_code)/)
-	p data.captures[0]
+		
 	
 	
 	
-	out.sort_by! do |start_pos, end_pos, type, captures|
-		start_pos
-	end
+	
 	
 	
 	puts "> #{out.inspect}"
@@ -771,6 +795,7 @@ task :qian_hu_data do
 			name = course_info.id
 			
 			puts "-=-=-=-=-=-=-=-="
+			
 			deps = course_info["Prerequisite(s)"]
 				puts "=>  #{deps.inspect}"
 			deps = deps.nil? ? [] : parse_dependencies(deps)
@@ -789,8 +814,8 @@ task :qian_hu_data do
 	p data
 	
 	# === convert to desired output format
-	filepath = File.expand_path('./qian_sample_4.txt', SummerResearch::Utilities::DATA_DIR)
-	File.open(filepath, 'w') do |f|
+	filepath = File.expand_path('./qian_sample_5.txt', SummerResearch::Utilities::DATA_DIR)
+	File.open(filepath, 'a') do |f|
 		data.each do |name, deps|
 			name = name.tr(' ', '-')
 			deps.collect!{  |x| x.tr(' ', '-')  }
