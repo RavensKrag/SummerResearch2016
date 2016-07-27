@@ -173,7 +173,13 @@ get '/api/program_of_study/CS_BS' do
 		.collect do |data|
 			{
 				'id' => data,
-				'r' => data.split(' ')[1][0].to_i # first digit
+				'r' => data.split(' ')[1][0].to_i, # first digit
+				'color' =>
+				if data.split(' ')[0] != 'CS'
+					"#10D588"
+				else
+					"#000"
+				end
 			}
 		end
 	

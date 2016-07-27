@@ -280,7 +280,7 @@ d3.json(program_of_study, function(error, graph){
     
     context.beginPath();
     graph.nodes.forEach(drawNode);
-    // context.fillStyle = '#3399FF'
+    context.fillStyle = '#000' // color of circles
     context.fill();
     context.strokeStyle = "#fff";
     context.stroke();
@@ -358,5 +358,18 @@ function drawNode(d) {
   context.moveTo(d.x + r, d.y);
   context.arc(d.x, d.y, r, 0, 2 * Math.PI);
   
+  // context.fillStyle = 'f00';
+  context.fillStyle = d.color; // color of text (anywhere, this fx)
   context.fillText(d.id, d.x, d.y);
+  
+  // NOTE: text seems to be rendering behind the circle, not sure why. Order of render commands does not seem to change anything.
+  
+  
+  // NOTE: the color if the first node seems to bleed into all other circles.
+    // NO
+    // it is not the FIRST one, but the LAST one
+  
+  
+  
+  // TODO: figure out how setting context variables effects rendering. I thought I understood it, but I can't always predict future effects, so I clearly don't...
 }
