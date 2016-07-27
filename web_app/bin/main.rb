@@ -162,6 +162,57 @@ get '/api/required_courses/ComputerScienceBS' do
 end
 
 
+
+
+data =
+	{"CS 101"=>["CS 112"], "CS 105"=>[], "CS 112"=>["MATH 104", "MATH 105", "MATH 113"], "CS 211"=>["CS 112"], "CS 262"=>["CS 211", "CS 222"], "CS 306"=>["CS 105", "COMM 100", "ENGH 302", "HNRS 110", "HNRS 122", "HNRS 130", "HNRS 131", "HNRS 230", "HNRS 240"], "CS 310"=>["CS 211", "MATH 113", "CS 105"], "CS 321"=>["CS 310", "ENGH 302", "CS 421", "SWE 421", "CS 321"], "CS 330"=>["CS 211", "MATH 125"], "CS 367"=>["CS 262", "CS 222", "ECE 301", "ECE 331"], "CS 465"=>["CS 367"], "CS 483"=>["CS 310", "CS 330", "MATH 125"], "ECE 301"=>["MATH 125", "MATH 112"]}
+
+get '/api/program_of_study/CS_BS' do
+	nodes = data.collect{|k,v| [k,v ]}.flatten.uniq
+	nodes = nodes.collect{  |data|  {'id' => data}  }
+	
+	links =
+		data.collect do |parent, children|
+			children.collect do |child|
+				[parent, child]
+			end
+		end
+	links =
+		links.flatten(1).collect do |parent, child|
+			{'source' => parent, 'target' => child}
+		end
+	
+	
+	
+	out = {
+		'nodes' => nodes,
+		'links' => links
+	}
+	
+	JSON.generate out
+end
+
+get '/api/program_of_study/CS_BS/all' do
+	out = data.collect{|k,v| [k,v ]}.flatten
+	
+	JSON.generate out
+end
+
+get '/api/program_of_study/CS_BS/paired_links' do
+	out =
+		data.collect do |parent, children|
+			children.collect do |child|
+				[parent, child]
+			end
+		end
+	out.flatten!(1)
+	
+	JSON.generate out
+end
+
+
+
+
 # bin/database.log
 # what the heck is this file? what is it a log of? SQLite? Mongo?
 # man, this configuration is messed up...
