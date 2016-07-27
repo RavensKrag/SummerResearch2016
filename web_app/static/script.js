@@ -209,12 +209,30 @@ var program_of_study = '/api/program_of_study/CS_BS';
 
 
 
+// src: http://stackoverflow.com/questions/808826/draw-arrow-on-canvas-tag
+function canvas_arrow(context, fromx, fromy, tox, toy){
+    var headlen = 10;   // length of head in pixels
+    var angle = Math.atan2(toy-fromy,tox-fromx);
+    context.moveTo(fromx, fromy);
+    context.lineTo(tox, toy);
+    context.lineTo(tox-headlen*Math.cos(angle-Math.PI/6),toy-headlen*Math.sin(angle-Math.PI/6));
+    context.moveTo(tox, toy);
+    context.lineTo(tox-headlen*Math.cos(angle+Math.PI/6),toy-headlen*Math.sin(angle+Math.PI/6));
+}
+
+
+
+
 // code below taken d3v4 example code
 // src: http://bl.ocks.org/mbostock/ad70335eeef6d167bc36fd3c04378048
-var canvas = document.querySelector("canvas"),
+// (starting to make my own modifications slowly over time)
+var canvas  = document.querySelector("canvas"),
     context = canvas.getContext("2d"),
-    width = canvas.width,
-    height = canvas.height;
+    width   = canvas.width,
+    height  = canvas.height;
+
+
+
 
 var simulation = d3.forceSimulation()
     .force("link", d3.forceLink().id(function(d) { return d.id; }))
@@ -223,14 +241,14 @@ var simulation = d3.forceSimulation()
 
 d3.json(program_of_study, function(error, graph){
   if (error) throw error;
-
+  
   simulation
       .nodes(graph.nodes)
       .on("tick", ticked);
-
+  
   simulation.force("link")
       .links(graph.links);
-
+  
   d3.select(canvas)
       .call(d3.drag()
           .container(canvas)
@@ -238,15 +256,18 @@ d3.json(program_of_study, function(error, graph){
           .on("start", dragstarted)
           .on("drag", dragged)
           .on("end", dragended));
-
+  
   function ticked() {
     context.clearRect(0, 0, width, height);
-
+    
+    context.fillText("Hello world!", 30, 55);
+    
+    
     context.beginPath();
     graph.links.forEach(drawLink);
     context.strokeStyle = "#aaa";
     context.stroke();
-
+    
     context.beginPath();
     graph.nodes.forEach(drawNode);
     context.fill();
@@ -277,11 +298,27 @@ function dragended() {
 }
 
 function drawLink(d) {
-  context.moveTo(d.source.x, d.source.y);
-  context.lineTo(d.target.x, d.target.y);
+  // context.moveTo(d.source.x, d.source.y);
+  // context.lineTo(d.target.x, d.target.y);
+  
+  
+  canvas_arrow(
+    context,
+    d.source.x, d.source.y,
+    d.target.x, d.target.y
+  );
+  
+  // canvas_arrow(
+  //   context,
+  //   d.target.x, d.target.y,
+  //   d.source.x, d.source.y
+  // );
 }
 
 function drawNode(d) {
-  context.moveTo(d.x + 3, d.y);
-  context.arc(d.x, d.y, 3, 0, 2 * Math.PI);
+  r = 3
+  context.moveTo(d.x + r, d.y);
+  context.arc(d.x, d.y, r, 0, 2 * Math.PI);
+  
+  context.fillText(d.id, d.x, d.y);
 }
