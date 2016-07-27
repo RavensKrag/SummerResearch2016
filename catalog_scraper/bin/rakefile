@@ -404,6 +404,7 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 			.collect do |x|
 				requirements = course_info[x]
 			end
+		
 		all_deps_text = all_deps_text.join("\n")
 		
 		# p all_deps_text
@@ -421,60 +422,15 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 end
 
 task :parser_test do
-	corpus = <<-EOF
-		"C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
-		
-		"Grade of C or better in CS 310, 330, and 367."
-		
-		CS 499 
-		Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
-		
-		PHIL 371 - Philosophy of Natural Sciences
-		Prerequisite(s): "3 credits of philosophy, or permission of instructor"
-
-
-		SWE 443 - Software Architectures
-		Prerequisite(s): Grade of C or better in CS 321 or CS 421 or SWE 321 or SWE 421.
-		
-		"math placement test"
-		"Placement Test"
-		"Mathematics Placement Test"
-
-		"algebra tutorial program"
-		
-		
-		
-		
-		HNRS 122, 130, 131, 230 or 240
-		CS 262 or 222
-		ECE 301 or 331
-		CS 310, 330, and 367
-		"Grade of C or better in CS 310, 330, and 367."
-		MATH 123 and 124
-		"C or better in MATH 113 or in both MATH 123 and 124."
-		
-		
-		
-		"Completion of 45 credits including the Mason core composition and literature requirements, requires a grade of C or better."
-		
-		"Score of 13 or better on the Math Placement Test, or Grade of C or better in MATH 105, or Grade of C or better in MATH 108, or Grade of C or better in MATH 113."
-		
-		"C or higher in STAT 346 and a course in Statistics, or STAT 344."
-		
-		
-		Mason Core
-		 Mason Core UWCU
-		 Mason Core UOC
-		 Mason Core UQR
-		 Mason Core UITC
-		 Mason Core UFA
-		 Mason Core UGU
-		 Mason Core ULIT
-		 Mason Core UNSL
-		 Mason Core USBS
-		 Mason Core UWC
-		 Mason Core USYN
-	EOF
+	filepath = File.expand_path(
+		'./dep_parser_test_input.txt',
+		SummerResearch::Utilities::DATA_DIR
+	)
+	
+	# ignore commented lines
+	corpus = File.readlines(filepath).reject{  |line| line.strip[0] == '#'  }
+	corpus = corpus.join('')
+	# puts corpus
 	
 	parse_dependencies(corpus)
 end
@@ -509,64 +465,210 @@ end
 
 def parse_dependencies(all_deps_text)
 	# === find relevant "tokens"
+	patterns = [
+		[/(Mason Core)/,   :core_overview],
+		
+		[
+			/(#{ %w[UWCU UOC UQR UITC UFA UGU ULIT UNSL USBS UWC USYN].join('|') })/,
+			:core_category
+		],
+		# Exhaustive search for all "mason core" category keys
+		# (must trigger before searching for department codes)
+		
+		[/(\d{3})(-level)/,  :year_level_category],
+		# ex: 600-level course
+		
+		[/(\p{Lu}{2,4})/,  :department_code],
+		# 2-4 capital letters,
+		
+		[/(\d{3})/,        :course_number],
+		# 3 digits,
+		
+		[/(C or higher|(g|G)rade of C or better)/, :c_or_higher], # above 'of something'
+		
+		
+		[/(\d+ (credits|credit hours))/,  :credit_count], # above 'of something'
+		# ooh, this is a multi-fragment token...,
+		
+		[/(permission of instructor)/, :instructor_permission], # above 'of something'
+		
+		
+		# [/(of)/,           :OF], # above 'of something'
+		
+		
+		[/(of \w*)/,       :of_something],
+		# as in '60 credits of philosophy'
+		
+		
+		# [/(and)/,                      :AND],
+		[/(or)/,                       :OR],
+		
+		[/(specific prerequisites vary)/, :it_depends]
+	]
+	
+	# $1 through $9 are the "Pseudo Variables" set by regex matching
+		# src: http://stackoverflow.com/questions/6803647/how-to-write-a-ruby-switch-statement-case-when-with-regex-and-backreferences
+	
+	
+	# NOTE: assuming the only usage of three-digit numbers is in course codes. However, some courses gate by the number of credits, so maybe a three-digit number could appear there? It seems unlikely, (60 and 90 seem like better choices, given 120 to graduate) but making a note in case an error comes up in the future.
+	
+	
+	
+	
+	
+	tokens = lex(patterns, all_deps_text)
+	out = parse(tokens)
+	
+	return out
+end
+
+def lex(patterns, corpus)
+	# foo = patterns[0]
+	# all_deps_text.scan foo[0] do
+	# 	p [$~.offset(1), foo[1]].flatten
+	# end
+	
+	
+	# p patterns[0][0].match(all_deps_text)
+	
+	
 	tokens = 
-		all_deps_text.split.collect do |fragment|
-			# $1 through $9 are the "Pseudo Variables" set by regex matching
-				# src: http://stackoverflow.com/questions/6803647/how-to-write-a-ruby-switch-statement-case-when-with-regex-and-backreferences
+		patterns.collect do |regexp, type|
+			matchdata_list = corpus.to_enum(:scan, regexp).collect { Regexp.last_match }
 			
-			# NOTE: must be write capture groups for the pseudo variables to be populated
-			case fragment
-				when /(Mason Core)/
-					# ERROR:: this can't be captured right now, because of the space
-					[:core_overview,   $1]
-				when /(#{ %w[UWCU UOC UQR UITC UFA UGU ULIT UNSL USBS UWC USYN].join('|') })/
-					# Exhaustive search for all "mason core" category keys
-					# (must trigger before searching for department codes)
-					[:core_category,   $1]
-				when /(\d{3}-level)/
-					# ex: 600-level course
-					[:year_level_category, $1]
-				when /(\p{Lu}{2,4})/ # 2-4 capital letters
-					[:department_code, $1]
-				when /(\d{3})/       # 3 digits
-					[:course_number,   $1]
-				else
-					nil
+			matchdata_list.collect do |matchdata|
+				start = matchdata.begin(0) # nth item in the matchdata collection
+				stop  = matchdata.end(0)
+				captures = matchdata.captures
+				
+				[start, stop, type, captures]
 			end
-			# NOTE: assuming the only usage of three-digit numbers is in course codes. However, some courses gate by the number of credits, so maybe a three-digit number could appear there? It seems unlikely, (60 and 90 seem like better choices, given 120 to graduate) but making a note in case an error comes up in the future.
 		end
-	tokens.compact!
 	
-	puts "vvvvvvvvvvvvv"
-	p tokens
-	puts "^^^^^^^^^^^^^"
-	
-	
-	# === use "tokens" to assemble course names
-	return if tokens.empty?
-	
-	
-	unless tokens.first[0] == :department_code
-		# Expect that the first token is a department code
-		# Need to specify department codes if there are any course numbers specified
-		if tokens.any?{|type, token| type == :course_number }
-			raise "ERROR: first token should be a department code"
-		end
+	tokens = tokens.flatten(1).sort_by do |start_pos, end_pos, type, captures|
+		start_pos
 	end
 	
 	
-	most_recent_dept_code = tokens.first[0]
+	# --- remove overlapping tokens
+	# whatever token whose pattern is higher on the list stays (lower index)
+	# the other token gets deleted
+	removal_list = Array.new
+	tokens.each_with_index do |t1, i|
+		tokens[(i+1)..-1].each do |t2|
+			t1_start, t1_stop = t1[0..1]
+			t2_start, t2_stop = t2[0..1]
+			
+			removal_list << [t1, t2] if (t1_start..t1_stop).include? t2_start
+		end
+	end
+	
+	removal_list.uniq.each do |t1, t2|
+		type1 = t1[2]
+		type2 = t2[2]
+		
+		a = patterns.each_with_index.find_index{  |pat,i|  pat[1] == type1  }
+		b = patterns.each_with_index.find_index{  |pat,i|  pat[1] == type2  }
+		# p [a,b]
+		
+		if a > b
+			tokens.delete t1
+		else
+			tokens.delete t2
+		end
+		
+	end
+	
+	
+	
+	# --- print data dump to file, for debugging	
+	dump = tokens.collect{|t| t.inspect }.join("\n")
+	SummerResearch::Utilities.write_to_file('./dep_parser_dump.txt', dump)
+	
+	
+	
+	# tokens.
+	
+	
+	
+	return tokens
+end
+
+def parse(tokens)
+	# === use "tokens" to assemble course names
+	return if tokens.empty?
+	# puts "running"
+	
+	# unless tokens.first[1] == :department_code
+	# 	# Expect that the first token is a department code
+	# 	# Need to specify department codes if there are any course numbers specified
+	# 	if tokens.any?{|start_pos, type, captures| type == :course_number }
+	# 		raise "ERROR: first token should be a department code"
+	# 	end
+	# end
+	
+	
+	most_recent_dept_code = tokens.first[1]
 	
 	out = 
-		tokens.collect do |type, token|
+		tokens.collect do |start_pos, end_pos, type, captures|
+			token = captures[0]
+			
 			most_recent_dept_code = token if type == :department_code
 			
 			if type == :course_number
 				[most_recent_dept_code, token].join(' ')
 			end
 		end
-	
 	out.compact!
+	
+	
+	[1138, 1147, :credit_count, ["3 credits", "credits"]]
+	[1151, 1154, :course_number, ["100"]]
+	[1158, 1167, :year_level_category, ["200", "-level"]]
+	[1168, 1172, :department_code, ["COMM"]]
+
+	foo_data_new = Array.new
+
+	tokens.each_with_index do |t, i|
+		start_pos, end_pos, type, captures = t
+		if type == :year_level_category
+			end_index = i+1
+			
+			if tokens[end_index][2] == :department_code
+				# walk backwards towards the front, until you hit :credit_count
+				tokens[0..i].reverse_each.each_with_index do |t2, distance|
+					
+					if t2[2] == :credit_count
+						# note: 'j' is further down the array than 'i'
+						j = i - distance
+						# p [j, end_index]
+						
+						
+						foo_data_new << tokens[j..end_index]
+						
+						break
+					end
+				end
+			end
+		end
+	end
+	
+	p foo_data_new
+
+	
+	data = 
+		tokens.collect{  |start_pos, end_pos, type, captures|  type }
+			.join(' ')
+			.match(/(credit_count(.*?)year_level_category department_code)/)
+	p data.captures[0]
+	
+	
+	
+	out.sort_by! do |start_pos, end_pos, type, captures|
+		start_pos
+	end
+	
 	
 	puts "> #{out.inspect}"
 	
@@ -607,7 +709,7 @@ task :qian_hu_data do
 			catologyear_model.where(:year_range => '2016-2017')
 			                 .first.courses
 		
-		p all_courses_in_year
+		# p all_courses_in_year
 		raise "ERROR: expected a course_model" unless all_courses_in_year.first.is_a? course_model
 		
 		
