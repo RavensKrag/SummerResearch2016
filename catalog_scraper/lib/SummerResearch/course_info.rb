@@ -187,7 +187,7 @@ class CourseInfo
 		# --- flatten out remaning <p> elements
 			segment.collect! do |node|
 				if node.name == "p"
-					node.children.to_a
+					node.enum_for(:traverse).to_a
 				else
 					node
 				end
