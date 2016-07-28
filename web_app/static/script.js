@@ -240,10 +240,13 @@ var simulation = d3.forceSimulation()
     .force("charge", d3.forceManyBody())
     .force("center", d3.forceCenter(width / 2, height / 2));
 
-d3.json(program_of_study, function(error, graph){
+d3.json(program_of_study, function(error, data){
   if (error) throw error;
   
-  graph = graph[3]
+  data.length;
+  
+  i = 3;
+  graph = data[i];
   
   simulation
       .nodes(graph.nodes)
@@ -264,6 +267,10 @@ d3.json(program_of_study, function(error, graph){
     context.clearRect(0, 0, width, height);
     
     context.fillText("Hello world!", 30, 55);
+    
+    page_count = "graph " + (i+1) + " of " + data.length;
+    context.fillText(page_count, 30, 75);
+    
     
     
     context.beginPath();
