@@ -30,3 +30,12 @@ svg text{
 svg text.course{
 	
 }
+
+.swatch{
+	background: aqua none repeat scroll 0% 0%;
+	display: inline-block;
+	margin-right: 20px;
+	
+	width:  80px;
+	height: 80px;
+}

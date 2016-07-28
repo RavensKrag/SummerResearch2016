@@ -243,6 +243,8 @@ var simulation = d3.forceSimulation()
 d3.json(program_of_study, function(error, graph){
   if (error) throw error;
   
+  graph = graph[4]
+  
   simulation
       .nodes(graph.nodes)
       .on("tick", ticked);
@@ -351,6 +353,9 @@ function drawLink(d) {
   //   d.target.x, d.target.y,
   //   d.source.x, d.source.y
   // );
+  
+  
+  // NOTE: some co-requisites are listed on both pages, and some are not
 }
 
 function drawNode(d) {

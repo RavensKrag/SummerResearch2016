@@ -269,30 +269,21 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 	
 	# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
 	
-	main_requirements = 
-		@required_courses
-		.reject{|catalog_link| catalog_link.id == "Mason Core"}
-		.collect do |catalog_link|
-			id = catalog_link.id
+	# main_requirements = 
+	# 	@required_courses
+	# 	.reject{|catalog_link| catalog_link.id == "Mason Core"}
+	# 	.collect do |catalog_link|
+	# 		id = catalog_link.id
 			
-			# puts "============"
-			# p id
-			data = @catalog.course_info(id)
-			# p data
+	# 		# puts "============"
+	# 		# p id
+	# 		data = @catalog.course_info(id)
+	# 		# p data
 			
-			data
-		end
+	# 		data
+	# 	end
 	
-	
-	
-	
-	
-	
-	# lexer = DependencyLexer.new(debug: true)
-	# lexer = DependencyLexer.new()
-	
-	
-	main_requirements.each do |course_info|
+	# main_requirements.each do |course_info|
 		# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
 		# ERROR: can't deal with 'or 240'
 		# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
@@ -386,22 +377,22 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 		
 		
 		
-		# === generate "source code"
-		puts ">>>>>>>>>>"
-		all_deps_text =
-		%w[Prerequisite(s) Corequisite(s)]
-			.collect do |x|
-				requirements = course_info[x]
-			end
+		# # === generate "source code"
+		# puts ">>>>>>>>>>"
+		# all_deps_text =
+		# %w[Prerequisite(s) Corequisite(s)]
+		# 	.collect do |x|
+		# 		requirements = course_info[x]
+		# 	end
 		
-		all_deps_text = all_deps_text.join("\n")
+		# all_deps_text = all_deps_text.join("\n")
 		
-		# p all_deps_text
-		# enum =  lexer.lex(all_deps_text)
-		# p enum.to_a
+		# # p all_deps_text
+		# # enum =  lexer.lex(all_deps_text)
+		# # p enum.to_a
 		
-		parse_dependencies(all_deps_text)
-	end
+		# parse_dependencies(all_deps_text)
+	# end
 	
 	
 	
@@ -500,32 +491,32 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 		"Natural Science (12 credits)" => {
 			:description => "The BS in Computer Science requires 12 credits of natural science.  The courses should be intended for science and engineering students and must include a two course sequence with laboratories.  Some approved combinations have a total of more than 12 hours.  Approved two course sequences with laboratories are:",
 			
+			# each pair is a two-course lab sequence. must take both items in a pair
 			
 			"Astronomy:" => [
-				"ASTR 111", "ASTR 112",
-				"ASTR 113", "ASTR 114"
+				["ASTR 111", "ASTR 112"],
+				["ASTR 113", "ASTR 114"]
 			],
 			 
 			"Biology:" => [
-				"BIOL 103", "BIOL 104"
-				 
+				["BIOL 103", "BIOL 104"]
 			],
 			"Chemistry:" => [
-				"CHEM 211", "CHEM 213",
-				"CHEM 212", "CHEM 214"
+				["CHEM 211", "CHEM 213"],
+				["CHEM 212", "CHEM 214"]
 			],
 			 
 			"Environmental Science:" => [
-				"EVPP 110", "EVPP 111"
+				["EVPP 110", "EVPP 111"]
 				 
 			],
 			"Geology:" => [
-				"GEOL 101", "GEOL 102"
+				["GEOL 101", "GEOL 102"]
 				 
 			],
 			"Physics:" => [
-				"PHYS 160", "PHYS 161",
-				"PHYS 260", "PHYS 261"
+				["PHYS 160", "PHYS 161"],
+				["PHYS 260", "PHYS 261"]
 			]
 		},
 		
@@ -570,11 +561,14 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 		"Electives (4 credits)" => "Students must complete 4 elective credits."
 	}
 	
-	course_info_list = 
-		degree_requirements["Computer science core (36 credits)"]
-		.collect{  |x| @catalog.course_info(x)  }
 	
-	dependency_list = 
+	
+	
+	
+	
+	
+	
+	foo = ->(course_info_list){
 		course_info_list.collect do |course_info|
 			puts ">>>>>>>>>>"
 			puts "#{course_info.id} - #{course_info.title}"
@@ -589,6 +583,72 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 			
 			parse_dependencies(all_deps_text) || []
 		end
+	}
+	
+	
+	course_info_list = 
+		degree_requirements["Computer science core (36 credits)"]
+		.collect{  |x| @catalog.course_info(x)  }
+	
+	dependency_list = foo[course_info_list]
+	
+	dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
+	p dependency_map
+	
+	
+	
+	
+	
+	
+	all_courses = {
+		:required => [
+			degree_requirements["Computer science core (36 credits)"],
+			degree_requirements["Mathematics (17 credits)"],
+			degree_requirements["Statistics (3 credits)"],
+			degree_requirements["Communication (3 credits)"]
+		].flatten,
+		
+		:elective => [
+			degree_requirements["Senior computer science (15 credits)"],
+			degree_requirements["Computer science-related courses (6 credits)"],
+			degree_requirements["Natural Science (12 credits)"],
+			degree_requirements["Electives (4 credits)"]
+		]
+		
+		# standard core courses can be replaced by Honors College stuff,
+		# but there is no clear 1-to-1 equivalence between Honors and Mason Core classes.
+		# (because Honors provides interdiciplinary approaches)
+		:standard_core => [
+			degree_requirements["Additional Humanities (3 credits)"],
+			degree_requirements["Additional Mason Core (21 credits)"]
+		]
+		
+		
+		
+		:elective_flat = [
+			degree_requirements["Senior computer science (15 credits)"]["One of the following:"],
+			degree_requirements["Senior computer science (15 credits)"]["And four additional courses chosen from:"]
+			
+			
+			# "Computer science-related courses (6 credits)"
+			# 	"Two courses chosen from:"
+			# 	"And four additional courses chosen from:"
+			
+			# "Natural Science (12 credits)"
+		].flatten
+	}
+	
+	
+	
+	
+	
+	
+	
+	course_info_list = 
+		all_courses[:required]
+		.collect{  |x| @catalog.course_info(x)  }
+	
+	dependency_list = foo[course_info_list]
 	
 	dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
 	p dependency_map

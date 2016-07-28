@@ -36,21 +36,28 @@ require 'open-uri'
 # other libs for this main thing
 require 'json'
 
+Dir.chdir File.expand_path(File.dirname(__FILE__)) do
+	# Files for the web app specifically
+	require_all '../models'
 
 
-# NOTE: 'catalog_scraper' files us the 'PATH_TO_ROOT' constant, which is pretty bad, because I'm just polluting the global namespace with that constant. Need to move that into a module or something.
 
-# Must expand '..' shortcut into a proper path. But that results in a shorter string.
-PATH_TO_ROOT = File.expand_path '../..', '../../catalog_scraper/bin/rakefile'
+	# Files to load up 'catalog_scraper', which is basically a gem
+
+	# NOTE: 'catalog_scraper' files use the 'PATH_TO_ROOT' constant, which is pretty bad, because I'm just polluting the global namespace with that constant. Need to move that into a module or something.
+
+	# Must expand '..' shortcut into a proper path. But that results in a shorter string.
+	PATH_TO_ROOT = File.expand_path '../..', '../../catalog_scraper/bin/rakefile'
 
 
-# files
-Dir.chdir PATH_TO_ROOT do
-	require_all './lib/SummerResearch'
+	# files
+	Dir.chdir PATH_TO_ROOT do
+		require_all './lib/SummerResearch'
+	end
+	
+	
+	set :public_folder, File.join(File.dirname(__FILE__), '..', 'static')
 end
-
-
-set :public_folder, File.join(File.dirname(__FILE__), '..', 'static')
 
 
 
@@ -164,66 +171,16 @@ end
 
 
 
-data =
-	{"CS 101"=>["CS 112"], "CS 105"=>[], "CS 112"=>["MATH 104", "MATH 105", "MATH 113"], "CS 211"=>["CS 112"], "CS 262"=>["CS 211", "CS 222"], "CS 306"=>["CS 105", "COMM 100", "ENGH 302", "HNRS 110", "HNRS 122", "HNRS 130", "HNRS 131", "HNRS 230", "HNRS 240"], "CS 310"=>["CS 211", "MATH 113", "CS 105"], "CS 321"=>["CS 310", "ENGH 302", "CS 421", "SWE 421", "CS 321"], "CS 330"=>["CS 211", "MATH 125"], "CS 367"=>["CS 262", "CS 222", "ECE 301", "ECE 331"], "CS 465"=>["CS 367"], "CS 483"=>["CS 310", "CS 330", "MATH 125"], "ECE 301"=>["MATH 125", "MATH 112"]}
+
+
+model = Models::ComputerScience_BS.new()
 
 get '/api/program_of_study/CS_BS' do
-	nodes =
-		data.collect{  |k,v|   [k, v] }.flatten.uniq
-		.collect do |data|
-			{
-				'id' => data,
-				'r' => data.split(' ')[1][0].to_i, # first digit
-				'color' =>
-				if data.split(' ')[0] != 'CS'
-					"#10D588"
-				else
-					"#000"
-				end
-			}
-		end
-	
-	links =
-		data.collect do |course, deps|
-			deps.collect do |dependency|
-				[course, dependency]
-			end
-		end
-	links =
-		links.flatten(1).collect do |course, dependency|
-			{
-				'source' => dependency,
-				'target' => course,
-				'color'  => '#3399FF'
-			}
-		end
-	
-	
-	
-	out = {
-		'nodes' => nodes,
-		'links' => links
-	}
-	
-	JSON.generate out
+	model.json
 end
 
 get '/api/program_of_study/CS_BS/all' do
-	out = data.collect{|k,v| [k,v ]}.flatten
-	
-	JSON.generate out
-end
-
-get '/api/program_of_study/CS_BS/paired_links' do
-	out =
-		data.collect do |parent, children|
-			children.collect do |child|
-				[parent, child]
-			end
-		end
-	out.flatten!(1)
-	
-	JSON.generate out
+	model.json_list_all_courses
 end
 
 
