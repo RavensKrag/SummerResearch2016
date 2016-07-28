@@ -188,25 +188,6 @@ d3.json('api/foo2.json', function(err, data){
 
 
 var program_of_study = '/api/program_of_study/CS_BS';
-// d3.json(program_of_study, function(err, data){
-//   console.log("CS BS program of study")
-  
-//   svg.selectAll("text.course")
-//      .data(data)
-//      .enter()
-//        .append("text")
-//          .attr("transform", function (d, i) { 
-//             var a = Math.floor((100 + i*20) / canvas.height)
-//             var y = ((100 + i*20) % canvas.height);
-//             var x = 10 + 80 * a ;
-//             return "translate(" + x + "," + y + ")"; 
-//          })
-//          .attr("class", "course")
-//          .text(function(d){ return d[1] })
-//          .style("cursor", "pointer")
-//          .call(drag);
-// })
-
 
 
 // src: http://stackoverflow.com/questions/808826/draw-arrow-on-canvas-tag
@@ -245,7 +226,7 @@ d3.json(program_of_study, function(error, data){
   if (error) throw error;
   
   json_data = data;
-  generateGraph(json_data, 0);
+  generateGraph(json_data, 1);
 });
 
 var simulation;
@@ -279,9 +260,12 @@ function generateGraph(data, i) {
   function ticked() {
     context.clearRect(0, 0, width, height);
     
-    context.fillText("Hello world!", 30, 55);
+    context.fillText(
+      "Graph 1 is an overview (may be slow). Others are slices.",
+      30, 55
+    );
     
-    page_count = "graph " + (i+1) + " of " + data.length;
+    page_count = "Graph " + (i+1) + " of " + data.length;
     context.fillText(page_count, 30, 75);
     
     context.fillText("Name: " + graph.name, 30, 95);

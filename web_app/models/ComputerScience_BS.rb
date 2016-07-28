@@ -121,9 +121,10 @@ def json
 	@color_key ||= {
 		:gated_elective_clump      => "#10D588",  # light green
 		:link_to_other_graph       => "#3399FF",  # blue
-		:required_course           => "#242424",  # black
-		:elective_for_requirements => "#2D1164",  # purple
-		:not_required              => "#AAA"     # grey
+		
+		:required_course           => "#CC2300",  # red / orange
+		:elective_for_requirements => "#242424",  # black
+		:not_required              => "#AAA"      # grey
 	}
 	
 	required =
@@ -151,7 +152,7 @@ def json
 	end
 	
 	SummerResearch::Utilities.write_to_file(
-		'./leaves.yaml', leaves.to_yaml
+		'./leaves.yaml', leaves.uniq.to_yaml
 	)
 	# need to recursively add all children of these leaves
 	# to the graph
@@ -398,6 +399,7 @@ def raw_data
 				# required courses
 				# duplicated here again, for use as glue
 				"CS 112"=>["MATH 104_", "MATH 105_", "MATH 113_"],
+				"CS 211"=>["CS 112"],
 				"CS 262"=>["CS 211", "CS 222"],
 				"CS 321"=>["CS 310", "ENGH 302"],
 				"CS 367"=>["CS 262", "CS 222", "ECE 301", "ECE 331"],
