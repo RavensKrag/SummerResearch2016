@@ -439,7 +439,9 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 				"CS 485",
 				"CS 490",
 				"CS 499",
-				"MATH 446 or OR 481" # FIGURE THIS OUT
+				# "MATH 446 or OR 481" # FIGURE THIS OUT
+				"MATH 446",
+				"OR 481"
 			],
 			
 			"Note:" => "Only three credits of CS 499 can be used toward the senior computer science requirement."
@@ -481,7 +483,7 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 				"SYST 470",
 				"PHIL 371",
 				"ENGH 388",
-				"MATH >300 (except MATH 351), or CS >300", # FIGURE THIS OUT
+				# "MATH >300 (except MATH 351), or CS >300", # FIGURE THIS OUT
 				"PHIL 376"
 			],
 			
@@ -586,14 +588,14 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 	}
 	
 	
-	course_info_list = 
-		degree_requirements["Computer science core (36 credits)"]
-		.collect{  |x| @catalog.course_info(x)  }
+	# course_info_list = 
+	# 	degree_requirements["Computer science core (36 credits)"]
+	# 	.collect{ |x| @catalog.course_info(x)  }
 	
-	dependency_list = foo[course_info_list]
+	# dependency_list = foo[course_info_list]
 	
-	dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
-	p dependency_map
+	# dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
+	# p dependency_map
 	
 	
 	
@@ -613,7 +615,7 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 			degree_requirements["Computer science-related courses (6 credits)"],
 			degree_requirements["Natural Science (12 credits)"],
 			degree_requirements["Electives (4 credits)"]
-		]
+		],
 		
 		# standard core courses can be replaced by Honors College stuff,
 		# but there is no clear 1-to-1 equivalence between Honors and Mason Core classes.
@@ -621,11 +623,11 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 		:standard_core => [
 			degree_requirements["Additional Humanities (3 credits)"],
 			degree_requirements["Additional Mason Core (21 credits)"]
-		]
+		],
 		
 		
 		
-		:elective_flat = [
+		:elective_flat => [
 			degree_requirements["Senior computer science (15 credits)"]["One of the following:"],
 			degree_requirements["Senior computer science (15 credits)"]["And four additional courses chosen from:"]
 			
@@ -644,8 +646,38 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 	
 	
 	
+	
+	
+	
+	
 	course_info_list = 
 		all_courses[:required]
+		.collect{  |x| @catalog.course_info(x)  }
+	
+	dependency_list = foo[course_info_list]
+	
+	dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
+	p dependency_map
+	
+	
+	
+	
+	
+	courses = 
+		[
+			degree_requirements["Senior computer science (15 credits)"],
+			degree_requirements["Computer science-related courses (6 credits)"]
+		].collect do |category|
+			# same structure
+			category.reject{  |k,v|  k == "Note:"  }
+			.collect do |title, list_of_courses|
+				list_of_courses
+			end
+		end
+	courses = courses.flatten.uniq
+	
+	course_info_list = 
+		courses
 		.collect{  |x| @catalog.course_info(x)  }
 	
 	dependency_list = foo[course_info_list]
