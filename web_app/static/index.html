@@ -24,7 +24,22 @@
 		<rect class="background"></rect>
 		<text x="20" y="20">Hello!</text>
 	</svg>
-	<canvas width="960" height="600"></canvas>
+	
+	
+	
+	<!--
+		input field adapted from this example: 
+		https://bl.ocks.org/eesur/9910343
+	-->
+	<form name="myform" onSubmit="return handleClick()">
+        <input name="Submit"  type="submit" value="Graph number" >
+        <input type="text" id="myVal" placeholder="1">
+    </form>
+	<canvas width="600" height="600"></canvas>
+	
+	
+	
+	
 	
 	<div id="swatch-container">
 		<div class="swatch"></div>

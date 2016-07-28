@@ -221,8 +221,12 @@ function canvas_arrow(context, fromx, fromy, tox, toy){
 }
 
 
+// // variables to control debug printing
 var tick = 0
 var tick_threshold = 50
+// -----------
+
+
 
 // code below taken d3v4 example code
 // src: http://bl.ocks.org/mbostock/ad70335eeef6d167bc36fd3c04378048
@@ -235,17 +239,26 @@ var canvas  = document.querySelector("canvas"),
 
 
 
-var simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(function(d) { return d.id; }))
-    .force("charge", d3.forceManyBody())
-    .force("center", d3.forceCenter(width / 2, height / 2));
 
+var json_data;
 d3.json(program_of_study, function(error, data){
   if (error) throw error;
   
+  json_data = data;
+  generateGraph(json_data, 0);
+});
+
+var simulation;
+function generateGraph(data, i) {
+  simulation = d3.forceSimulation()
+      .force("link", d3.forceLink().id(function(d) { return d.id; }))
+      .force("charge", d3.forceManyBody())
+      .force("center", d3.forceCenter(width / 2, height / 2));
+  
+  
+  
   data.length;
   
-  i = 3;
   graph = data[i];
   
   simulation
@@ -270,6 +283,8 @@ d3.json(program_of_study, function(error, data){
     
     page_count = "graph " + (i+1) + " of " + data.length;
     context.fillText(page_count, 30, 75);
+    
+    context.fillText("Name: " + graph.name, 30, 95);
     
     
     
@@ -298,7 +313,7 @@ d3.json(program_of_study, function(error, data){
   function dragsubject() {
     return simulation.find(d3.event.x, d3.event.y);
   }
-});
+}
 
 function dragstarted() {
   if (!d3.event.active) simulation.alphaTarget(0.3).restart();
@@ -384,4 +399,22 @@ function drawNode(d) {
   
   
   // TODO: figure out how setting context variables effects rendering. I thought I understood it, but I can't always predict future effects, so I clearly don't...
+}
+
+
+
+
+// input parsing adapted from the following example
+// src: https://bl.ocks.org/eesur/9910343
+function handleClick(event){
+    console.log(document.getElementById("myVal").value)
+    draw(document.getElementById("myVal").value)
+    return false;
+}
+
+function draw(val){
+    i = +val; // in javascript, unary plus coerces to int
+    // src: http://stackoverflow.com/questions/1133770/how-do-i-convert-a-string-into-an-integer-in-javascript
+    i--;
+    generateGraph(json_data, i);
 }

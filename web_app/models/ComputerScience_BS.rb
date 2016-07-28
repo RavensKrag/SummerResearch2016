@@ -77,11 +77,12 @@ def json
 						dep_list.delete course
 					end
 					
-					dep_list << "?#{name}"
+					dep_list << "? #{name}"
 				end
 			end
 			
 			{
+				'name'  => name,
 				'nodes' => nodes(clump),
 				'links' => links(clump)
 			}
@@ -91,7 +92,8 @@ def json
 	
 	
 	
-	
+	# TODO: visualize implicit courses
+	# a course is 'implicit' if it is listed as a dependency for a required course, but it never itself listed as a core requirement
 	
 	
 	# mark nodes with different colors
