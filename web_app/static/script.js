@@ -243,7 +243,7 @@ var simulation = d3.forceSimulation()
 d3.json(program_of_study, function(error, graph){
   if (error) throw error;
   
-  graph = graph[4]
+  graph = graph[3]
   
   simulation
       .nodes(graph.nodes)

@@ -57,16 +57,6 @@ def initialize
 end
 
 def json
-	data = self.data()
-	
-	
-	dataset = (
-		@data[:required].collect{  |clump| clump.keys }.flatten + 
-		@data[:elective].each_value.collect{|clump| clump.keys  }.flatten
-	)
-	
-	
-	
 	d1 = 
 		@data[:required].collect do |clump|
 			{
@@ -77,6 +67,20 @@ def json
 	
 	d2 = 
 		@data[:elective].each.collect do |name, clump|
+			if name != 'others'
+				# for the clumped groups, remove the common deps, replace with a single node
+				
+				clump.values.each do |dep_list|
+					name.split.each do |course_number|
+						course = "CS #{course_number}"
+						puts course
+						dep_list.delete course
+					end
+					
+					dep_list << "?#{name}"
+				end
+			end
+			
 			{
 				'nodes' => nodes(clump),
 				'links' => links(clump)
@@ -131,8 +135,8 @@ def nodes(data)
 		data.collect{  |k,v|   [k, v] }.flatten.uniq
 			.collect do |data|
 				{
-					'id' => data,
-					'r' => data.split(' ')[1][0].to_i, # first digit
+					'id' => data
+					# 'r' => data.split(' ')[1][0].to_i, # first digit
 				}
 			end
 	
@@ -169,6 +173,9 @@ def color(course_string, required)
 	elsif course_string.include? '_'
 		# link to another sub-graph
 		"#000"
+	elsif course_string.include? '?'
+		# elective clump gated by one or more courses
+		"#10D588"
 	else
 		# non-required
 		# (not an elective, but a non-core dependency)
