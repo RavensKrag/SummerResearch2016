@@ -398,293 +398,298 @@ task :cs_requirements => ['data/required_courses.yaml', SQLITE_DATABASE_FILEPATH
 	
 	
 	degree_requirements = {
-		"Computer science core (36 credits)" => [
-			"CS 101",
-			"CS 105",
-			"CS 112",
-			"CS 211",
-			"CS 262",
-			"CS 306",
-			"CS 310",
-			"CS 321",
-			"CS 330",
-			"CS 367",
-			"CS 465",
-			"CS 483",
-			"ECE 301"
-		],
+		"Computer science core (36 credits)" => {
+			:credits => 36,
+			:data => [
+				"CS 101",
+				"CS 105",
+				"CS 112",
+				"CS 211",
+				"CS 262",
+				"CS 306",
+				"CS 310",
+				"CS 321",
+				"CS 330",
+				"CS 367",
+				"CS 465",
+				"CS 483",
+				"ECE 301"
+			]
+		},
 		
 		"Senior computer science (15 credits)" => {
-			"One of the following:" => [
-				"CS 463",
-				"CS 471",
-				"CS 475"
-			],
+			:credits => 15,
 			
-			"And four additional courses chosen from:" => [
-				"CS 425",
-				"CS 440",
-				"CS 450",
-				"CS 451",
-				"CS 455",
-				"CS 463",
-				"CS 468",
-				"CS 469",
-				"CS 471",
-				"CS 475",
-				"CS 477",
-				"CS 480",
-				"CS 482",
-				"CS 484",
-				"CS 485",
-				"CS 490",
-				"CS 499",
-				# "MATH 446 or OR 481" # FIGURE THIS OUT
-				"MATH 446",
-				"OR 481"
-			],
+			:data => {
+				"One of the following:" => [
+					"CS 463",
+					"CS 471",
+					"CS 475"
+				],
+				
+				"And four additional courses chosen from:" => [
+					"CS 425",
+					"CS 440",
+					"CS 450",
+					"CS 451",
+					"CS 455",
+					"CS 463",
+					"CS 468",
+					"CS 469",
+					"CS 471",
+					"CS 475",
+					"CS 477",
+					"CS 480",
+					"CS 482",
+					"CS 484",
+					"CS 485",
+					"CS 490",
+					"CS 499",
+					# "MATH 446 or OR 481" # FIGURE THIS OUT
+					"MATH 446",
+					"OR 481"
+				]
+			},
 			
 			"Note:" => "Only three credits of CS 499 can be used toward the senior computer science requirement."
 		},
 		
-		"Mathematics (17 credits)" => [
-			"MATH 113",
-			"MATH 114",
-			"MATH 125",
-			"MATH 203",
-			"MATH 213"
-		],
+		"Mathematics (17 credits)" => {
+			:credits => 17,
+			
+			:data => [
+				"MATH 113",
+				"MATH 114",
+				"MATH 125",
+				"MATH 203",
+				"MATH 213"
+			]
+		},
 		
-		"Statistics (3 credits)" => [
-			"STAT 344"
-		],
+		"Statistics (3 credits)" => {
+			:credits => 3,
+			
+			:data => [
+				"STAT 344"
+			]
+		},
 		
 		"Computer science-related courses (6 credits)" => {
-			"Two courses chosen from:" => [
-				"CS 463",
-				"CS 471",
-				"CS 475"
-			],
+			:credits => 6,
 			
-			"And four additional courses chosen from:" => [
-				"STAT 354",
-				"OR 335",
-				"OR 441",
-				"OR 442",
-				"ECE 280",
-				"ECE 431",
-				"ECE 447",
-				"ECE 450",
-				"ECE 511",
-				"SWE 432",
-				"SWE 437",
-				"SWE 443",
-				"SYST 371",
-				"SYST 470",
-				"PHIL 371",
-				"ENGH 388",
-				# "MATH >300 (except MATH 351), or CS >300", # FIGURE THIS OUT
-				"PHIL 376"
-			],
+			:data => {
+				"Two courses chosen from:" => [
+					"STAT 354",
+					"OR 335",
+					"OR 441",
+					"OR 442",
+					"ECE 280",
+					"ECE 431",
+					"ECE 447",
+					"ECE 450",
+					"ECE 511",
+					"SWE 432",
+					"SWE 437",
+					"SWE 443",
+					"SYST 371",
+					"SYST 470",
+					"PHIL 371",
+					"ENGH 388",
+					# "Any MATH or CS course numbered above 300 (except MATH 351)", # FIGURE THIS OUT
+					"PHIL 376",
+				]
+			},
 			
 			"Note:" => "Students may need to choose electives to satisfy prerequisites for these courses. Those planning to take MATH 352 may replace STAT 344 with MATH 351."
 		},
 		
 		"Natural Science (12 credits)" => {
+			:credits => 12,
+			
 			:description => "The BS in Computer Science requires 12 credits of natural science.  The courses should be intended for science and engineering students and must include a two course sequence with laboratories.  Some approved combinations have a total of more than 12 hours.  Approved two course sequences with laboratories are:",
 			
 			# each pair is a two-course lab sequence. must take both items in a pair
-			
-			"Astronomy:" => [
-				["ASTR 111", "ASTR 112"],
-				["ASTR 113", "ASTR 114"]
-			],
-			 
-			"Biology:" => [
-				["BIOL 103", "BIOL 104"]
-			],
-			"Chemistry:" => [
-				["CHEM 211", "CHEM 213"],
-				["CHEM 212", "CHEM 214"]
-			],
-			 
-			"Environmental Science:" => [
-				["EVPP 110", "EVPP 111"]
-				 
-			],
-			"Geology:" => [
-				["GEOL 101", "GEOL 102"]
-				 
-			],
-			"Physics:" => [
-				["PHYS 160", "PHYS 161"],
-				["PHYS 260", "PHYS 261"]
-			]
-		},
-		
-		"Communication (3 credits)" => [
-			"COMM 100"
-		],
-		# Computer Science students must make a technical presentation.  This course fulfills the  Mason Core requirement in oral communication.
-		# ^ TODO: figure out how to encode this data
-		
-		"Additional Humanities (3 credits)" => {
-			:description => "Students must complete three additional credits of Humanities courses.  This can be fulfilled by any Mason Core course except those listed under Information Technology, Synthesis, Quantitative Reasoning, or Natural Science.  Students wishing to substitute alternate courses for this requirement must obtain departmental approval.",
-			
-			
 			:data => {
-				"3 credits in humanities" => [
-					"ANY Mason Core
-					EXCEPT Information Technology
-					       Synthesis
-					       Quantitative Reasoning
-					       Natural Science",
-					
-					"or alternates with departmental approval"
+				"Astronomy:" => [
+					["ASTR 111", "ASTR 112"],
+					["ASTR 113", "ASTR 114"]
+				],
+				 
+				"Biology:" => [
+					["BIOL 103", "BIOL 104"]
+				],
+				"Chemistry:" => [
+					["CHEM 211", "CHEM 213"],
+					["CHEM 212", "CHEM 214"]
+				],
+				 
+				"Environmental Science:" => [
+					["EVPP 110", "EVPP 111"]
+					 
+				],
+				"Geology:" => [
+					["GEOL 101", "GEOL 102"]
+					 
+				],
+				"Physics:" => [
+					["PHYS 160", "PHYS 161"],
+					["PHYS 260", "PHYS 261"]
 				]
 			}
 		},
 		
-		"Additional Mason Core (21 credits)" => {
-			:description => "Students must complete all Mason Core requirements not fulfilled by major requirements.",
+		"Communication (3 credits)" => {
+			:credits => 3,
+			
+			:description => "Computer Science students must make a technical presentation.  This course fulfills the  Mason Core requirement in oral communication.",
 			
 			:data => [
-				"Written Communication: 6 credits",
-				"Literature: 3 credits",
-				"Arts: 3 credits",
-				"Western Civilization/World History: 3 credits",
-				"Social and Behavioral Science: 3 credits",
-				"Global Understanding: 3 credits"
-			],
+				"COMM 100"
+			]
+		},
+		
+		"Additional Humanities (3 credits)" => {
+			:credits => 3,
+			
+			:description => "Students must complete three additional credits of Humanities courses.  This can be fulfilled by any Mason Core course except those listed under Information Technology, Synthesis, Quantitative Reasoning, or Natural Science.  Students wishing to substitute alternate courses for this requirement must obtain departmental approval.",
+			
+			
+			:data => 
+			"	ANY Mason Core
+				EXCEPT Information Technology
+				       Synthesis
+				       Quantitative Reasoning
+				       Natural Science
+				
+				or alternates with departmental approval
+			".lines.collect{|l| l.lstrip }.join
+		},
+		
+		"Additional Mason Core (21 credits)" => {
+			:credits => 21,
+			
+			:description => "Students must complete all Mason Core requirements not fulfilled by major requirements.",
+			
+			:data => 
+			"	Written Communication: 6 credits
+				Literature: 3 credits
+				Arts: 3 credits
+				Western Civilization/World History: 3 credits
+				Social and Behavioral Science: 3 credits
+				Global Understanding: 3 credits
+			".lines.collect{|l| l.lstrip }.join,
 			
 			"Note:" => "CS majors must take the Natural Sciences section of ENGH 302."
 		},
 		
-		"Electives (4 credits)" => "Students must complete 4 elective credits."
+		"Electives (4 credits)" => {
+			:credits => 4,
+			:description => "Students must complete 4 elective credits.",
+			:data => ''
+		}
 	}
 	
 	
+	SummerResearch::Utilities.write_to_file(
+		'./CS_BS_requirements.yaml', degree_requirements.to_yaml
+	)
+	
+	
+	# Explanation of how the requirements data format works:
+	# -----
+	# 
+	# for sectors with options, :data is a hash.                    (electives)
+	# for sectors where ALL items must be taken, :data is an array. (required)
+	# for sectors where information given was not parsable, :data is a string.
+		# Sometimes, it may be an empty string,
+		# as the only relevant information in the sector
+		# was used to populat the :description field instead.
+	# :description is a category I created,                         (implict category)
+	# which describes the text before classes are listed
+	# (at least for CS BS). 
+	# on the other hand,
+	# "Note:" is a sector explictly marked in the Program of Study page for the CS BS
+		# notice the difference in key type,
+				# symbol: implict type created by me.
+				# string: something declared by the catalog.
+	# -------------------------------------------------------
 	
 	
 	
 	
 	
+	# standard core courses can be replaced by Honors College stuff,
+	# but there is no clear 1-to-1 equivalence between Honors and Mason Core classes.
+	# (because Honors provides interdiciplinary approaches)
+	standard_core = [
+		degree_requirements["Additional Humanities (3 credits)"],
+		degree_requirements["Additional Mason Core (21 credits)"]
+	]
 	
-	foo = ->(course_info_list){
-		course_info_list.collect do |course_info|
-			puts ">>>>>>>>>>"
-			puts "#{course_info.id} - #{course_info.title}"
+	
+	
+	
+	filepath = 
+		File.expand_path(
+			'./CS_BS_data_dump.txt', 
+			SummerResearch::Utilities::DATA_DIR
+		)
+	File.open(filepath, 'w') do |f|
+		requirements_by_type = {
+			:required =>
+				degree_requirements.select{ |name, sector|  sector[:data].is_a? Array }
+				                   .collect{  |name, sector|  sector[:data] }
+				                   .flatten,
 			
-			all_deps_text_list =
-				%w[Prerequisite(s) Corequisite(s)]
-					.collect do |x|
-						requirements = course_info[x]
-					end
-			all_deps_text = all_deps_text_list.join("\n")
+			:elective =>
+				degree_requirements.select{   |name, sector|  sector[:data].is_a? Hash }
+				                   .collect{  |name, sector|  sector[:data].values }
+				                   .flatten,
+			
+			:unclear  => degree_requirements.select{ |name, sector|  sector[:data].is_a? String }
+		}
+		
+		requirements_by_type.each do |type, requirement_list|
+			next if type == :unclear
+			
+			course_info_list = requirement_list.collect{  |x| p x; @catalog.course_info(x)  }
 			
 			
-			parse_dependencies(all_deps_text) || []
+			dependency_list = 
+				course_info_list.collect do |course_info|
+					puts ">>>>>>>>>>"
+					puts "#{course_info.id} - #{course_info.title}"
+					
+					all_deps_text_list =
+						%w[Prerequisite(s) Corequisite(s)]
+							.collect do |x|
+								requirements = course_info[x]
+							end
+					all_deps_text = all_deps_text_list.join("\n")
+					
+					
+					parse_dependencies(all_deps_text) || []
+				end
+			dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
+			
+			
+			f.puts "requirement type: #{type}"
+			f.puts "---"
+			f.puts dependency_map.inspect
+			f.puts
 		end
-	}
+	end
 	
 	
-	# course_info_list = 
-	# 	degree_requirements["Computer science core (36 credits)"]
-	# 	.collect{ |x| @catalog.course_info(x)  }
-	
-	# dependency_list = foo[course_info_list]
-	
-	# dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
-	# p dependency_map
-	
-	
-	
-	
-	
-	
-	all_courses = {
-		:required => [
-			degree_requirements["Computer science core (36 credits)"],
-			degree_requirements["Mathematics (17 credits)"],
-			degree_requirements["Statistics (3 credits)"],
-			degree_requirements["Communication (3 credits)"]
-		].flatten,
-		
-		:elective => [
-			degree_requirements["Senior computer science (15 credits)"],
-			degree_requirements["Computer science-related courses (6 credits)"],
-			degree_requirements["Natural Science (12 credits)"],
-			degree_requirements["Electives (4 credits)"]
-		],
-		
-		# standard core courses can be replaced by Honors College stuff,
-		# but there is no clear 1-to-1 equivalence between Honors and Mason Core classes.
-		# (because Honors provides interdiciplinary approaches)
-		:standard_core => [
-			degree_requirements["Additional Humanities (3 credits)"],
-			degree_requirements["Additional Mason Core (21 credits)"]
-		],
-		
-		
-		
-		:elective_flat => [
-			degree_requirements["Senior computer science (15 credits)"]["One of the following:"],
-			degree_requirements["Senior computer science (15 credits)"]["And four additional courses chosen from:"]
-			
-			
-			# "Computer science-related courses (6 credits)"
-			# 	"Two courses chosen from:"
-			# 	"And four additional courses chosen from:"
-			
-			# "Natural Science (12 credits)"
-		].flatten
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	course_info_list = 
-		all_courses[:required]
-		.collect{  |x| @catalog.course_info(x)  }
-	
-	dependency_list = foo[course_info_list]
-	
-	dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
-	p dependency_map
-	
-	
-	
-	
-	
-	courses = 
-		[
-			degree_requirements["Senior computer science (15 credits)"],
-			degree_requirements["Computer science-related courses (6 credits)"]
-		].collect do |category|
-			# same structure
-			category.reject{  |k,v|  k == "Note:"  }
-			.collect do |title, list_of_courses|
-				list_of_courses
-			end
-		end
-	courses = courses.flatten.uniq
-	
-	course_info_list = 
-		courses
-		.collect{  |x| @catalog.course_info(x)  }
-	
-	dependency_list = foo[course_info_list]
-	
-	dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
-	p dependency_map
 end
+
+
+task :requirements => SQLITE_DATABASE_FILEPATH do
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+end
+
+
 
 task :parser_test do
 	filepath = File.expand_path(

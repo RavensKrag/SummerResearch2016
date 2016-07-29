@@ -534,7 +534,10 @@ class CourseInfo
 	# (This is not a rigourous enough definiton to actually separate the types, especially in the case of Type B, but this helps to understand generally what is going on. Take a look at some examples of all the types to further undertand. Examples can be found in the CourseInfo diagnostic in the project Rakefile)
 	
 	
-	# NOTE: these type classes are no longer used.
+	# NOTE: these type classes are depreciated.
+	# need to completely remove all code that uses this stuff.
+	# I think that mainly means the debug diagnostics?
+	# How can those be updated? Scrap them?
 	
 	
 	class BaseType
