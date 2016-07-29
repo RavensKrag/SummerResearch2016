@@ -57,6 +57,8 @@ Dir.chdir File.expand_path(File.dirname(__FILE__)) do
 	
 	
 	set :public_folder, File.join(File.dirname(__FILE__), '..', 'static')
+	
+	# set :logging, :true
 end
 
 
@@ -173,7 +175,13 @@ end
 
 
 
+
+
 model = Models::ComputerScience_BS.new()
+
+SummerResearch::Utilities.write_to_file(
+	'./CS_BS_courses.txt', model.all_courses.join("\n")
+)
 
 get '/api/program_of_study/CS_BS' do
 	model.json

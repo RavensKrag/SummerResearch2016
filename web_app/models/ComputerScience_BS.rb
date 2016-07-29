@@ -128,7 +128,7 @@ def json
 	}
 	
 	required =
-		@data[:required].collect{  |clump|  clump.to_a  }
+		@data[:required].collect{  |clump|  clump.keys  }
 		.flatten
 		.to_set
 	
@@ -170,6 +170,14 @@ def json_list_all_courses
 	out = @all_data.collect{|k,v| [k,v ]}.flatten
 	
 	JSON.generate out
+end
+
+
+def all_courses
+	10.times { puts "HEY"}
+	p @all_data.to_a.flatten.uniq
+	
+	return @all_data.to_a.flatten.uniq
 end
 
 
