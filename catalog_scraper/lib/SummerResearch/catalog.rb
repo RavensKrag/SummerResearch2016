@@ -5,6 +5,7 @@ class Catalog
 	def initialize(sql_db_filepath, sql_log_filepath='database.log')		
 		SQLite.setup(sql_db_filepath, sql_log_filepath)
 		
+		
 		@mongo_ip      = "127.0.0.1"
 		@mongo_port    = "12345"
 		@mongo_address = [@mongo_ip, @mongo_port].join(':')
@@ -13,6 +14,10 @@ class Catalog
 	
 	def setup
 		ActiveRecord::Schema.define do
+			@connection = SQLite.connection
+			# ^ need to do this when using a custom subclass of ActiveRecord::Base
+			
+			
 			# NOTE: this schema definition may have problems with mulitple DBs? Not totally sure
 			unless SQLite.connection.tables.include? 'courses'
 				create_table :courses do |table|
@@ -33,58 +38,17 @@ class Catalog
 		end
 	end
 	
-	def fetch_course_listing
-		# go to the main catalog page
-		# and figure out what catalog years are avaiable
-		url = "http://catalog.gmu.edu"
+	
+	# Should include all deparments necessary to evaulate CS EE IT Psyc and Bio degrees.
+	CASE_STUDY_DEPARTMENT_SET = (%w[BIOL CHEM MATH CS SWE IT PSYC CDS ASTR GEOL PHYS GGS NEUR CRIM PHIL ENGH STAT ECE COMM ECON BENG MBUS HAP OR SEOR OM SYST EVPP] + ["Mason Core"]).to_set
+	
+	
+	def fetch_course_listing(years=CatalogYear.all)
+		# populates 'catoid' and 'year_range' on CatalogYear
+		discover_catalog_years()
 		
-		xml = Nokogiri::HTML(open(url))
-		
-		# SummerResearch::Utilities.write_to_file("./catalog_temp.html", xml)
-		
-		node = xml.xpath('//form[@name="select_catalog"]')
-			SummerResearch::Utilities.write_to_file("./catalog_temp.html", node)
-		
-		                                             # catoid number, date range
-		                                             # ["29",        "2016-2017"]
-		data = node.first.css('option').collect{  |x|  [x['value'],    x.inner_text.split.first]  }
-		
-		# === Save all of the possible catalog years to the SQLite DB
-		data.each do |catoid, year_range_string|
-			next if CatalogYear.find_by(:catoid => catoid)
-			
-			CatalogYear.create(
-				:catoid         => catoid,
-				# :courses_navoid => ,
-				:year_range     => year_range_string
-			)
-		end
-		
-		
-		# === For each available catalog year, navigate to the Course search page
-		# (Set 'courses_navoid' field for each CatalogYear record. Enables link to course search)
-		CatalogYear.all.each do |record|
-			next unless record.courses_navoid.nil?
-			
-			# p record
-			url = "http://catalog.gmu.edu/index.php?catoid=#{record.catoid}"
-			
-			xml = Nokogiri::HTML(open(url))
-			
-			relative_link_to_course_search = xml.xpath('//a[text()="Courses"]').first['href']
-			
-			p relative_link_to_course_search
-			
-			regex = /navoid=(\d+)/
-			matchdata = relative_link_to_course_search.match(regex)
-			
-			# p matchdata[1]
-			
-			record.update(:courses_navoid => matchdata[1])
-			# record.courses_navoid = matchdata[1]
-			# record.save
-		end
-		
+		# populates 'courses_navoid' field on CatalogYear
+		discover_catalog_search_pages(CatalogYear.all) 
 		
 		
 		
@@ -123,21 +87,118 @@ class Catalog
 		
 		
 		
+		# === Populate course index for all years, for departments within the resticted set
+		populate_course_index(CatalogYear.all, CASE_STUDY_DEPARTMENT_SET)
 		
-		# === Restrict departments to a useful subset.
-		# Should include all deparments necessary to evaulate CS EE IT Psyc and Bio degrees.
-		restricted_set = (%w[BIOL CHEM MATH CS SWE IT PSYC CDS ASTR GEOL PHYS GGS NEUR CRIM PHIL ENGH STAT ECE COMM ECON BENG MBUS HAP OR SEOR OM SYST EVPP] + ["Mason Core"]).to_set
 		
-		CatalogYear.all.each do |record|
-			puts "#{record.year_range} Catalog Year"
+		
+		
+		# regex = 
+		# relative_link_to_course_search
+		
+		
+		
+		
+		# Now that you've populated the database with all the courses that you think you will need,
+		# you can get information on particulars as needed.
+		# DO NOT DO THIS ALL IN ONE STEP
+		# Only get documents when explictly requested, and then cache them in a Mongo database.
+		# 
+		# Use the SQL database to figure out "given a name like CS 101, what is the catalog url?"
+		
+		
+		# TODO: figure out what data actually needs to be passed over to CourseInfo to fetch data, and just pass that?
+			# catalog_link = CatalogLink.new()
+			# info = CourseInfo.new(catalog_link).fetch
+		# TODO: move this into another method or something. it is not needed here.
+	end
+	
+	
+	
+	private
+	
+	# figure out for what catalog years there is data
+	# store all of that data in the SQL database as an index of catalog years
+	def discover_catalog_years
+		# go to the main catalog page
+		# and figure out what catalog years are avaiable
+		url = "http://catalog.gmu.edu"
+		
+		xml = Nokogiri::HTML(open(url))
+		
+		# SummerResearch::Utilities.write_to_file("./catalog_temp.html", xml)
+		
+		node = xml.xpath('//form[@name="select_catalog"]')
+			SummerResearch::Utilities.write_to_file("./catalog_temp.html", node)
+		
+		                                             # catoid number, date range
+		                                             # ["29",        "2016-2017"]
+		data = node.first.css('option').collect{  |x|  [x['value'],    x.inner_text.split.first]  }
+		# extract catalog years from the dropdown in the corner that let's you switch catalog year
+		
+		
+		# === Save all of the possible catalog years to the SQLite DB
+		data.each do |catoid, year_range_string|
+			next if CatalogYear.find_by(:catoid => catoid)
+			
+			CatalogYear.create(
+				:catoid         => catoid,
+				# :courses_navoid => ,
+				:year_range     => year_range_string
+			)
+		end
+		
+		return nil
+	end
+	
+	# === For each available catalog year, navigate to the Course search page
+	# (Set 'courses_navoid' field for each CatalogYear record. Enables link to course search)
+	def discover_catalog_search_pages(catalog_year_records)
+		catalog_year_records.each do |record|
+			next unless record.courses_navoid.nil?
+			
+			# p record
+			url = "http://catalog.gmu.edu/index.php?catoid=#{record.catoid}"
+			
+			xml = Nokogiri::HTML(open(url))
+			
+			relative_link_to_course_search = xml.xpath('//a[text()="Courses"]').first['href']
+			
+			p relative_link_to_course_search
+			
+			regex = /navoid=(\d+)/
+			matchdata = relative_link_to_course_search.match(regex)
+			
+			# p matchdata[1]
+			
+			record.update(:courses_navoid => matchdata[1])
+			# record.courses_navoid = matchdata[1]
+			# record.save
+		end
+	end
+	
+	
+	public
+	
+	# === Populate course index for particular years, for departments within the resticted set
+	# catalog_years    ---  years specified as an Enumerable of CatalogYear objects
+	# restriction_set  ---  if given, only departments in this set will be added to the index
+	def populate_course_index(catalog_years, restriction_set=nil)
+		catalog_years.each do |record|
+			puts record
 			
 			# --- For each catalog year, find the list of department IDs for that year
-			url = "http://catalog.gmu.edu/content.php?catoid=#{record.catoid}&navoid=#{record.courses_navoid}"
-			p url
-			
-			dept_codes = all_department_codes(url)
+			dept_codes = all_department_codes(record)
 			# p dept_codes
-			dept_codes.select!{ |x| restricted_set.include? x } # must be in the list, and the set
+			
+			# --- Must be in the list, and the restricted set
+			# (ignore if no restriction set is given)
+			unless restriction_set.nil?
+				warn(
+					"Only certain departments will be added to the index for the #{record}: #{restriction_set}"
+				)
+				dept_codes.select!{ |x| restriction_set.include? x } 
+			end
 			
 			
 			# --- Search for all avaiable courses in each department
@@ -164,128 +225,145 @@ class Catalog
 			end
 			
 		end
-		
-		
-		
-		
-		
-		# regex = 
-		# relative_link_to_course_search
-		
-		
-		
-		
-		# Now that you've populated the database with all the courses that you think you will need,
-		# you can get information on particulars as needed.
-		# DO NOT DO THIS ALL IN ONE STEP
-		# Only get documents when explictly requested, and then cache them in a Mongo database.
-		# 
-		# Use the SQL database to figure out "given a name like CS 101, what is the catalog url?"
-		
-		
-		# TODO: figure out what data actually needs to be passed over to CourseInfo to fetch data, and just pass that?
-			# catalog_link = CatalogLink.new()
-			# info = CourseInfo.new(catalog_link).fetch
-		# TODO: move this into another method or something. it is not needed here.
 	end
-	
 	
 	# get info on a particular course.
 	# assume that if no year is specified, the most recent information is desired
 	# 
 	# May fetch data over the network as needed.
 	# Assuming that catalog data never changes once the catalog has been published.
-	def course_info(course_id, catalog_year=:most_recent)
+	def course_info(course_id, catalog_year: :most_recent, force_download: false)
+		sql_course_info = 
+			if catalog_year == :most_recent
+				# puts "Select a year"
+				# p CatalogYear.find_by(:year_range => '2014-2015').courses
+				
+				
+				# puts "main query"
+				dept, course_number = Catalog.parse_course_id(course_id)
+				
+				
+				# symbols = CatalogYear.methods.grep(/name/)
+				# results = symbols.collect{|sym| CatalogYear.send(sym)  }
+				# p symbols.zip(results).to_h
+				# p symbols
+				
+				# p CatalogYear.methods
+				# p CatalogYear.name
+				# p CatalogYear.model_name
+				
+				
+				most_recent_course_record = 
+					Course.where(:dept => dept, :course_number => course_number)
+					      .joins(:catalog_year)
+					      .order("year_range DESC").first
+				# course_list = Course.where(:dept => dept, :course_number => course_number)
+				# p course_list.joins(:catalog_year).order("year_range DESC").first
+				
+				
+				# TODO: throw exception when the course you specified is not found. Should notify that the course is not in the index, but that doesn't necessarily mean that the course is not actually in the catalog. Need to let programmers know that the index must be up-to-date before this method will behave as expected.
+				
+				
+				
+				p most_recent_course_record
+				# course_list.each do |course|
+				# 	p course.catalog_year.year_range
+				# end
+				
+				
+				most_recent_course_record # pseudo-return
+			elsif catalog_year.is_a? String
+				# assume that you're getting a catalog year in the format
+				# "2016-2017"
+				# as a string
+				raise "ERROR: NOT IMPLEMENTED YET"
+				
+				course_record = 
+					Course.where(:dept => dept, :course_number => course_number)
+						  .joins(:catalog_year)
+						  .where(:year_range => catalog_year)
+				
+				# TODO: raise exception when course is not found in the index
+			else
+				raise "ERROR: Catalog year not in recognized format. Either specify a year range string (ex: 2016-2017) or :most_recent"
+			end
+		
+		
+		
+		# ==================
+		# basically manually performing a JOIN with Mongo data at this point
+		# (need to downlad the data if necessary)
+		# ==================
+		
+		return fetch_course_info(sql_course_info, force_download: force_download)
+	end
+	
+	
+	# retrive specific course information from the online catalog, caching it in Mongo DB.
+	# The course to be downloaded is specified with an ActiveRecord object
+	def fetch_course_info(sql_course_record, force_download:false)
+		record = sql_course_record
+		url = record.url
+		catalog_year = record.catalog_year.year_range
+		
+		
+		# check if the document is in MongoDB
+		document = 
+			@mongo[:course_info].find(
+				:course_id => record.course_id, :catalog_year => catalog_year
+			)
+			.limit(1)
+			.first
+		
+		
+		info = 
+			if document.nil? or force_download
+				# Document not found. Fetch data and add it to DB.
+				# Return the original CourseInfo object, which is still in memory.
+				info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
+				info.fetch
+				
+				# puts info.to_h
+				
+				# p @mongo[:course_info]
+				@mongo[:course_info].insert_one(info.to_h)
+				
+				
+				info # pseudo-return for block
+			else
+				# Document was in MongoDB. Turn it back into a CourseInfo object.
+				# p document.class # => BSON::Document
+				
+				CourseInfo.load(document)
+			end
+		
+		return info
+	end
+	
+	def all_courses_in_department(dept_code, catalog_year=:most_recent)
 		if catalog_year == :most_recent
+			year_record = 
+				CatalogYear.all
+				           .order("year_range DESC").first
 			
-			
-			# puts "Select a year"
-			# p CatalogYear.find_by(:year_range => '2014-2015').courses
-			
-			
-			# puts "main query"
-			dept, course_number = Catalog.parse_course_id(course_id)
-			
-			
-			# symbols = CatalogYear.methods.grep(/name/)
-			# results = symbols.collect{|sym| CatalogYear.send(sym)  }
-			# p symbols.zip(results).to_h
-			# p symbols
-			
-			# p CatalogYear.methods
-			# p CatalogYear.name
-			# p CatalogYear.model_name
-			
-			
-			
-			
-			most_recent_course_record = 
-				Course.where(:dept => dept, :course_number => course_number)
-				      .joins(:catalog_year)
-				      .order("year_range DESC").first
-			# course_list = Course.where(:dept => dept, :course_number => course_number)
-			# p course_list.joins(:catalog_year).order("year_range DESC").first
-			
-			p most_recent_course_record
-			# course_list.each do |course|
-			# 	p course.catalog_year.year_range
-			# end
-			
-			
-			
-			
-			
-			
-			# ==================
-			# basically manually performing a JOIN with Mongo data at this point
-			# (need to downlad the data if necessary)
-			# ==================
-			
-			record = most_recent_course_record
-			url = record.url
-			catalog_year = record.catalog_year.year_range
-			
-			
-			# check if the document is in MongoDB
-			document = 
-				@mongo[:course_info].find(
-					:course_id => record.course_id, :catalog_year => catalog_year
-				)
-				.limit(1)
-				.first
-			
-			
-			info = 
-				if document.nil?
-					# Document not found. Fetch data and add it to DB.
-					# Return the original CourseInfo object, which is still in memory.
-					info = CourseInfo.new(record.dept, record.course_number, catalog_year, url)
-					info.fetch
-					
-					# puts info.to_h
-					
-					# p @mongo[:course_info]
-					@mongo[:course_info].insert_one(info.to_h)
-					
-					
-					info # pseudo-return for block
-				else
-					# Document was in MongoDB. Turn it back into a CourseInfo object.
-					# p document.class # => BSON::Document
-					
-					CourseInfo.load(document)
+			course_records = Course.where(:catoid => year_record.catoid, :dept => dept_code)
+			out =
+				course_records.collect do |record|
+					[record.dept, record.course_number].join(' ')
 				end
 			
-			return info
+			return out
 		else
 			raise "ERROR: NOT IMPLEMENTED YET"
 		end
 	end
 	
+	
 	# expose the database to the block.
 	# should automatically handle "normalization" of switching between SQL and Mongo
 	def query(&block)
-		
+		# probably should evaluate the block within the context of the Catalog object
+		# would make this actually useful for prototyping new behavior
 	end
 	
 	
@@ -302,10 +380,7 @@ class Catalog
 	end
 	
 	
-	# catoid => 'catolog year' (e.g. "2016-2017" as is stored on CourseInfo objects)
-	def catoid_to_catalog_year(catoid)
-		return CatalogYear.find_by(:catoid => catoid).year_range
-	end
+	
 	
 	
 	
@@ -314,7 +389,12 @@ class Catalog
 	
 	# return all department codes from the Courses search page in the catalog
 	# (operates on one page from one catalog year)
-	def all_department_codes(url)
+	# 
+	# Input: CatalogYear object
+	def all_department_codes(catalog_year)
+		url = "http://catalog.gmu.edu/content.php?catoid=#{catalog_year.catoid}&navoid=#{catalog_year.courses_navoid}"
+		p url
+		
 		xml = Nokogiri::HTML(open(url))
 		
 		#course_search > table > tbody > tr:nth-child(4) > td:nth-child(1) > select
@@ -345,26 +425,53 @@ class Catalog
 		
 		puts "searching for classes under: #{dept_code} ..."
 		
-		node = xml.css('td.block_content_outer table')[3]
-			# SummerResearch::Utilities.write_to_file("./search.html", xml) if node.nil?
-		# NOTE: sometimes fails to find courses.
-		# just retry the request again, and you should be able to get it.
-		while node.nil?
-			puts "nope. wait a sec..."
-			sleep(3.0) # wait a bit before retrying
-			puts "retrying #{dept_code}..."
-			
-			xml = Nokogiri::HTML(open(url))
-			node = xml.css('td.block_content_outer table')[3]
-		end
-			
 		
-		# NOTE: results are paginated. Should get info from ALL pages, not just the first one.
 		
-		tr_list = node.css('tr')[2..-1]
+		# === Figure out links to all of the pages
+		links = page_links(xml)
 		
-		# tr_list.each{|x| puts x.class }
-		return tr_list.collect{  |x| SummerResearch.get_all_weird_link_urls(x)  }.flatten
+		# add the original page url to the set of all page urls
+		# (this is the full set of pages to look at when trying to scrape for courses)
+		links.unshift(url)
+		
+		
+		# NOTE: this variation downloads the first page twice, which is not very efficient
+		# === Get all courses from each and every page
+		data = 
+			links.collect do |url|
+				xml = Nokogiri::HTML(open(url))
+				
+				
+				node = xml.css('td.block_content_outer table')[3]
+					# SummerResearch::Utilities.write_to_file("./search.html", xml) if node.nil?
+				# NOTE: sometimes fails to find courses.
+				# just retry the request again, and you should be able to get it.
+				while node.nil?
+					puts "nope. wait a sec..."
+					sleep(3.0) # wait a bit before retrying
+					puts "retrying #{dept_code}..."
+					
+					xml = Nokogiri::HTML(open(url))
+					node = xml.css('td.block_content_outer table')[3]
+				end
+				
+				
+				# NOTE: results are paginated. Should get info from ALL pages, not just the first one.
+				
+				tr_list = node.css('tr')[2..-1]
+				
+				# tr_list.each{|x| puts x.class }
+				tr_list.collect{  |x| SummerResearch.get_all_weird_link_urls(x)  }.flatten
+			end
+		
+		# === Show the courses gathered from the links
+		puts data.flatten.collect{  |catalog_link|  catalog_link.id  }
+		
+		
+		
+		
+		
+		
 		
 		
 		
@@ -378,8 +485,31 @@ class Catalog
 		# in the left sidebar, there is a link for "Courses"
 		# href: http://catalog.gmu.edu/content.php?catoid=25&navoid=4962
 		# need to extract that navoid value
+		
+		return data.flatten
 	end
 	
+	def page_links(nokogiri_html)
+		fragment = nokogiri_html.css('td.block_content_outer table')
+		page_navigation = fragment.css('td').last
+		
+		# puts page_navigation
+		
+		
+		relative_links = page_navigation.xpath('a/@href')
+		links          = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
+		
+		return links
+	end
+	
+	public
+	
+	
+	
+	# catoid => 'catolog year' (e.g. "2016-2017" as is stored on CourseInfo objects)
+	def catoid_to_catalog_year(catoid)
+		return CatalogYear.find_by(:catoid => catoid).year_range
+	end
 	
 	class << self
 		# TODO: consider case of Mason Core classes
@@ -483,6 +613,13 @@ class Catalog
 		def url
 			return Catalog.course_description_url(self.catoid, self.coid)
 		end
+		
+		def to_CourseInfo
+			url = self.url
+			catalog_year = self.catalog_year.year_range
+			
+			return SummerResearch::CourseInfo.new(self.dept, self.course_number, catalog_year, url)
+		end
 	end
 	private_constant :Course
 	
@@ -492,6 +629,11 @@ class Catalog
 		self.primary_keys = :catoid
 		
 		has_many :courses, :foreign_key => 'catoid'
+		
+		
+		def to_s
+			"#{self.year_range} Catalog Year"
+		end
 	end
 	private_constant :CatalogYear
 	

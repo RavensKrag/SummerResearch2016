@@ -16,3 +16,9 @@ gem 'sqlite3'
 gem 'composite_primary_keys', '~> 8.1.3' # had problems installing through bundler
 
 gem 'mongo', '~> 2.2.5' # using Mongo 2.6
+
+
+# gem 'lex', '~> 0.1.0' # NOPE this is not a good library
+# there's RLTK (name is a reference to TCL/TK)
+# could just use TCL/TK, I suppose...
+# YACC is in that toolchain too, I think?

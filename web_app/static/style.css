@@ -1,0 +1,41 @@
+dot{
+	fill:lightblue;
+	stroke:#999999;
+}
+
+dot2{
+	fill:green;
+	stroke:#CCCCCC;
+}
+
+svg{
+	width:  700px;
+	height: 500px;
+	background-color: #DBDBDB
+}
+
+svg rect.background{
+	width:  100%;
+	height: 100%;
+	stroke: #999999;
+	fill:   #F6F6F6;
+}
+
+svg text{
+	font-family: 'sans-serif';
+	font-size: 12px;
+	fill: #FF0000;
+}
+
+svg text.course{
+	
+}
+
+.swatch{
+	background: aqua none repeat scroll 0% 0%;
+	display: inline-block;
+	margin-right: 20px;
+	
+	width:  80px;
+	height: 80px;
+}

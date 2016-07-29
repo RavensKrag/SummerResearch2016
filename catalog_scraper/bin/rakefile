@@ -168,11 +168,12 @@ puts "========="
 
 
 
-SQLITE_DATABASE_FILEPATH = 'example.db'
+SQLITE_DATABASE_FILEPATH = 'data/example.db'
 
 
+task :create_db => SQLITE_DATABASE_FILEPATH
 
-task :create_db do
+file SQLITE_DATABASE_FILEPATH do
 	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		# connect to the SQLite and MongoDB databases
 		
@@ -190,7 +191,7 @@ end
 
 # run 'create_db' before this to download initial data
 # (can't list as explict dependency at this time, because I don't know how to easily skip processing an entire catalog year)
-task :query_db do
+task :query_db => [SQLITE_DATABASE_FILEPATH] do
 	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	
@@ -201,7 +202,7 @@ task :query_db do
 	# end
 end
 
-task :wipe_mongo do
+task :wipe_mongo => [SQLITE_DATABASE_FILEPATH] do
 	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	@catalog.course_details_mongo do |db|
@@ -258,76 +259,841 @@ file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
 	@required_courses = course_list
 end
 
-task :cs_requirements => 'data/required_courses.yaml' do
-	@required_courses ||= YAML.load_file('data/required_courses.yaml')
+
+namespace :cs_requirements do
+	task :required_courses => SQLITE_DATABASE_FILEPATH do
+		@required_courses ||= YAML.load_file('data/required_courses.yaml')
+		
+		
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		
+		# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
+		
+		# main_requirements = 
+		# 	@required_courses
+		# 	.reject{|catalog_link| catalog_link.id == "Mason Core"}
+		# 	.collect do |catalog_link|
+		# 		id = catalog_link.id
+				
+		# 		# puts "============"
+		# 		# p id
+		# 		data = @catalog.course_info(id)
+		# 		# p data
+				
+		# 		data
+		# 	end
+		
+		# main_requirements.each do |course_info|
+			# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
+			# ERROR: can't deal with 'or 240'
+			# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
+			
+			# "Grade of C or better in CS 310, 330, and 367."
+			# ERROR: can't deal with 'CS 310, 330, and 367' => 'and 367'
+			
+			# CS 499 
+			# Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
+			
+			# PHIL 371 - Philosophy of Natural Sciences
+			# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
+			
+			
+			
+			
+			# SWE 443 - Software Architectures
+			# Prerequisite(s): Grade of C or better in CS 321 or CS 421 or SWE 321 or SWE 421.
+			# IIRC, 421 was re-numbered to 321.
+			# Notice that the numbers are the same for CS and SWE
+			# this is a cross-listed course.
+				# (note that some cross listed courses are exactly the same, but there's some OR course that's not? depending on if you take it as OR or MATH, there are a different number of seats avaiable in the class, and the prereqs are fairly different. This is despite it being the exact same physical lecture section.)
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			# "math placement test"
+			# "Placement Test"
+			# "Mathematics Placement Test"
+			
+			# "algebra tutorial program"
+			
+			
+			
+			
+			# HNRS 122, 130, 131, 230 or 240
+			# CS 262 or 222
+			# ECE 301 or 331
+			# CS 310, 330, and 367
+			# "Grade of C or better in CS 310, 330, and 367."
+			# MATH 123 and 124
+			# "C or better in MATH 113 or in both MATH 123 and 124."
+			
+			
+			
+			
+			# "Completion of 45 credits including the Mason core composition and literature requirements, requires a grade of C or better."
+			# => ["of 45"]
+			
+			# "Score of 13 or better on the Math Placement Test, or Grade of C or better in MATH 105, or Grade of C or better in MATH 108, or Grade of C or better in MATH 113."
+			# => ["of 13", "MATH 105", "MATH 108", "MATH 113"]
+			
+			# "C or higher in STAT 346 and a course in Statistics, or STAT 344."
+			# "a course in Statistics" ???
+				# ACS Gaming specifies that you can take "344 or a course in statistics relevant to your major" [paraphrased] so I have seen precedience for this sort of loose dependency around stat.
+				# (but IIRC there aren't currently any courses like that offered at Mason? so why is there this stipulation at all? future-proofing?)
+				# 
+				# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
+			
+			
+			
+			
+			
+			# # "#{course} with grade of C or better"
+			# # "Minimum grade of C in #{course}"
+			# soft_deps = 
+			# 	if course_info["Notes"]
+			# 		# [0] PHYS 161
+			# 		# [1] PHYS
+			# 		# [2] 161
+					
+			# 		# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
+			# 		[] # pseudo-return empty array to stub this out
+			# 	else
+			# 		[] # if "Notes" attribute not set, return empty Array
+			# 	end
+			
+			
+			# # p hard_deps
+			# # p soft_deps
+			# dependencies = hard_deps + soft_deps
+			
+			
+			# # p dependencies.flatten.compact.uniq
+			# puts "---------"
+			
+			
+			
+			# # === generate "source code"
+			# puts ">>>>>>>>>>"
+			# all_deps_text =
+			# %w[Prerequisite(s) Corequisite(s)]
+			# 	.collect do |x|
+			# 		requirements = course_info[x]
+			# 	end
+			
+			# all_deps_text = all_deps_text.join("\n")
+			
+			# # p all_deps_text
+			# # enum =  lexer.lex(all_deps_text)
+			# # p enum.to_a
+			
+			# parse_dependencies(all_deps_text)
+		# end
+		
+		
+		
+		
+		degree_requirements = {
+			"Computer science core (36 credits)" => {
+				:credits => 36,
+				:data => [
+					"CS 101",
+					"CS 105",
+					"CS 112",
+					"CS 211",
+					"CS 262",
+					"CS 306",
+					"CS 310",
+					"CS 321",
+					"CS 330",
+					"CS 367",
+					"CS 465",
+					"CS 483",
+					"ECE 301"
+				]
+			},
+			
+			"Senior computer science (15 credits)" => {
+				:credits => 15,
+				
+				:data => {
+					"One of the following:" => [
+						"CS 463",
+						"CS 471",
+						"CS 475"
+					],
+					
+					"And four additional courses chosen from:" => [
+						"CS 425",
+						"CS 440",
+						"CS 450",
+						"CS 451",
+						"CS 455",
+						"CS 463",
+						"CS 468",
+						"CS 469",
+						"CS 471",
+						"CS 475",
+						"CS 477",
+						"CS 480",
+						"CS 482",
+						"CS 484",
+						"CS 485",
+						"CS 490",
+						"CS 499",
+						# "MATH 446 or OR 481" # FIGURE THIS OUT
+						"MATH 446",
+						"OR 481"
+					]
+				},
+				
+				"Note:" => "Only three credits of CS 499 can be used toward the senior computer science requirement."
+			},
+			
+			"Mathematics (17 credits)" => {
+				:credits => 17,
+				
+				:data => [
+					"MATH 113",
+					"MATH 114",
+					"MATH 125",
+					"MATH 203",
+					"MATH 213"
+				]
+			},
+			
+			"Statistics (3 credits)" => {
+				:credits => 3,
+				
+				:data => [
+					"STAT 344"
+				]
+			},
+			
+			"Computer science-related courses (6 credits)" => {
+				:credits => 6,
+				
+				:data => {
+					"Two courses chosen from:" => [
+						"STAT 354",
+						"OR 335",
+						"OR 441",
+						"OR 442",
+						"ECE 280",
+						"ECE 431",
+						"ECE 447",
+						"ECE 450",
+						"ECE 511",
+						"SWE 432",
+						"SWE 437",
+						"SWE 443",
+						"SYST 371",
+						"SYST 470",
+						"PHIL 371",
+						"ENGH 388",
+						# "Any MATH or CS course numbered above 300 (except MATH 351)", # FIGURE THIS OUT
+						"PHIL 376",
+					]
+				},
+				
+				"Note:" => "Students may need to choose electives to satisfy prerequisites for these courses. Those planning to take MATH 352 may replace STAT 344 with MATH 351."
+			},
+			
+			"Natural Science (12 credits)" => {
+				:credits => 12,
+				
+				:description => "The BS in Computer Science requires 12 credits of natural science.  The courses should be intended for science and engineering students and must include a two course sequence with laboratories.  Some approved combinations have a total of more than 12 hours.  Approved two course sequences with laboratories are:",
+				
+				# each pair is a two-course lab sequence. must take both items in a pair
+				:data => {
+					"Astronomy:" => [
+						["ASTR 111", "ASTR 112"],
+						["ASTR 113", "ASTR 114"]
+					],
+					 
+					"Biology:" => [
+						["BIOL 103", "BIOL 104"]
+					],
+					"Chemistry:" => [
+						["CHEM 211", "CHEM 213"],
+						["CHEM 212", "CHEM 214"]
+					],
+					 
+					"Environmental Science:" => [
+						["EVPP 110", "EVPP 111"]
+						 
+					],
+					"Geology:" => [
+						["GEOL 101", "GEOL 102"]
+						 
+					],
+					"Physics:" => [
+						["PHYS 160", "PHYS 161"],
+						["PHYS 260", "PHYS 261"]
+					]
+				}
+			},
+			
+			"Communication (3 credits)" => {
+				:credits => 3,
+				
+				:description => "Computer Science students must make a technical presentation.  This course fulfills the  Mason Core requirement in oral communication.",
+				
+				:data => [
+					"COMM 100"
+				]
+			},
+			
+			"Additional Humanities (3 credits)" => {
+				:credits => 3,
+				
+				:description => "Students must complete three additional credits of Humanities courses.  This can be fulfilled by any Mason Core course except those listed under Information Technology, Synthesis, Quantitative Reasoning, or Natural Science.  Students wishing to substitute alternate courses for this requirement must obtain departmental approval.",
+				
+				
+				:data => 
+				"	ANY Mason Core
+					EXCEPT Information Technology
+					       Synthesis
+					       Quantitative Reasoning
+					       Natural Science
+					
+					or alternates with departmental approval
+				".lines.collect{|l| l.lstrip }.join
+			},
+			
+			"Additional Mason Core (21 credits)" => {
+				:credits => 21,
+				
+				:description => "Students must complete all Mason Core requirements not fulfilled by major requirements.",
+				
+				:data => 
+				"	Written Communication: 6 credits
+					Literature: 3 credits
+					Arts: 3 credits
+					Western Civilization/World History: 3 credits
+					Social and Behavioral Science: 3 credits
+					Global Understanding: 3 credits
+				".lines.collect{|l| l.lstrip }.join,
+				
+				"Note:" => "CS majors must take the Natural Sciences section of ENGH 302."
+			},
+			
+			"Electives (4 credits)" => {
+				:credits => 4,
+				:description => "Students must complete 4 elective credits.",
+				:data => ''
+			}
+		}
+		
+		
+		SummerResearch::Utilities.write_to_file(
+			'./CS_BS_requirements.yaml', degree_requirements.to_yaml
+		)
+		
+		
+		# Explanation of how the requirements data format works:
+		# -----
+		# 
+		# for sectors with options, :data is a hash.                    (electives)
+		# for sectors where ALL items must be taken, :data is an array. (required)
+		# for sectors where information given was not parsable, :data is a string.
+			# Sometimes, it may be an empty string,
+			# as the only relevant information in the sector
+			# was used to populat the :description field instead.
+		# :description is a category I created,                         (implict category)
+		# which describes the text before classes are listed
+		# (at least for CS BS). 
+		# on the other hand,
+		# "Note:" is a sector explictly marked in the Program of Study page for the CS BS
+			# notice the difference in key type,
+					# symbol: implict type created by me.
+					# string: something declared by the catalog.
+		# -------------------------------------------------------
+		
+		
+		
+		
+		
+		# standard core courses can be replaced by Honors College stuff,
+		# but there is no clear 1-to-1 equivalence between Honors and Mason Core classes.
+		# (because Honors provides interdiciplinary approaches)
+		standard_core = [
+			degree_requirements["Additional Humanities (3 credits)"],
+			degree_requirements["Additional Mason Core (21 credits)"]
+		]
+		
+		
+		
+		
+		filepath = 
+			File.expand_path(
+				'./CS_BS_data_dump.txt', 
+				SummerResearch::Utilities::DATA_DIR
+			)
+		File.open(filepath, 'w') do |f|
+			requirements_by_type = {
+				:required =>
+					degree_requirements.select{ |name, sector|  sector[:data].is_a? Array }
+					                   .collect{  |name, sector|  sector[:data] }
+					                   .flatten,
+				
+				:elective =>
+					degree_requirements.select{   |name, sector|  sector[:data].is_a? Hash }
+					                   .collect{  |name, sector|  sector[:data].values }
+					                   .flatten,
+				
+				:unclear  => degree_requirements.select{ |name, sector|  sector[:data].is_a? String }
+			}
+			
+			requirements_by_type.each do |type, requirement_list|
+				next if type == :unclear
+				
+				course_info_list = requirement_list.collect{  |x| p x; @catalog.course_info(x)  }
+				
+				
+				dependency_list = 
+					course_info_list.collect do |course_info|
+						puts ">>>>>>>>>>"
+						puts "#{course_info.id} - #{course_info.title}"
+						
+						all_deps_text_list =
+							%w[Prerequisite(s) Corequisite(s)]
+								.collect do |x|
+									requirements = course_info[x]
+								end
+						all_deps_text = all_deps_text_list.join("\n")
+						
+						
+						parse_dependencies(all_deps_text) || []
+					end
+				dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
+				
+				
+				f.puts "requirement type: #{type}"
+				f.puts "---"
+				f.puts dependency_map.inspect
+				f.puts
+			end
+		end
+		
+		
+	end
 	
 	
+end
+
+
+
+task :parser_test do
+	filepath = File.expand_path(
+		'./dep_parser_test_input.txt',
+		SummerResearch::Utilities::DATA_DIR
+	)
+	
+	# ignore commented lines
+	corpus = File.readlines(filepath).reject{  |line| line.strip[0] == '#'  }
+	corpus = corpus.join('')
+	# puts corpus
+	
+	parse_dependencies(corpus)
+end
+
+# class DependencyLexer < Lex::Lexer
+# 	tokens(
+# 		:NUMBER,
+# 		:DEPT
+# 	)
+
+# 	# Regular expression rules for simple tokens
+# 	rule(:DEPT,   /\p{Lu}{2,4}/)
+	
+# 	# A regular expression rules with actions
+# 	rule(:NUMBER, /\d{3}/) do |lexer, token|
+# 		token.value = token.value.to_i
+# 		token
+# 	end
+	
+# 	# Define a rule so we can track line numbers
+# 	rule(:newline, /\n+/) do |lexer, token|
+# 		lexer.advance_line(token.value.length)
+# 	end
+	
+# 	# A string containing ignored characters (spaces and tabs)
+# 	ignore " \t"
+	
+# 	error do |lexer, token|
+# 		puts "Illegal character: #{token.value}"
+# 	end
+# end
+
+def parse_dependencies(all_deps_text)
+	# === find relevant "tokens"
+	patterns = [
+		[/(Mason Core)/,   :core_overview],
+		
+		[
+			/(#{ %w[UWCU UOC UQR UITC UFA UGU ULIT UNSL USBS UWC USYN].join('|') })/,
+			:core_category
+		],
+		# Exhaustive search for all "mason core" category keys
+		# (must trigger before searching for department codes)
+		
+		[/(\d{3})(-level)/,  :year_level_category],
+		# ex: 600-level course
+		
+		[/(\p{Lu}{2,4})/,  :department_code],
+		# 2-4 capital letters,
+		
+		[/(\d{3})/,        :course_number],
+		# 3 digits,
+		
+		[/(C or higher|(g|G)rade of C or better)/, :c_or_higher], # above 'of something'
+		
+		
+		[/(\d+ (credits|credit hours))/,  :credit_count], # above 'of something'
+		# ooh, this is a multi-fragment token...,
+		
+		[/(permission of instructor)/, :instructor_permission], # above 'of something'
+		
+		
+		# [/(of)/,           :OF], # above 'of something'
+		
+		
+		[/(of \w*)/,       :of_something],
+		# as in '60 credits of philosophy'
+		
+		
+		# [/(and)/,                      :AND],
+		[/(or)/,                       :OR],
+		
+		[/(specific prerequisites vary)/, :it_depends]
+	]
+	
+	# $1 through $9 are the "Pseudo Variables" set by regex matching
+		# src: http://stackoverflow.com/questions/6803647/how-to-write-a-ruby-switch-statement-case-when-with-regex-and-backreferences
+	
+	
+	# NOTE: assuming the only usage of three-digit numbers is in course codes. However, some courses gate by the number of credits, so maybe a three-digit number could appear there? It seems unlikely, (60 and 90 seem like better choices, given 120 to graduate) but making a note in case an error comes up in the future.
+	
+	
+	
+	
+	
+	tokens = lex(patterns, all_deps_text)
+	out = parse(tokens)
+	
+	return out
+end
+
+def lex(patterns, corpus)
+	# foo = patterns[0]
+	# all_deps_text.scan foo[0] do
+	# 	p [$~.offset(1), foo[1]].flatten
+	# end
+	
+	
+	# p patterns[0][0].match(all_deps_text)
+	
+	
+	tokens = 
+		patterns.collect do |regexp, type|
+			matchdata_list = corpus.to_enum(:scan, regexp).collect { Regexp.last_match }
+			
+			matchdata_list.collect do |matchdata|
+				start = matchdata.begin(0) # nth item in the matchdata collection
+				stop  = matchdata.end(0)
+				captures = matchdata.captures
+				
+				[start, stop, type, captures]
+			end
+		end
+	
+	tokens = tokens.flatten(1).sort_by do |start_pos, end_pos, type, captures|
+		start_pos
+	end
+	
+	
+	# --- remove overlapping tokens
+	# whatever token whose pattern is higher on the list stays (lower index)
+	# the other token gets deleted
+	removal_list = Array.new
+	tokens.each_with_index do |t1, i|
+		tokens[(i+1)..-1].each do |t2|
+			t1_start, t1_stop = t1[0..1]
+			t2_start, t2_stop = t2[0..1]
+			
+			removal_list << [t1, t2] if (t1_start..t1_stop).include? t2_start
+		end
+	end
+	
+	removal_list.uniq.each do |t1, t2|
+		type1 = t1[2]
+		type2 = t2[2]
+		
+		a = patterns.each_with_index.find_index{  |pat,i|  pat[1] == type1  }
+		b = patterns.each_with_index.find_index{  |pat,i|  pat[1] == type2  }
+		# p [a,b]
+		
+		if a > b
+			tokens.delete t1
+		else
+			tokens.delete t2
+		end
+		
+	end
+	
+	
+	
+	# --- print data dump to file, for debugging	
+	dump = tokens.collect{|t| t.inspect }.join("\n")
+	SummerResearch::Utilities.write_to_file('./dep_parser_dump.txt', dump)
+	
+	
+	
+	# tokens.
+	
+	
+	
+	return tokens
+end
+
+def parse(tokens)
+	# === use "tokens" to assemble course names
+	return if tokens.empty?
+	# puts "running"
+	
+	
+	out = Array.new
+	
+	
+	# --- parse complex generalized case like '3 credits of 100 or 200-level COMM'
+	
+	# [1138, 1147, :credit_count, ["3 credits", "credits"]]
+	# [1151, 1154, :course_number, ["100"]]
+	# [1158, 1167, :year_level_category, ["200", "-level"]]
+	# [1168, 1172, :department_code, ["COMM"]]
+	
+	foo_data_new = Array.new
+	
+	
+	tokens.each_with_index do |t, i|
+		break if i == tokens.size-1 # need to read one past 'i', so abort when 'i' is max
+		
+		start_pos, end_pos, type, captures = t
+		
+		next unless type == :year_level_category
+		end_index = i+1
+		
+		
+		
+		next unless tokens[end_index][2] == :department_code
+		
+		# walk backwards towards the front, until you hit :credit_count
+		tokens[0..i].reverse_each.each_with_index do |t2, distance|
+			if t2[2] == :credit_count
+				# note: 'j' is further down the array than 'i'
+				j = i - distance
+				# p [j, end_index]
+				
+				
+				foo_data_new << tokens[j..end_index]
+				
+				break
+			end
+		end
+	end
+	
+	p foo_data_new
+	
+	# data = 
+	# 	tokens.collect{  |start_pos, end_pos, type, captures|  type }
+	# 		.join(' ')
+	# 		.match(/(credit_count(.*?)year_level_category department_code)/)
+	# p data.captures[0]
+	
+	
+	# consume these tokens so no other steps can use them
+	foo_data_new.flatten(1).each do |t|
+		# p t
+		tokens.delete t
+	end
+	
+	# out += foo_data_new
+	
+	
+	
+	
+	# unless tokens.first[1] == :department_code
+	# 	# Expect that the first token is a department code
+	# 	# Need to specify department codes if there are any course numbers specified
+	# 	if tokens.any?{|start_pos, type, captures| type == :course_number }
+	# 		raise "ERROR: first token should be a department code"
+	# 	end
+	# end
+	
+	# --- parse standard department codes. ex) 'CS 367'
+	unless tokens.empty?
+		most_recent_dept_code = tokens.first[1]
+		
+		new_data = 
+			tokens.collect do |start_pos, end_pos, type, captures|
+				token = captures[0]
+				
+				most_recent_dept_code = token if type == :department_code
+				
+				if type == :course_number
+					[most_recent_dept_code, token].join(' ')
+				end
+			end
+		new_data.compact!
+		
+		
+		out += new_data 
+	end
+		
+	
+	
+	
+	
+	
+	
+	puts "> #{out.inspect}"
+	
+	
+	return out
+end
+
+
+
+# prereq information only, specific format, for all classes in the 2016-2017 catalog year
+# CS 330 : CS 101, CS 212
+# COURSE : DEP1, DEP2
+# (only show direct dependencies)
+# (these numbers are only for demonstration, I don't know this is real data or not)
+task :qian_hu_data do
 	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 	
 	
 	
-	# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
 	
-	main_requirements = 
-		@required_courses
-		.reject{|catalog_link| catalog_link.id == "Mason Core"}
-		.collect do |catalog_link|
-			id = catalog_link.id
-			
-			puts "============"
-			p id
-			data = @catalog.course_info(id)
-			p data
-			
-			data
+	
+	# this is kinda bad form, because you don't want to be able to call this class outside of the context of @catalog, because the database may not be created yet, or there may not be a connection, etc etc etc
+	# catalog_year = SummerResearch::Catalog::CatalogYear.where(:year_range => '2016-2017')
+	
+	
+	
+	out = nil
+	
+	@catalog.activerecord_query do |course_model, catologyear_model|
+		# === update index with ALL DEPARTMENTS for the most recent catalog year
+		catalog_year = catologyear_model.where(:year_range => '2016-2017')
+		
+		@catalog.populate_course_index(catalog_year)
+		
+		
+		# === fetch specific information of ALL CLASSES in the current year
+		all_courses_in_year = 
+			catologyear_model.where(:year_range => '2016-2017')
+			                 .first.courses
+		
+		# p all_courses_in_year
+		raise "ERROR: expected a course_model" unless all_courses_in_year.first.is_a? course_model
+		
+		
+		# filter out the main Mason Core pages.
+		# These do not have the same structure as other "real courses", and may cause problems.
+		all_courses_in_year = all_courses_in_year.reject{|course| course.dept == "Mason Core"}
+		
+		
+		
+		
+		# --- Try to fetch information for all courses in the desired set.
+		#     If you can't process a course, just keep going, but log some error data.
+		#     This error log can be examined later to determine new CatalogInfo Types.
+		# TODO: would be nice if you could have some sort of progress indicator for this.
+		out = nil
+		
+		filepath = File.expand_path(
+			'./all_courses_2016_new_catalog_info_types.txt',
+			SummerResearch::Utilities::DATA_DIR
+		)
+		File.open(filepath, 'a') do |f|
+			out = 
+				all_courses_in_year.collect do |course_record|			
+					begin
+						@catalog.fetch_course_info(course_record)
+					rescue StandardError => e
+						f.puts "course id:   #{course_record.course_id}"
+						# TODO: Add short description to index
+						# f.puts "description: #{course.description}"
+						f.puts "url:         #{course_record.url}"
+						
+						# output the data from the exception
+						# (the program will still continue to run)
+						# (resulting in all errors printed in one place)
+						f.puts e.message
+						e.backtrace.each do |line|
+							f.puts "\t" + line
+							# indent the lines of the backtrace.
+							# makes it easier to see things when you start getting multiple errors
+						end
+						f.puts "=============="
+						f.puts
+						f.puts
+					end
+				end
 		end
-	
-	
-	
-	
-	
-	
-	
-	main_requirements.each do |course|
-		
-		puts course.id
-		get_dependencies(course)
-		
-		
-		
-		# "math placement test"
-		# "Placement Test"
-		# "Mathematics Placement Test"
-		
-		# "algebra tutorial program"
-		
-		
-		
-		
-		# HNRS 122, 130, 131, 230 or 240
-		# CS 262 or 222
-		# ECE 301 or 331
-		# CS 310, 330, and 367
-		# "Grade of C or better in CS 310, 330, and 367."
-		# MATH 123 and 124
-		# "C or better in MATH 113 or in both MATH 123 and 124."
-		
-		
-		
-		
-		# "Completion of 45 credits including the Mason core composition and literature requirements, requires a grade of C or better."
-		# => ["of 45"]
-		
-		# "Score of 13 or better on the Math Placement Test, or Grade of C or better in MATH 105, or Grade of C or better in MATH 108, or Grade of C or better in MATH 113."
-		# => ["of 13", "MATH 105", "MATH 108", "MATH 113"]
-		
-		# "C or higher in STAT 346 and a course in Statistics, or STAT 344."
-		# "a course in Statistics" ???
-			# ACS Gaming specifies that you can take "344 or a course in statistics relevant to your major" [paraphrased] so I have seen precedience for this sort of loose dependency around stat.
-			# (but IIRC there aren't currently any courses like that offered at Mason? so why is there this stipulation at all? future-proofing?)
-			# 
-			# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
 	end
+	
+	# raise "ERROR: Not all course info types recognized. Define new types and try again." if out.include? nil
+	
+	main_requirements = out.compact
+	
+	
+	
+	# === parse direct prereqs for each and every class
+	p main_requirements.collect{  |course_info| course_info.id  }
+	data = 
+		main_requirements.uniq.collect do |course_info|
+			name = course_info.id
+			
+			puts "-=-=-=-=-=-=-=-="
+			
+			deps = course_info["Prerequisite(s)"]
+				puts "=>  #{deps.inspect}"
+			deps = deps.nil? ? [] : parse_dependencies(deps)
+				puts "=>  #{deps.inspect}"
+			deps = [] if deps.nil?
+				puts "=>  #{deps.inspect}"
+			
+			# oooh yeah. parse_dependencies can return nil, even if the dependecies field is set
+				# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
+			
+			
+			raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
+			
+			[name, deps]
+		end
+	p data
+	
+	# === convert to desired output format
+	filepath = File.expand_path('./qian_sample_5.txt', SummerResearch::Utilities::DATA_DIR)
+	File.open(filepath, 'a') do |f|
+		data.each do |name, deps|
+			name = name.tr(' ', '-')
+			deps.collect!{  |x| x.tr(' ', '-')  }
+			
+			
+			f.puts "#{name}:#{deps.join(',')}"
+		end
+	end
+	
 end
 
 
@@ -339,75 +1105,151 @@ task :get_info do
 end
 
 
-
-
-
-
-
-
-
-def get_dependencies(course_info)
-	regexp = /(\p{L}+ \d+)/ # look for course codes in the requirements lists
+# TODO: reimplement these tests calling actual code from Catalog
+# maybe use instance_eval? probably need to break up the code in Catalog a little better, to allow for testing without having to just copy the code over like this
+namespace :catalog_test do
+	# all of these tests use the 2016-2017 catalog year, catoid = "29"
+	
+	task 'data/CS_course_list.html' do
+		# little bit of code to get the page where the CS courses 
+		# copied from Catalog#search_by_department()
+		catoid, navoid, dept_code = %w[29 6272 CS]
+		
+		url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=#{dept_code}&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=#{catoid}&expand=&navoid=#{navoid}&search_database=Filter#acalog_template_course_filter"
+		
+		xml = Nokogiri::HTML(open(url))
+		
+		
+		# cache data on the disk
+		SummerResearch::Utilities.write_to_file("./CS_course_list.html", xml)
+	end
+	
+	task :multiple_page_iteration => 'data/CS_course_list.html' do
+		filepath = File.expand_path("./CS_course_list.html", SummerResearch::Utilities::DATA_DIR)
+		xml = Nokogiri::HTML(open(filepath))
+		
+		links = CatalogTest.page_links(xml)
+		
+		puts links
+		pages = links.collect{  |url|  Nokogiri::HTML(open(url))  }
+		
+		
+		# add the original page to the set of all pages
+		pages.unshift(xml)
+		
+		
+		# === Get all links from each and every page
+		data = 
+			pages.collect do |xml|
+				# === copied from Catalog#search_by_department()
+				
+				node = xml.css('td.block_content_outer table')[3]
+					# SummerResearch::Utilities.write_to_file("./search.html", xml) if node.nil?
+				# NOTE: sometimes fails to find courses.
+				# just retry the request again, and you should be able to get it.
+				while node.nil?
+					puts "nope. wait a sec..."
+					sleep(3.0) # wait a bit before retrying
+					puts "retrying #{dept_code}..."
+					
+					xml = Nokogiri::HTML(open(url))
+					node = xml.css('td.block_content_outer table')[3]
+				end
+				
+				
+				# NOTE: results are paginated. Should get info from ALL pages, not just the first one.
+				
+				tr_list = node.css('tr')[2..-1]
+				
+				# tr_list.each{|x| puts x.class }
+				tr_list.collect{  |x| SummerResearch.get_all_weird_link_urls(x)  }.flatten
+			end
+		
+		# === Show the courses gathered from the links
+		puts data.flatten.collect{  |catalog_link|  catalog_link.id  }
+	end
 	
 	
-	hard_deps =
-	%w[Prerequisite(s) Corequisite(s)]
-		.collect do |x|
-			requirements = course_info[x]
-			p requirements
-			next unless requirements
-			requirements.scan(regexp)
+	# show the page counts for various degrees in the catalog
+	task :page_counts do
+		departments_with_999 = %w[ASTR BIOD BENG BINF BIOS CHEM CEIE CLIM COMM CSI CSS CS CONF CRIM CULT ECON EDUC ECE ENGH EVPP GGS GOVT HAP HE HIST IT LING MATH MUSI NEUR NURS PSCI PHYS PSYC PUBP RHBS SOCI STAT SEOR]
+		
+		# department_codes = departments_with_999
+		department_codes = CatalogTest.all_department_codes()
+		
+		department_codes.each do |dept_code|
+			# little bit of code to get the page where the CS courses 
+			# copied from Catalog#search_by_department()
+			catoid, navoid = %w[29 6272]
+			
+			url = "http://catalog.gmu.edu/content.php?filter%5B27%5D=#{dept_code}&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=#{catoid}&expand=&navoid=#{navoid}&search_database=Filter#acalog_template_course_filter"
+			
+			xml = Nokogiri::HTML(open(url))
+			
+			
+			
+			
+			
+			# copied from :multiple_page_iteration task above
+			links = CatalogTest.page_links(xml)
+			page_count = links.length + 1
+			
+			puts page_count
+			# need to add 1 to page count, because there is no link to the current page, ie the first page
+			
+			
+			
+			
+			# query all dept codes at once to see how many pages will fit before elipsis is inserted
+			# http://catalog.gmu.edu/content.php?filter%5B27%5D=-1&filter%5B29%5D=&filter%5Bcourse_type%5D=-1&filter%5Bkeyword%5D=&filter%5B32%5D=1&filter%5Bcpage%5D=1&cur_cat_oid=29&expand=&navoid=6272&search_database=Filter#acalog_template_course_filter
+			# 
+			# => as long as there are 11 or fewer pages,
+			#    should be able to traverse without any problems
+			
+			
+			# can easily chuck the numbers that get printed into a histogram for easy viewing
+			# http://www.shodor.org/interactivate/activities/Histogram/
+			# => 1 page  => 140
+			#    2 pages => ~20
+			#    3 pages => a couple
+		end
+	end	
+end
+module CatalogTest
+	class << self
+		def all_department_codes
+			# === copied from Catalog#fetch_course_listing()
+			catoid         = "29"
+			courses_navoid = "6272"
+			url = "http://catalog.gmu.edu/content.php?catoid=#{catoid}&navoid=#{courses_navoid}"
+			
+			
+			# === copied from Catalog#all_department_codes()
+			xml = Nokogiri::HTML(open(url))
+			
+			#course_search > table > tbody > tr:nth-child(4) > td:nth-child(1) > select
+			segment = xml.css('#course_search table tr:nth-child(4) > td:nth-child(1) > select > option')
+				# Utilities.write_to_file("./department_codes_fragment.html", segment)
+			
+			departments = segment.collect{  |option_node|  option_node["value"]  } 
+			departments.shift # remove the first one, which is just -1, the default nonsense value
+			
+			return departments
 		end
 		
-	
-	# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
-	# ERROR: can't deal with 'or 240'
-	# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
-	
-	# "Grade of C or better in CS 310, 330, and 367."
-	# ERROR: can't deal with 'CS 310, 330, and 367' => 'and 367'
-	
-	# CS 499 
-	# Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
-	
-	# PHIL 371 - Philosophy of Natural Sciences
-	# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
-	
-	
-	
-	
-	# SWE 443 - Software Architectures
-	# Prerequisite(s): Grade of C or better in CS 321 or CS 421 or SWE 321 or SWE 421.
-	# IIRC, 421 was re-numbered to 321.
-	# Notice that the numbers are the same for CS and SWE
-	# this is a cross-listed course.
-		# (note that some cross listed courses are exactly the same, but there's some OR course that's not? depending on if you take it as OR or MATH, there are a different number of seats avaiable in the class, and the prereqs are fairly different. This is despite it being the exact same physical lecture section.)
-	
-	
-	
-	
-	# "#{course} with grade of C or better"
-	# "Minimum grade of C in #{course}"
-	soft_deps = 
-		if course_info["Notes"]
-			# [0] PHYS 161
-			# [1] PHYS
-			# [2] 161
+		def page_links(nokogiri_html)
+			fragment = nokogiri_html.css('td.block_content_outer table')
+			page_navigation = fragment.css('td').last
 			
-			# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
-			[] # pseudo-return empty array to stub this out
-		else
-			[] # if "Notes" attribute not set, return empty Array
+			# puts page_navigation
+			
+			
+			relative_links = page_navigation.xpath('a/@href')
+			links          = relative_links.collect{  |x| "http://catalog.gmu.edu" + x.value  }
+			
+			return links
 		end
-	
-	
-	# p hard_deps
-	# p soft_deps
-	dependencies = hard_deps + soft_deps
-	
-	
-	p dependencies.flatten.compact.uniq
-	puts "---------"
+	end
 end
 
 
@@ -417,9 +1259,9 @@ end
 
 
 
-
-
-
+def get_dependencies(course_info)
+	
+end
 
 def all_courses_for_degree(url_to_program_requirements_page)
 	puts "=== run processing"
@@ -448,6 +1290,65 @@ end
 
 
 
+
+
+task :restricted_set_size do
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	
+	
+	@catalog.activerecord_query do |course_model, catologyear_model|
+		count =
+			SummerResearch::Catalog::CASE_STUDY_DEPARTMENT_SET
+				.collect{  |dept|
+					course_model.where(:dept => dept).size
+				}
+				.reduce(&:+)
+		
+		puts "Count of all courses in the case study department set: #{count}"
+	end
+	
+	
+	# @catalog.mongo_query :course_info do |mongo|
+	# 	
+	# 	mongo.find(
+	# 		:course_id => record.course_id
+	# 	)
+	# end
+	
+	
+	
+	
+	
+	puts "=== load data..."
+	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
+	
+	
+	puts "=== cycle through programs of study..."
+	
+	programs = [
+		"Computer Science, BS",
+		"Applied Computer Science, BS",
+		"Biology, BA",
+		"Biology, BS",
+		"Psychology, BA"
+	]
+	programs.each do |degree_name|
+		puts "=== Getting info for: #{degree_name}"
+		url = @programs_of_study[degree_name]
+		courses = all_courses_for_degree(url)
+		# If the program list has a weird link in it, then the foo2 will fail before reaching the end of the list
+			# url = @env.degrees[degree_name]
+			# course_list = SummerResearch.degree_requirements(url)
+			# puts "test"
+		# failure occurs inside of SummerResearch.degree_requiremnts
+		
+		
+		
+		p courses.size
+		# => 474 total courses across all degrees being studied, assuming no overlap (which is probably wrong)
+	end
+end
 
 
 
@@ -536,14 +1437,71 @@ namespace :test_course_info_fetch do
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130&print"
 			],
 			[
-				"EVPP 110",
+				"EVPP 110", # 'sustainable mason' badge
 				"The Ecosphere: An Introduction to Environmental Science I",
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982&print"
+			],
+			[
+				"GGS 103",  # 'sustainable mason' badge
+				"Human Geography",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=304295"
 			],
 			[
 				"Mason Core UGU",
 				"Global Understanding",
 				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635"
+			],
+			
+			
+			[
+				"OM 210",
+				"Statistical Analysis for Management",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305751"
+			],
+			[
+				"OR 574",
+				"Quality Control and Process Management",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305770"
+			],
+			[
+				"CEIE 450",
+				"Environmental Engineering Systems",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302280"
+			],
+			[
+				"CLIM 102",
+				"Introduction to Global Climate Change Science",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=307948"
+			],
+			[
+				"SOM 301",
+				"Business Models: A Communication Approach",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306669"
+			],
+			[
+				"CEIE 501",
+				"Sustainable Development",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=302288"
+			],
+			[
+				"REAL 796",
+				"Directed Reading",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306438"
+			],
+			[
+				"MATH 551",
+				"Regression and Time Series",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305092"
+			],
+			[
+				"MLSC 302",
+				"Applied Leadership II",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=307989"
+			],
+			[
+				"PHYS 440",
+				"Nuclear and Particle Physics",
+				"http://catalog.gmu.edu/preview_course.php?catoid=29&coid=305999"
 			]
 		].collect{|a,b,c| SummerResearch::CatalogLink.new(a, b, c, 'manual') }
 		
@@ -577,7 +1535,7 @@ namespace :test_course_info_fetch do
 		# 
 		# sample data set => [CatalogLink] 
 		# [CatalogLink] => [CourseInfo] DEBUG
-		course_data = CourseInfoDiagnostic.foo11(@catalog, @pw_sample) 
+		course_data = CourseInfoDiagnostic.debug(@catalog, @pw_sample) 
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
@@ -595,7 +1553,7 @@ namespace :test_course_info_fetch do
 		# 
 		# sample data set => [CatalogLink] 
 		# [CatalogLink] => [CourseInfo] DEBUG VERBOSE
-		course_data = CourseInfoDiagnostic.foo14(@catalog, @pw_sample)
+		course_data = CourseInfoDiagnostic.debug_verbose(@catalog, @pw_sample)
 	end
 	
 	
@@ -625,9 +1583,9 @@ namespace :test_course_info_fetch do
 		
 		
 		puts "=== run processing"
-		course_data = CourseInfoDiagnostic.foo11(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
+		course_data = CourseInfoDiagnostic.debug(@catalog, courses) # course [CatalogLink] => [CourseInfo] RELEASE VERSION
 		
-		Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
+		SummerResearch::Utilities.write_to_file('./course_info.yaml', course_data.to_yaml)
 	end
 	
 	# [CatalogLink] => [CourseInfo] DEBUG
@@ -661,7 +1619,7 @@ namespace :test_course_info_fetch do
 			# failure occurs inside of SummerResearch.degree_requiremnts
 			
 			puts "=== analyzing courses... "
-			course_data = CourseInfoDiagnostic.foo11(@catalog, courses)
+			course_data = CourseInfoDiagnostic.debug(@catalog, courses)
 		end
 		
 		# errors from: SummerResearch::CourseInfo#fetch
@@ -684,126 +1642,313 @@ namespace :test_course_info_fetch do
 			# "Biology, BS",
 			# "Psychology, BA"
 	end
+	
+	
+	task :extended_set => "data/all_courses_2016_anomalies.txt" do
+		# ASSUME: requires that you load up ALL COURSES for the current catalog year, as was done when generating Qian Hu's dataset. Not going to copy that code here, just assuming it has been done already.
+			# (This only uses the index data, it should not use data from Mongo)
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		# read from file
+		filepath = File.expand_path(
+			"./all_courses_2016_anomalies.txt",
+			SummerResearch::Utilities::DATA_DIR
+		)
+		data = File.readlines(filepath)
+		
+		# chunk the data
+		chunk_size = 3
+		number_of_records = 98
+		data = data.collect{ |line| line.chomp }
+		           .each_slice(chunk_size).to_a
+		data.pop() # remove the last entry
+		
+		data.each{|list| list.pop } # remove the last line of each cluster, which is just empty
+		
+		p data.last(3)
+		
+		data.collect! do |course_id, url|
+			# remove the part at the beginning of the line that explains what this field is
+			course_id = course_id.split(':').last.strip
+			name      = '???'
+			url       = url.split.last
+			
+			# do actual processing
+			SummerResearch::CatalogLink.new(course_id, name, url, 'manual')
+		end
+		
+		
+		
+		
+		# # NOTE: if @catalog is not set, debug_verbose() still works, but actually outputs far less data that debug()
+		CourseInfoDiagnostic.debug(@catalog, data)
+		# CourseInfoDiagnostic.debug_verbose(@catalog, data)
+	end
+	
+	task :extended_set_type_signatures => "data/all_courses_2016_anomalies_types.txt" do
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		# read from file
+		filepath = File.expand_path(
+			"./all_courses_2016_anomalies_types.txt",
+			SummerResearch::Utilities::DATA_DIR
+		)
+		data = File.readlines(filepath)
+		
+		# chunk the data
+		chunk_size = 3
+		number_of_records = 98
+		data = data.collect{ |line| line.chomp }
+		           .each_slice(chunk_size).to_a
+		data.pop() # remove the last entry
+		
+		data.each{|list| list.pop } # remove the last line of each cluster, which is just empty
+		
+		
+		# extra processing
+		data.each{|list| list.collect!{|x| x.tr('"', '')} } # remove unnecessary double quotes
+		
+		p data.last(3)
+		
+		
+		# actually use the data
+		out = 
+			data.group_by do |name, signature|
+				arr = signature.split()
+				i = arr.rindex('hr')
+				
+				arr[0..i]
+			end
+		
+		out.values.each{|arr| arr.collect!{|a,b| a }}
+		
+		puts out.to_yaml
+		puts "number of types:   #{out.size}"
+		puts "number of entries: #{data.size}"
+		puts "#{out.size.to_f / data.size * 100}%"
+	end
+	
+	
+	
+	
+	# dump some course data with the expected types out of Mongo and to YAML for easy viewing
+	task :sample_dump do
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		data = 
+			[
+				'PSYC 320',
+				'EVPP 110',
+				'Mason Core UGU',
+				# 'Math 551',
+			].collect do |course|
+				# @catalog.course_info(course, force_download: false)
+				@catalog.course_info(course, force_download: true)
+			end
+		data.collect!{  |x| x.to_h  }
+		
+		SummerResearch::Utilities.write_to_file('./sample_dump.yaml', data.to_yaml)
+	end
+	
+	
+	task :group_by_type do
+		# TODO: store the type of the CourseInfo object in Mongo. would make this a whole lot easier
+		
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		course_list = nil
+		@catalog.activerecord_query do |course_model, catologyear_model|
+			all_courses_in_year = 
+				catologyear_model.where(:year_range => '2016-2017')
+				                 .first.courses
+			
+			course_list = all_courses_in_year
+		end
+		
+		
+		course_list.collect!{  |x| x.to_CourseInfo()  }
+		
+		out = 
+			course_list.group_by do |course|
+				course_type = nil
+				
+				# === based on code copied from CourseInfo#fetch()
+				
+				url = course.url
+				
+				
+				# GET THE DATA USING NOKOGIRI
+				xml = Nokogiri::HTML(open(url))
+				chunk = xml.css('td.block_content_popup')
+					# SummerResearch::Utilities.write_to_file("./course.html", chunk)
+				
+				
+				# === figure out where the interesting section is, and store in 'segment' variable
+				list = chunk.children
+				# puts list.size
+				
+				# list.each do |node|
+				# 	puts node.class
+				# 	if node.class == Nokogiri::XML::Element
+				# 		# p node.name
+				# 		# p node.methods
+				# 		break
+				# 	end
+				# end
+				
+				i_start = list.find_index{  |x| x.name == "h1" }
+				i_end   = list.find_index{  |x| x.name == "div" and x["style"] == "float: right" }
+				
+				
+				segment = list[(i_start..i_end)]
+				
+				
+				
+				
+				type_search_order = SummerResearch::CourseInfo::TYPE_SEARCH_ORDER
+				
+				# ---
+				type_search_order.each do |type_class|
+					type = type_class.new(course)
+					course_type = type_class
+					
+					if type.signature_match?(segment)
+						# when a matching signature is found...
+						course_type = type_class
+						p course_type
+						
+						break
+					end
+				end
+				# ---
+				
+				
+				course_type # pseudo-return for block
+			end
+		
+		out.values.each{  |arr|  arr.collect!{|x| x.id }   }
+		
+		p out
+	end
 end
 
 
 module CourseInfoDiagnostic
 class << self
-
-
-# I think foo13 is just a precursor to the other ones?
-# like, really why would I ever want to run this variant?
-# It's just gonna fail to give any useful diagnostic information whatsoever
-def foo13(catalog, course_list)
-	output_data = 
-		course_list.collect do |course|
-			puts course.id
-			course_info_from_catalog_link(catalog, course).fetch
-		end
-	
-	return output_data
-end
-
-
-# find courses that fail parsing
-# want to see some examples of the unexpected
-# 
-# prints dots to let you know something is happening
-# only prints out courses that are "weird"
-# 
-# Does basicaly the same thing as foo13, but includes extra code to help report errors.
-def foo11(catalog, course_list)
-	flag = true
-	
-	course_list.each do |course|
-		begin
-			course_info_from_catalog_link(catalog, course).fetch
-		rescue StandardError => e
-			if flag
-				puts ""
-				flag = false
+	# I think foo13 is just a precursor to the other ones?
+	# like, really why would I ever want to run this variant?
+	# It's just gonna fail to give any useful diagnostic information whatsoever
+	def foo13(catalog, course_list)
+		output_data = 
+			course_list.collect do |course|
+				puts course.id
+				course_info_from_catalog_link(catalog, course).fetch
 			end
-			
-			puts "course id:   #{course.id}"
-			puts "description: #{course.description}"
-			puts "url:         #{course.url}"
-			puts "Catalog Link format: #{course.link_type}"
-			# throw e
-			
-			# output the data from the exception
-			# (the program will still continue to run)
-			# (resulting in all errors printed in one place)
-			puts e.message
-			e.backtrace.each do |line|
-				puts "\t" + line
-				# indent the lines of the backtrace.
-				# makes it easier to see things when you start getting multiple errors
-			end
-			puts "=============="
-			puts
-			puts
-		else
-			flag = true
-			print "."
-		end
+		
+		return output_data
 	end
 	
-	puts ""
-end
-
-# Like foo11, but with even more debug information. 
-# 
-# most of the code in this method comes directly from foo11 above
-# only the method call on CouseInfo has been changed from #fetch to #test_types
-def foo14(catalog, course_list)
-	flag = true
 	
-	course_list.each do |course|
-		begin
-			course_info_from_catalog_link(catalog, course).test_types
-		rescue StandardError => e
-			if flag
-				puts ""
-				flag = false
+	# find courses that fail parsing
+	# want to see some examples of the unexpected
+	# 
+	# prints dots to let you know something is happening
+	# only prints out courses that are "weird"
+	# 
+	# Does basicaly the same thing as foo13, but includes extra code to help report errors.
+	def debug(catalog, course_list)
+		flag = true
+		
+		course_list.each do |course|
+			begin
+				course_info_from_catalog_link(catalog, course).fetch
+			rescue StandardError => e
+				if flag
+					puts ""
+					flag = false
+				end
+				
+				puts "course id:   #{course.id}"
+				puts "description: #{course.description}"
+				puts "url:         #{course.url}"
+				puts "Catalog Link format: #{course.link_type}"
+				# throw e
+				
+				# output the data from the exception
+				# (the program will still continue to run)
+				# (resulting in all errors printed in one place)
+				puts e.message
+				e.backtrace.each do |line|
+					puts "\t" + line
+					# indent the lines of the backtrace.
+					# makes it easier to see things when you start getting multiple errors
+				end
+				puts "=============="
+				puts
+				puts
+			else
+				flag = true
+				print "."
 			end
-			
-			puts "course id:   #{course.id}"
-			puts "description: #{course.description}"
-			puts "url:         #{course.url}"
-			puts "Catalog Link format: #{course.link_type}"
-		else
-			flag = true
-		ensure
-			puts "=============="
-			puts
-			puts
 		end
+		
+		puts ""
 	end
 	
-	puts ""
-end
-
-
-
-# NOTE: this connects to the SQLite DB to convert between catoid => 'catalog year'
-def course_info_from_catalog_link(catalog, catalog_link)
-	course = catalog_link
+	# Like debug, but with even more debug information. 
+	# 
+	# most of the code in this method comes directly from 'debug()' above
+	# only the method call on CouseInfo has been changed from #fetch to #test_types
+	# (will show more detailed type signature information, but may supress some informative errors)
+	def debug_verbose(catalog, course_list)
+		flag = true
+		
+		course_list.each do |course|
+			begin
+				data = course_info_from_catalog_link(catalog, course).test_types
+			rescue StandardError => e
+				if flag
+					puts ""
+					flag = false
+				end
+				
+				puts "course id:   #{course.id}"
+				puts "description: #{course.description}"
+				puts "url:         #{course.url}"
+				puts "Catalog Link format: #{course.link_type}"
+			else
+				flag = true
+			ensure
+				puts "=============="
+				puts
+				puts
+			end
+		end
+		
+		puts ""
+	end
 	
 	
-	dept, course_number = Catalog.parse_course_id(course.id)
 	
-	url = course.url
-	
-	catoid = Catalog.catoid_from_url(url)
-	# convert catoid => 'catalog year' using the data in the new Catalog class
-	catalog_year = catalog.catoid_to_catalog_year(catoid)
-	
-	
-	return CourseInfo.new(dept, course_number, catalog_year, url)
-end
-
-
-
+	# NOTE: this connects to the SQLite DB to convert between catoid => 'catalog year'
+	def course_info_from_catalog_link(catalog, catalog_link)
+		course = catalog_link
+		
+		
+		dept, course_number = SummerResearch::Catalog.parse_course_id(course.id)
+		
+		url = course.url
+		
+		catoid = SummerResearch::Catalog.catoid_from_url(url)
+		# convert catoid => 'catalog year' using the data in the new Catalog class
+		catalog_year = catalog.catoid_to_catalog_year(catoid)
+		
+		
+		return SummerResearch::CourseInfo.new(dept, course_number, catalog_year, url)
+	end
 end
 end
 
