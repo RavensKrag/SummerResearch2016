@@ -277,46 +277,48 @@ file 'data/all_dependencies.yaml' => SQLITE_DATABASE_FILEPATH do
 		
 		
 		# === parse direct prereqs for each and every class
-		data = 
-			%w[Prerequisite(s) Corequisite(s) Notes].collect do |category_name|
-				courses = 
-					courses_from_this_year.collect do |mongo_bson|
-						course_info =  SummerResearch::CourseInfo.load(mongo_bson)
-						
-						
-						
-						name = course_info.id
-						
-						deps = course_info[category_name]
-							# puts "=>  #{deps.inspect}"
-						deps = deps.nil? ? [] : parse_dependencies(deps)
-							# puts "=>  #{deps.inspect}"
-						deps = [] if deps.nil?
-							# puts "=>  #{deps.inspect}"
-						
-						# oooh yeah. parse_dependencies can return nil, even if the dependencies field is set
-							# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
-						
-						
-						raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
-						
-						[name, deps]
-					end
-				[category_name, courses]
+		
+		data = Hash.new
+		%w[Prerequisite(s) Corequisite(s) Notes].each do |category_name|
+			data[category_name] = Hash.new
+			
+			courses_from_this_year.collect do |mongo_bson|
+				course_info =  SummerResearch::CourseInfo.load(mongo_bson)
+				
+				
+				
+				name = course_info.id
+				
+				deps = course_info[category_name]
+					# puts "=>  #{deps.inspect}"
+				deps = deps.nil? ? [] : parse_dependencies(deps)
+					# puts "=>  #{deps.inspect}"
+				deps = [] if deps.nil?
+					# puts "=>  #{deps.inspect}"
+				
+				# oooh yeah. parse_dependencies can return nil, even if the dependencies field is set
+					# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
+				
+				
+				raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
+				
+				
+				data[category_name][name] = deps
 			end
-		data = data.to_h
+		end
 		
 		# === convert to desired output format
 		SummerResearch::Utilities.write_to_file('./all_dependencies.yaml', data.to_yaml)
-		
-		# NOTE: need to manually update a record
-		# change 
-			# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
-		# to
-			# CS-321:CS-310,ENGH-302
-		# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
 	end
 end
+# NOTE: need to manually update a record
+# change 
+	# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
+# to
+	# CS-321:CS-310,ENGH-302
+# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
+
+
 
 # assumes that all the data you need is already loaded up into Mongo
 namespace :cs_requirements do
@@ -769,33 +771,90 @@ namespace :cs_requirements do
 	
 	
 	
-	task :foo => [
-		SQLITE_DATABASE_FILEPATH,
+	
+	# Start with prereq data first,
+	# then try to blend in co reqs,
+	# and the stuff from NOTES
+	
+	
+	
+	# find full prereq chains for all courses in requirements,
+	# be they required, or elective
+	file 'data/CS_BS_dep_chains' => [
 		'data/CS_BS_requirements_by_type.yaml',
 		'data/all_dependencies.yaml',
 	] do 
-		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		dependencies = YAML.load_file('./data/all_dependencies.yaml')
 		
-		# @catalog.mongo_query(:course_info) do |mongo|
-		# 	course = 
-		# 		mongo.find(
-		# 			:catalog_year => "2016-2017",
-		# 			:course_id => "REAL 796"
-		# 		).first
+		
+		
+		sym = 
+			%w[prereq coreq notes].collect{|x| x.to_sym}
+			    .zip(%w[Prerequisite(s) Corequisite(s) Notes])
+			    .to_h
+		
+		
+		
+		list_of_course_ids = requirements[:required] + requirements[:elective]
+		
+		
+		
+		
+		stack = Array.new
+		set   = Set.new
+		
+		data = 
+			list_of_course_ids.collect do |course_id|
+				prereqs = dependencies[sym[:prereq]]
+				set     = Set.new
 				
-		# 	p course
-		# end
+				
+				stack.concat prereqs[course_id]
+				
+				
+				until stack.empty? do
+					c = stack.pop
+					p c
+					
+					deps = prereqs[c]
+					p deps
+					unless deps == nil
+						# OPTIMIZATION: don't check deps of classes you have already checked.
+						# see if the class is in the set.
+						# if it is, you can ignore it and move on
+						deps.reject!{  |x| set.include? x  }
+						
+						# some prereqs may no longer exist in catalog. just ignore them
+						stack.concat deps 
+					end
+					
+					set.add c
+				end
+				
+				[course_id, set.to_a]
+				
+				# [course_id, prereqs[course_id]]
+			end
+		SummerResearch::Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
+	end
+	
+	
+	# find elements on chains that are not covered by the core requirements
+	task :foo => [
+		'data/CS_BS_dep_chains',
+		'data/CS_BS_requirements_by_type.yaml',
+		'data/all_dependencies.yaml',
+	] do 
+		chains       = YAML.load_file('./data/CS_BS_dep_chains.yaml')
+		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		dependencies = YAML.load_file('./data/all_dependencies.yaml')
 		
-		d1 = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-		d2 = YAML.load_file('./data/all_dependencies.yaml')
 		
 		
-		# NOTE: need to manually update a record
-		# change 
-			# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
-		# to
-			# CS-321:CS-310,ENGH-302
-		# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
+		
+		
+		# SummerResearch::Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
 	end
 end
 
