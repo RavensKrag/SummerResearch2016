@@ -56,11 +56,16 @@ Dir.chdir File.expand_path(File.dirname(__FILE__)) do
 	end
 	
 	
-	set :public_folder, File.join(File.dirname(__FILE__), '..', 'static')
-	
-	# set :logging, :true
+	configure do
+		set :public_folder, File.join(File.dirname(__FILE__), '..', 'static')
+		
+		set :logging, :true
+		
+		set :views, [
+			File.expand_path('../views')
+		]
+	end
 end
-
 
 
 get '/' do
@@ -197,3 +202,21 @@ end
 # bin/database.log
 # what the heck is this file? what is it a log of? SQLite? Mongo?
 # man, this configuration is messed up...
+
+
+
+
+
+get '/graphs/test' do
+	erb :index, :locals => {
+		:foo => 'downward_edges.js',
+		:d3_version => '3.5.17',
+		
+		:stylesheets => [
+			'style.css',
+			'downward_edges_example.css'
+		],
+		
+		:test => 'hello world'
+	}
+end

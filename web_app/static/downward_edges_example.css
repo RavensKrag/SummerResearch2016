@@ -1,0 +1,15 @@
+/*src:  http://marvl.infotech.monash.edu/webcola/examples/downwardedges.html */
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1.5px;
+  opacity: 0.4;
+  marker-end: url(#end-arrow);
+}
+

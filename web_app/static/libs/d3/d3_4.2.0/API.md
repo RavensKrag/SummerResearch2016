@@ -100,7 +100,7 @@ Human-readable reference marks for scales.
 
 * [d3.axisTop](https://github.com/d3/d3-axis/blob/master/README.md#axisTop) - create a new top-oriented axis generator.
 * [d3.axisRight](https://github.com/d3/d3-axis/blob/master/README.md#axisTight) - create a new right-oriented axis generator.
-* [d3.axisBottom](https://github.com/d3/d3-axis/blob/master/README.md#axisTottom) - create a new bottom-oriented axis generator.
+* [d3.axisBottom](https://github.com/d3/d3-axis/blob/master/README.md#axisBottom) - create a new bottom-oriented axis generator.
 * [d3.axisLeft](https://github.com/d3/d3-axis/blob/master/README.md#axisTeft) - create a new left-oriented axis generator.
 * [*axis*](https://github.com/d3/d3-axis/blob/master/README.md#_axis) - generate an axis for the given selection.
 * [*axis*.scale](https://github.com/d3/d3-axis/blob/master/README.md#axis_scale) - set the scale.
@@ -418,6 +418,8 @@ Geographic projections, shapes and math.
 * [*projection*.clipExtent](https://github.com/d3/d3-geo/blob/master/README.md#projection_clipExtent) - set the viewport clip extent, in pixels.
 * [*projection*.scale](https://github.com/d3/d3-geo/blob/master/README.md#projection_scale) - set the scale factor.
 * [*projection*.translate](https://github.com/d3/d3-geo/blob/master/README.md#projection_translate) - set the translation offset.
+* [*projection*.fitExtent](https://github.com/d3/d3-geo/blob/master/README.md#projection_fitExtent) - set the scale and translate to fit a GeoJSON object.
+* [*projection*.fitSize](https://github.com/d3/d3-geo/blob/master/README.md#projection_fitSize) - set the scale and translate to fit a GeoJSON object.
 * [*projection*.center](https://github.com/d3/d3-geo/blob/master/README.md#projection_center) - set the center point.
 * [*projection*.rotate](https://github.com/d3/d3-geo/blob/master/README.md#projection_rotate) - set the three-axis spherical rotation angles.
 * [*projection*.precision](https://github.com/d3/d3-geo/blob/master/README.md#projection_precision) - set the precision threshold for adaptive sampling.
@@ -845,8 +847,8 @@ Transform the DOM by selecting elements and joining to data.
 ### [Local Variables](https://github.com/d3/d3-selection/blob/master/README.md#local-variables)
 
 * [d3.local](https://github.com/d3/d3-selection/blob/master/README.md#local) - declares a new local variable.
-* [*local*.set](https://github.com/d3/d3-selection/blob/master/README.md#local_set) - get a local variable’s value.
-* [*local*.get](https://github.com/d3/d3-selection/blob/master/README.md#local_get) - set a local variable’s value.
+* [*local*.set](https://github.com/d3/d3-selection/blob/master/README.md#local_set) - set a local variable’s value.
+* [*local*.get](https://github.com/d3/d3-selection/blob/master/README.md#local_get) - get a local variable’s value.
 * [*local*.remove](https://github.com/d3/d3-selection/blob/master/README.md#local_remove) - delete a local variable.
 * [*local*.toString](https://github.com/d3/d3-selection/blob/master/README.md#local_toString) - get the property identifier of a local variable.
 
