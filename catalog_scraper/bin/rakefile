@@ -260,6 +260,56 @@ file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
 end
 
 
+
+# assumes that all the data you need is already loaded up into Mongo
+file 'data/all_dependencies.yaml' => SQLITE_DATABASE_FILEPATH do
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	@catalog.mongo_query(:course_info) do |mongo|
+		courses_from_this_year = 
+			mongo.find(
+				:catalog_year => "2016-2017"
+			)
+		
+		# p data.to_a
+		
+		
+		# === parse direct prereqs for each and every class
+		data = 
+			courses_from_this_year.collect do |mongo_bson|
+				course_info =  SummerResearch::CourseInfo.load(mongo_bson)
+				
+				
+				
+				name = course_info.id
+				
+				deps = course_info["Prerequisite(s)"]
+					# puts "=>  #{deps.inspect}"
+				deps = deps.nil? ? [] : parse_dependencies(deps)
+					# puts "=>  #{deps.inspect}"
+				deps = [] if deps.nil?
+					# puts "=>  #{deps.inspect}"
+				
+				# oooh yeah. parse_dependencies can return nil, even if the dependencies field is set
+					# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
+				
+				
+				raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
+				
+				[name, deps]
+			end
+		# === convert to desired output format
+		SummerResearch::Utilities.write_to_file('./all_dependencies.yaml', data.to_yaml)
+		
+		# NOTE: need to manually update a record
+		# change 
+			# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
+		# to
+			# CS-321:CS-310,ENGH-302
+		# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
+	end
+end
+
 # assumes that all the data you need is already loaded up into Mongo
 namespace :cs_requirements do
 	file 'data/CS_BS_requirements_by_type.yaml' => SQLITE_DATABASE_FILEPATH do
@@ -656,55 +706,6 @@ namespace :cs_requirements do
 		SummerResearch::Utilities.write_to_file('./CS_BS_requirements_by_type.yaml', out.to_yaml)
 	end
 	
-	
-	file 'data/dependency_dump.yaml' => SQLITE_DATABASE_FILEPATH do
-		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		@catalog.mongo_query(:course_info) do |mongo|
-			courses_from_this_year = 
-				mongo.find(
-					:catalog_year => "2016-2017"
-				)
-			
-			# p data.to_a
-			
-			
-			# === parse direct prereqs for each and every class
-			data = 
-				courses_from_this_year.collect do |mongo_bson|
-					course_info =  SummerResearch::CourseInfo.load(mongo_bson)
-					
-					
-					
-					name = course_info.id
-					
-					deps = course_info["Prerequisite(s)"]
-						# puts "=>  #{deps.inspect}"
-					deps = deps.nil? ? [] : parse_dependencies(deps)
-						# puts "=>  #{deps.inspect}"
-					deps = [] if deps.nil?
-						# puts "=>  #{deps.inspect}"
-					
-					# oooh yeah. parse_dependencies can return nil, even if the dependencies field is set
-						# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
-					
-					
-					raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
-					
-					[name, deps]
-				end
-			# === convert to desired output format
-			SummerResearch::Utilities.write_to_file('./dependency_dump.yaml', data.to_yaml)
-			
-			# NOTE: need to manually update a record
-			# change 
-				# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
-			# to
-				# CS-321:CS-310,ENGH-302
-			# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
-		end
-	end
-	
 	# this data was used to generate the inital graphs in D3
 	# it was generated through this process, and then manually copied over to the 'web_app'
 	task :data_dump => [SQLITE_DATABASE_FILEPATH, 'data/CS_BS_requirements_by_type.yaml'] do
@@ -763,7 +764,7 @@ namespace :cs_requirements do
 	task :foo => [
 		SQLITE_DATABASE_FILEPATH,
 		'data/CS_BS_requirements_by_type.yaml',
-		'data/dependency_dump.yaml',
+		'data/all_dependencies.yaml',
 	] do 
 		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
 		
@@ -778,7 +779,15 @@ namespace :cs_requirements do
 		# end
 		
 		d1 = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-		d2 = YAML.load_file('./data/dependency_dump.yaml')
+		d2 = YAML.load_file('./data/all_dependencies.yaml')
+		
+		
+		# NOTE: need to manually update a record
+		# change 
+			# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
+		# to
+			# CS-321:CS-310,ENGH-302
+		# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
 	end
 end
 
