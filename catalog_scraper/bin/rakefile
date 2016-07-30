@@ -260,8 +260,9 @@ file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
 end
 
 
+# assumes that all the data you need is already loaded up into Mongo
 namespace :cs_requirements do
-	task :required_courses => SQLITE_DATABASE_FILEPATH do
+	file 'data/CS_BS_requirements_by_type.yaml' => SQLITE_DATABASE_FILEPATH do
 		@required_courses ||= YAML.load_file('data/required_courses.yaml')
 		
 		
@@ -631,32 +632,104 @@ namespace :cs_requirements do
 		
 		
 		
+		
+		
+		
+		requirements_by_type = {
+			:required =>
+				degree_requirements.select{ |name, sector|  sector[:data].is_a? Array }
+				                   .collect{  |name, sector|  sector[:data] }
+				                   .flatten,
+			
+			:elective =>
+				degree_requirements.select{   |name, sector|  sector[:data].is_a? Hash }
+				                   .collect{  |name, sector|  sector[:data].values }
+				                   .flatten,
+			
+			:unclear  => degree_requirements.select{ |name, sector|  sector[:data].is_a? String }
+		}
+		
+		
+		
+		out = requirements_by_type
+		
+		SummerResearch::Utilities.write_to_file('./CS_BS_requirements_by_type.yaml', out.to_yaml)
+	end
+	
+	
+	file 'data/dependency_dump.yaml' => SQLITE_DATABASE_FILEPATH do
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		@catalog.mongo_query(:course_info) do |mongo|
+			courses_from_this_year = 
+				mongo.find(
+					:catalog_year => "2016-2017"
+				)
+			
+			# p data.to_a
+			
+			
+			# === parse direct prereqs for each and every class
+			data = 
+				courses_from_this_year.collect do |mongo_bson|
+					course_info =  SummerResearch::CourseInfo.load(mongo_bson)
+					
+					
+					
+					name = course_info.id
+					
+					deps = course_info["Prerequisite(s)"]
+						# puts "=>  #{deps.inspect}"
+					deps = deps.nil? ? [] : parse_dependencies(deps)
+						# puts "=>  #{deps.inspect}"
+					deps = [] if deps.nil?
+						# puts "=>  #{deps.inspect}"
+					
+					# oooh yeah. parse_dependencies can return nil, even if the dependencies field is set
+						# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
+					
+					
+					raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
+					
+					[name, deps]
+				end
+			# === convert to desired output format
+			SummerResearch::Utilities.write_to_file('./dependency_dump.yaml', data.to_yaml)
+			
+			# NOTE: need to manually update a record
+			# change 
+				# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
+			# to
+				# CS-321:CS-310,ENGH-302
+			# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
+		end
+	end
+	
+	# this data was used to generate the inital graphs in D3
+	# it was generated through this process, and then manually copied over to the 'web_app'
+	task :data_dump => [SQLITE_DATABASE_FILEPATH, 'data/CS_BS_requirements_by_type.yaml'] do
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		
+		
+		requirements_by_type = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		
+		
 		filepath = 
 			File.expand_path(
-				'./CS_BS_data_dump.txt', 
-				SummerResearch::Utilities::DATA_DIR
+				'./data/CS_BS_data_dump.txt', 
 			)
 		File.open(filepath, 'w') do |f|
-			requirements_by_type = {
-				:required =>
-					degree_requirements.select{ |name, sector|  sector[:data].is_a? Array }
-					                   .collect{  |name, sector|  sector[:data] }
-					                   .flatten,
-				
-				:elective =>
-					degree_requirements.select{   |name, sector|  sector[:data].is_a? Hash }
-					                   .collect{  |name, sector|  sector[:data].values }
-					                   .flatten,
-				
-				:unclear  => degree_requirements.select{ |name, sector|  sector[:data].is_a? String }
-			}
-			
-			requirements_by_type.each do |type, requirement_list|
+			requirements_by_type.collect do |type, requirement_list|
 				next if type == :unclear
 				
 				course_info_list = requirement_list.collect{  |x| p x; @catalog.course_info(x)  }
 				
 				
+				
+				# bascially, just ignore this block
+				# enable this block to get the sample data used in the inital graphs
 				dependency_list = 
 					course_info_list.collect do |course_info|
 						puts ">>>>>>>>>>"
@@ -675,17 +748,38 @@ namespace :cs_requirements do
 				dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
 				
 				
+				
 				f.puts "requirement type: #{type}"
 				f.puts "---"
 				f.puts dependency_map.inspect
 				f.puts
 			end
 		end
-		
-		
 	end
 	
 	
+	
+	
+	task :foo => [
+		SQLITE_DATABASE_FILEPATH,
+		'data/CS_BS_requirements_by_type.yaml',
+		'data/dependency_dump.yaml',
+	] do 
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		# @catalog.mongo_query(:course_info) do |mongo|
+		# 	course = 
+		# 		mongo.find(
+		# 			:catalog_year => "2016-2017",
+		# 			:course_id => "REAL 796"
+		# 		).first
+				
+		# 	p course
+		# end
+		
+		d1 = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		d2 = YAML.load_file('./data/dependency_dump.yaml')
+	end
 end
 
 
