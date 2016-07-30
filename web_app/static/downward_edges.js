@@ -1,6 +1,8 @@
 // from the Cola "downward pointing edges" example
 // src: http://marvl.infotech.monash.edu/webcola/examples/downwardedges.html
 
+// with some modifications
+
 var width = 960,
     height = 500;
 
@@ -15,6 +17,8 @@ var svg = d3.select("body").append("svg")
     .attr("height", height);
 
 d3.json("dynamic_data.json", function (error, graph) {
+    if (error) throw error;
+    
     var nodeRadius = 5;
     
     graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeRadius; });

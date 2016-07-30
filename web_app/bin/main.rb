@@ -207,6 +207,7 @@ end
 
 
 
+# Create a graph page based on an erb template
 get '/graphs/:name/graph' do
 	erb :index, :locals => {
 		:foo => 'downward_edges.js',
@@ -221,17 +222,32 @@ get '/graphs/:name/graph' do
 	}
 end
 
+# return the data needed by the corresponding graph
 get '/graphs/:name/dynamic_data.json' do
-	# return the data needed by the corresponding graph
+	static_json_files = [
+		'chris'
+	]
 	
-	filepath = 
-		File.expand_path(
-			"../static/#{params['name']}.json",
-			File.dirname(__FILE__)
-		)
 	
-	data = File.read(filepath)
-	
-	return data
+	if static_json_files.include? params['name']
+		# --- serve static documents
+		
+		filepath = 
+			File.expand_path(
+				"../static/#{params['name']}.json",
+				File.dirname(__FILE__)
+			)
+		
+		data = File.read(filepath)
+		
+		return data
+	else
+		# --- serve dynamic data
+		
+		return model.json_directional(params['name'])
+		
+		# # return empty JSON document for now
+		# return '{"nodes":[], "edges":[], "constraints":[]}'
+	end
 end
 

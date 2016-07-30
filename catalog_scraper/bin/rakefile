@@ -318,6 +318,9 @@ end
 	# CS-321:CS-310,ENGH-302
 # (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
 
+# Actually, in general
+# SWE 421 and CS 421 need to be removed from the file that this procedure generates
+# or else all of the downstream data gets polluted
 
 
 # assumes that all the data you need is already loaded up into Mongo
@@ -869,7 +872,7 @@ namespace :cs_requirements do
 			'MATH 104',
 			'MATH 105',
 			'MATH 113', # these first three gate "CS 112 - Intro to Computer Programming"
-			'MATH 108'
+			'MATH 108',
 			'MATH 114',
 			'MATH 123',
 			'MATH 124',
@@ -883,11 +886,12 @@ namespace :cs_requirements do
 		]
 		
 		(low_math + core_english).each do |course|
-			set.add course
+			# set.add course
 		end
 		
 		
 		
+		# all prereq chains, but hide the prereqs that are satisfied by required classes
 		data = 
 			chains.collect do |chain|
 				parent_course, deps = chain
@@ -920,6 +924,17 @@ namespace :cs_requirements do
 		
 		
 		# SummerResearch::Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
+		
+		set = 
+			[:prereq, :coreq, :notes]
+			 .collect{ |category|
+				dependencies[sym[:prereq]].keys
+			}.flatten.to_set
+		
+		hidden_prereq_requirements.each do |class_id|
+			d = { class_id => dependencies[sym[:prereq]][class_id]  }
+			p d if set.include? class_id
+		end
 	end
 end
 

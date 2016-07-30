@@ -173,6 +173,165 @@ def json_list_all_courses
 end
 
 
+# output data for directonal Cola all-arrows-point-down graph
+def json_directional(name)
+	# return '{"nodes":[], "links":[], "constraints":[]}'
+	
+	
+	raw_data2 = {
+		"MATH 104"=>[],
+		"MATH 105"=>[],
+		"CS 222"=>["CS 112"],
+		"ENGH 302"=>[],
+		"HNRS 108"=>[],
+		"HNRS 109"=>["HNRS 108"],
+		"HNRS 110"=>[],
+		"HNRS 122"=>[],
+		"HNRS 130"=>["HNRS 109", "HNRS 110", "HNRS 210", "HNRS 302"],
+		"HNRS 131"=>["HNRS 109", "HNRS 110", "HNRS 210", "HNRS 302"],
+		"HNRS 230"=>["HNRS 109", "HNRS 110", "HNRS 210", "HNRS 302"],
+		"HNRS 240"=>["HNRS 109", "HNRS 110", "HNRS 210", "HNRS 302"],
+		"HNRS 302"=>[],
+		"MATH 108"=>[],
+		"MATH 112"=>["MATH 105", "MATH 108", "MATH 113"],
+		"ECE 331"=>["PHYS 260"],
+		"PHYS 160"=>[],
+		"PHYS 260"=>["PHYS 160"],
+		"MATH 123"=>[],
+		"MATH 124"=>["MATH 123"],
+		"MATH 115"=>[],
+		"MATH 116"=>["MATH 115", "MATH 113", "MATH 113"],
+		"ECE 332"=>["PHYS 261", "PHYS 265"],
+		"ECE 445"=>["ECE 331", "ECE 332", "CS 262", "CS 222"],
+		"PHYS 161"=>[],
+		"PHYS 261"=>["PHYS 161"],
+		"PHYS 265"=>[],
+		"CS 351"=>["CS 262", "CS 310"],
+		"MATH 215"=>["MATH 114", "MATH 116"],
+		"STAT 346"=>["MATH 213", "MATH 215"],
+		"MATH 351"=>["MATH 213", "MATH 215"],
+		"ECE 280"=>[],
+		"ECE 285"=>["PHYS 260", "PHYS 261"],
+		"ECE 333"=>["ECE 280", "ECE 285"],
+		"SWE 321"=>["CS 310", "ENGH 302"],
+		"SYST 101"=>[],
+		"SYST 210"=>["SYST 101"],
+		"MATH 110"=>[],
+		"PHIL 173"=>[],
+		"CHEM 211"=>[],
+		"CHEM 214"=>["CHEM 211"],
+		"CHEM 212"=>["CHEM 211", "CHEM 214"],
+		"GEOL 101"=>[],
+	}
+	
+	
+	
+	# === create nodes
+	nodes = nodes(raw_data2)
+	nodes.each do |h|
+		h['name'] = h['id']
+		h.delete 'id'
+	end
+	
+	# === create links (edges)
+	links = links(raw_data2)
+	links.each do |h| 
+		h['source'] = nodes.find_index{ |x| x['name'] == h['source']}
+		h['target'] = nodes.find_index{ |x| x['name'] == h['target']}
+	end
+	
+	
+	
+	# === Create Constraints
+	# basic constraint: prereqs go above later courses.
+		# (overall visual flow: top to bottom as skill increases)
+		# defined as local property.
+		# graph ends up showing global properties.
+	constraints =
+		raw_data2.collect do |course, deps|
+			deps.collect do |d|
+				i_left  =
+					nodes.find_index{ |x| x['name'] == course}
+				
+				i_right =
+					nodes.find_index{ |x| x['name'] == d}
+				
+				
+				{
+					"axis" => "y", 
+					"left" => i_left, "right" => i_right, "gap" => 25
+				}
+			end
+		end
+	constraints.flatten!
+	
+	# TODO: implement constraint such that all 100-level courses are above the 200-level ones, etc etc.
+	# (want to stratify course levels)
+	
+	
+	
+	# TODO: implement constraint that causes all courses from a single department to clump
+	
+	
+	
+	
+	
+	
+	# === rough packaging for output
+	out = {
+		# 'name'  => name,
+		'nodes' => nodes,
+		'links' => links,
+		'constraints' => constraints
+	}
+	
+	
+	# === style the nodes
+	
+	color_key ||= {
+		:gated_elective_clump      => "#10D588",  # light green
+		:link_to_other_graph       => "#3399FF",  # blue
+		
+		:required_course           => "#CC2300",  # red / orange
+		:elective_for_requirements => "#242424",  # black
+		:not_required              => "#AAA"      # grey
+	}
+	
+	required =
+		@data[:required].collect{  |clump|  clump.keys  }
+		.flatten
+		.to_set
+	
+	elective = 
+		@data[:elective].values
+		.collect{  |clump|  clump.keys  }
+		.flatten
+		.to_set
+	
+	
+	out['nodes'].each do |node|
+		# --- color assigment
+		type = node_type(node['name'], required, elective)
+		node['color'] = color_key[type]
+		
+		
+		# --- do other things with type
+		# leaves << node['id'] if type == :not_required
+	end
+	
+	
+	
+	# === style the edges
+	
+	
+	
+	
+	# === final output
+	return JSON.generate out
+end
+
+
+
 def all_courses
 	10.times { puts "HEY"}
 	p @all_data.to_a.flatten.uniq
