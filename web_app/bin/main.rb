@@ -207,7 +207,7 @@ end
 
 
 
-get '/graphs/test' do
+get '/graphs/:name/graph' do
 	erb :index, :locals => {
 		:foo => 'downward_edges.js',
 		:d3_version => '3.5.17',
@@ -220,3 +220,18 @@ get '/graphs/test' do
 		:test => 'hello world'
 	}
 end
+
+get '/graphs/:name/dynamic_data.json' do
+	# return the data needed by the corresponding graph
+	
+	filepath = 
+		File.expand_path(
+			"../static/#{params['name']}.json",
+			File.dirname(__FILE__)
+		)
+	
+	data = File.read(filepath)
+	
+	return data
+end
+

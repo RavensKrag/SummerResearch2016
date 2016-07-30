@@ -14,7 +14,7 @@ var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-d3.json("/chris.json", function (error, graph) {
+d3.json("dynamic_data.json", function (error, graph) {
     var nodeRadius = 5;
     
     graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeRadius; });
