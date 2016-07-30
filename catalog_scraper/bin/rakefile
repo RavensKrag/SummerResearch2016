@@ -269,6 +269,8 @@ file 'data/all_dependencies.yaml' => SQLITE_DATABASE_FILEPATH do
 		courses_from_this_year = 
 			mongo.find(
 				:catalog_year => "2016-2017"
+			).sort(
+				:course_id => 1
 			)
 		
 		# p data.to_a
@@ -276,28 +278,34 @@ file 'data/all_dependencies.yaml' => SQLITE_DATABASE_FILEPATH do
 		
 		# === parse direct prereqs for each and every class
 		data = 
-			courses_from_this_year.collect do |mongo_bson|
-				course_info =  SummerResearch::CourseInfo.load(mongo_bson)
-				
-				
-				
-				name = course_info.id
-				
-				deps = course_info["Prerequisite(s)"]
-					# puts "=>  #{deps.inspect}"
-				deps = deps.nil? ? [] : parse_dependencies(deps)
-					# puts "=>  #{deps.inspect}"
-				deps = [] if deps.nil?
-					# puts "=>  #{deps.inspect}"
-				
-				# oooh yeah. parse_dependencies can return nil, even if the dependencies field is set
-					# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
-				
-				
-				raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
-				
-				[name, deps]
+			%w[Prerequisite(s) Corequisite(s) Notes].collect do |category_name|
+				courses = 
+					courses_from_this_year.collect do |mongo_bson|
+						course_info =  SummerResearch::CourseInfo.load(mongo_bson)
+						
+						
+						
+						name = course_info.id
+						
+						deps = course_info[category_name]
+							# puts "=>  #{deps.inspect}"
+						deps = deps.nil? ? [] : parse_dependencies(deps)
+							# puts "=>  #{deps.inspect}"
+						deps = [] if deps.nil?
+							# puts "=>  #{deps.inspect}"
+						
+						# oooh yeah. parse_dependencies can return nil, even if the dependencies field is set
+							# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
+						
+						
+						raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
+						
+						[name, deps]
+					end
+				[category_name, courses]
 			end
+		data = data.to_h
+		
 		# === convert to desired output format
 		SummerResearch::Utilities.write_to_file('./all_dependencies.yaml', data.to_yaml)
 		
