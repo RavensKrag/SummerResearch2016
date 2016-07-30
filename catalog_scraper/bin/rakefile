@@ -775,12 +775,56 @@ namespace :cs_requirements do
 	# Start with prereq data first,
 	# then try to blend in co reqs,
 	# and the stuff from NOTES
+	sym = 
+		%w[prereq coreq notes].collect{|x| x.to_sym}
+		    .zip(%w[Prerequisite(s) Corequisite(s) Notes])
+		    .to_h
 	
+	
+	def foo_fx(list_of_course_ids, dependency_relation)
+		stack = Array.new
+		
+		list_of_course_ids.collect do |course_id|
+			set     = Set.new
+			
+			
+			deps = dependency_relation[course_id]
+			
+			stack.concat deps unless deps.nil? # guard against intial list being nil
+			
+			
+			
+			until stack.empty? do
+				c = stack.pop
+				p c
+				
+				deps = dependency_relation[c]
+				p deps
+				
+				unless deps.nil?
+					# OPTIMIZATION: don't check deps of classes you have already checked.
+					# see if the class is in the set.
+					# if it is, you can ignore it and move on
+					deps.reject!{  |x| set.include? x  }
+					
+					# some prereqs may no longer exist in catalog. just ignore them
+					stack.concat deps 
+				end
+				
+				set.add c
+			end
+			
+			
+			# remove self from dep list
+			# that happens sometimes, because the incoming data is not totally correct 
+			[course_id, set.to_a.sort.reject{  |x| x == course_id  }]
+		end
+	end
 	
 	
 	# find full prereq chains for all courses in requirements,
 	# be they required, or elective
-	file 'data/CS_BS_dep_chains' => [
+	file 'data/CS_BS_dep_chains.yaml' => [
 		'data/CS_BS_requirements_by_type.yaml',
 		'data/all_dependencies.yaml',
 	] do 
@@ -789,60 +833,20 @@ namespace :cs_requirements do
 		
 		
 		
-		sym = 
-			%w[prereq coreq notes].collect{|x| x.to_sym}
-			    .zip(%w[Prerequisite(s) Corequisite(s) Notes])
-			    .to_h
 		
 		
 		
 		list_of_course_ids = requirements[:required] + requirements[:elective]
 		
-		
-		
-		
-		stack = Array.new
-		set   = Set.new
-		
-		data = 
-			list_of_course_ids.collect do |course_id|
-				prereqs = dependencies[sym[:prereq]]
-				set     = Set.new
-				
-				
-				stack.concat prereqs[course_id]
-				
-				
-				until stack.empty? do
-					c = stack.pop
-					p c
-					
-					deps = prereqs[c]
-					p deps
-					unless deps == nil
-						# OPTIMIZATION: don't check deps of classes you have already checked.
-						# see if the class is in the set.
-						# if it is, you can ignore it and move on
-						deps.reject!{  |x| set.include? x  }
-						
-						# some prereqs may no longer exist in catalog. just ignore them
-						stack.concat deps 
-					end
-					
-					set.add c
-				end
-				
-				[course_id, set.to_a]
-				
-				# [course_id, prereqs[course_id]]
-			end
+		data = foo_fx(list_of_course_ids, dependencies[sym[:prereq]])
+			
 		SummerResearch::Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
 	end
 	
 	
 	# find elements on chains that are not covered by the core requirements
 	task :foo => [
-		'data/CS_BS_dep_chains',
+		'data/CS_BS_dep_chains.yaml',
 		'data/CS_BS_requirements_by_type.yaml',
 		'data/all_dependencies.yaml',
 	] do 
@@ -852,6 +856,67 @@ namespace :cs_requirements do
 		
 		
 		
+		set = requirements[:required].to_set
+		
+		
+		
+		# low-numbered math courses should be removed.
+		# you can't even declare CS as a major, unless you exceed this level of mathematics,
+		# 
+		# To switch to CS as a major, you need to meet at least this level of math,
+		# but you can declare CS as a freshman without needing all of these (ex MATH 125: Discrete)
+		low_math = [
+			'MATH 104',
+			'MATH 105',
+			'MATH 113', # these first three gate "CS 112 - Intro to Computer Programming"
+			'MATH 108'
+			'MATH 114',
+			'MATH 123',
+			'MATH 124',
+			'MATH 125',
+		]
+		
+		core_english = [
+			'ENGH 101',
+			'ENGH 100',
+			'ENGH 302'
+		]
+		
+		(low_math + core_english).each do |course|
+			set.add course
+		end
+		
+		
+		
+		data = 
+			chains.collect do |chain|
+				parent_course, deps = chain
+				
+				[parent_course, deps.reject{  |x| set.include? x  }]
+			end
+		data = data.to_h
+		
+		# p data
+		data.each do |k,v|
+			p "#{k} => #{v.join(', ')}"
+		end
+		
+		
+		
+		
+		
+		# take just the prereqs from 'data', and figure out what their requirements are
+		hidden_prereq_requirements = data.values.flatten.uniq
+		p hidden_prereq_requirements
+		
+		out = foo_fx(hidden_prereq_requirements, dependencies[sym[:prereq]]).to_h
+		p out
+		
+		out.each do |k,v|
+			v.reject!{  |x| set.include? x  }
+		end
+		
+		p out
 		
 		
 		# SummerResearch::Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
