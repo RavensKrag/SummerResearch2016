@@ -174,7 +174,7 @@ end
 
 
 # output data for directonal Cola all-arrows-point-down graph
-def json_directional(name)
+def json_directional(name, logger)
 	# return '{"nodes":[], "links":[], "constraints":[]}'
 	
 	
@@ -224,6 +224,10 @@ def json_directional(name)
 		"GEOL 101"=>[],
 	}
 	
+	chains = SummerResearch::Utilities.load_yaml_file(
+		'./CS_BS_dep_chains.yaml'
+	).to_h
+	logger.info chains.inspect
 	
 	
 	# === create nodes
@@ -231,6 +235,19 @@ def json_directional(name)
 	nodes.each do |h|
 		h['name'] = h['id']
 		h.delete 'id'
+	end
+	nodes.each_with_index do |h, i|
+		h['number'] = i
+	end
+	nodes.each do |h|
+		# annotate node with names of all its ancestors
+		logger.info h['name']
+		chain_deps = 
+			chains[h['name']].collect do |name|
+				nodes.find_index{ |x| x['name'] == name}
+			end
+		
+		h['chain_deps'] = chain_deps
 	end
 	
 	# === create links (edges)
@@ -312,7 +329,8 @@ def json_directional(name)
 	out['nodes'].each do |node|
 		# --- color assigment
 		type = node_type(node['name'], required, elective)
-		node['color'] = color_key[type]
+		# node['color'] = color_key[type]
+		node['class'] = type.to_s.tr('_', '-')
 		
 		
 		# --- do other things with type

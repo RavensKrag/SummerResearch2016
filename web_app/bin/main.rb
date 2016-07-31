@@ -59,8 +59,6 @@ Dir.chdir File.expand_path(File.dirname(__FILE__)) do
 	configure do
 		set :public_folder, File.join(File.dirname(__FILE__), '..', 'static')
 		
-		set :logging, :true
-		
 		set :views, [
 			File.expand_path('../views')
 		]
@@ -244,7 +242,7 @@ get '/graphs/:name/dynamic_data.json' do
 	else
 		# --- serve dynamic data
 		
-		return model.json_directional(params['name'])
+		return model.json_directional(params['name'], logger)
 		
 		# # return empty JSON document for now
 		# return '{"nodes":[], "edges":[], "constraints":[]}'
