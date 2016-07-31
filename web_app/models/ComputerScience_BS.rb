@@ -192,7 +192,7 @@ def json_directional(name, logger)
 	chains = SummerResearch::Utilities.load_yaml_file(
 		'./CS_BS_dep_chains.yaml'
 	).to_h
-	logger.info chains.inspect
+	# logger.info chains.inspect
 	
 	
 	# === create nodes
@@ -207,12 +207,15 @@ def json_directional(name, logger)
 	nodes.each do |h|
 		# annotate node with names of all its ancestors
 		logger.info h['name']
+		
+		
 		chain_deps = 
 			chains[h['name']].collect do |name|
 				nodes.find_index{ |x| x['name'] == name}
 			end
 		
-		h['chain_deps'] = chain_deps
+		logger.info chain_deps.compact.inspect
+		h['chain_deps'] = chain_deps.compact
 	end
 	
 	# === create links (edges)
@@ -221,7 +224,15 @@ def json_directional(name, logger)
 		h['source'] = nodes.find_index{ |x| x['name'] == h['source']}
 		h['target'] = nodes.find_index{ |x| x['name'] == h['target']}
 	end
+	links.each do |h|
+		h.delete 'color'
+	end
 	
+	links.each do |h|
+		if h['source'] == h['target']
+			raise "ERROR: #{h.inspect}"
+		end
+	end
 	
 	
 	# === Create Constraints
@@ -229,7 +240,7 @@ def json_directional(name, logger)
 		# (overall visual flow: top to bottom as skill increases)
 		# defined as local property.
 		# graph ends up showing global properties.
-	constraints =
+	c1 =
 		raw_data2.collect do |course, deps|
 			deps.collect do |d|
 				i_left  =
@@ -245,10 +256,41 @@ def json_directional(name, logger)
 				}
 			end
 		end
-	constraints.flatten!
+	c1.flatten!
+	
+	constraints = c1
 	
 	# TODO: implement constraint such that all 100-level courses are above the 200-level ones, etc etc.
 	# (want to stratify course levels)
+	# logger.info "HEY"
+	gap = 500
+	c2 =
+		nodes.combination(2)
+		.collect{  |n1, n2| # isolate the names
+			[n1['name'], n2['name']]
+		}
+		.select{   |n1, n2| # filter by course number
+			logger.info [n1,n2].inspect
+			a,b = [n1, n2].collect{|x| x.split.last[0].to_i }
+			
+			a < b
+		}.collect{ |n1, n2|
+			i_left  =
+				nodes.find_index{ |x| x['name'] == n1}
+			
+			i_right =
+				nodes.find_index{ |x| x['name'] == n2}
+			
+			{
+				"axis" => "y", 
+				"left" => i_left, "right" => i_right, "gap" => gap
+			}
+		}
+	
+		# this constraint currently has no effect on the output
+	constraints = constraints + c2
+	constraints.flatten!
+	
 	
 	
 	
@@ -301,6 +343,22 @@ def json_directional(name, logger)
 		# --- do other things with type
 		# leaves << node['id'] if type == :not_required
 	end
+	
+	
+	
+	
+	# === Highlight nodes with many children
+	nodes.each_with_index
+	.collect{   |n, i|   i }
+	.select{    |i|
+		children = links.select{|link| link['source'] == i }.length
+		children > 5
+	}.collect{  |i|
+		nodes[i]
+	}.each do   |n|
+		n['class'] = [n['class'], "bottleneck"].join(' ')
+	end
+	
 	
 	
 	

@@ -65,6 +65,11 @@ Dir.chdir File.expand_path(File.dirname(__FILE__)) do
 		set :views, [
 			File.expand_path('../views')
 		]
+		
+		set :logging, :true
+		enable :logging
+		set :logger, Logger.new(STDOUT)
+		use Rack::CommonLogger, Logger.new(STDOUT)
 	end
 end
 

@@ -55,7 +55,7 @@ d3.json("dynamic_data.json", function (error, graph) {
             }
         )
         .attr("r", nodeRadius)
-        .style("fill", function (d) { return color(d.group); })
+        // .style("fill", function (d) { return color(d.group); })
         .call(d3cola.drag);
     
     node.append("title")
@@ -67,6 +67,10 @@ d3.json("dynamic_data.json", function (error, graph) {
         });
         // draw directed edges with proper padding from node centers
         path.attr('d', function (d) {
+            // console.log(d);
+            // if you're getting NaN from this function,
+            // it's probably because dist == 0
+            
             var deltaX = d.target.x - d.source.x,
                 deltaY = d.target.y - d.source.y,
                 dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
@@ -78,6 +82,7 @@ d3.json("dynamic_data.json", function (error, graph) {
                 sourceY = d.source.y + (sourcePadding * normY),
                 targetX = d.target.x - (targetPadding * normX),
                 targetY = d.target.y - (targetPadding * normY);
+            // console.log(dist);
             return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
         });
         

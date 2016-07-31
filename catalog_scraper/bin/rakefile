@@ -966,24 +966,16 @@ namespace :cs_requirements do
 		dependencies = YAML.load_file('./data/all_dependencies.yaml')
 		
 		
-		
-		set = requirements[:required].to_set
-		
-		
-		
-		# all prereq chains, but hide the prereqs that are satisfied by required classes
 		data = 
-			chains.collect do |chain|
-				parent_course, deps = chain
+			chains.to_h.keys.collect do |course|
+				deps = dependencies[sym[:prereq]][course] || []
+				deps.delete(course)
 				
-				[parent_course, deps.reject{  |x| set.include? x  }]
+				[course, deps]
 			end
 		data = data.to_h
 		
-		# p data
-		data.each do |k,v|
-			p "#{k} => #{v.join(', ')}"
-		end
+		SummerResearch::Utilities.write_to_file('./CS_BS_all.yaml', data.to_yaml)
 	end
 end
 

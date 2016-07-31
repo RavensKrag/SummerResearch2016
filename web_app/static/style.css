@@ -43,25 +43,37 @@ svg text.course{
 
 
 svg circle.gated-elective-clump{
-	stroke: #10D588; # light green
+	stroke: #10D588; /* light green */
 }
 
 svg circle.link-to-other-graph{
-	stroke: #3399FF; # blue
+	stroke: #3399FF; /* blue */
 }
 
 svg circle.required-course{
-	stroke: #CC2300; # red / orange
+	stroke: #CC2300; /* red / orange */
 }
 
 svg circle.elective-for-requirements{
-	stroke: #242424; # black
+	stroke: #242424; /* black */
 }
 
 svg circle.not-required{
-	stroke: #AAAAAA; # grey
+	stroke: #AAAAAA; /* grey */
 }
 
+
+svg circle.bottleneck{
+	fill:  #AA0000; /* bright red */
+}
+
+svg circle{
+	fill:  rgb(31, 119, 180);
+}
+
+
+
+
 svg path.activated {
-	
+	fill: #FF0000; /* bright red */
 }
