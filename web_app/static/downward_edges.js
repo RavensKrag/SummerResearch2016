@@ -98,10 +98,10 @@ d3.json("dynamic_data.json", function (error, graph) {
     
     
     
+    
     node.on('mouseover', function(hovered) {
-        console.log("callback");
-        console.log(hovered);
-        
+        // console.log("callback");
+        // console.log(hovered);
         
         path.filter(function (d) {
             set = new Set(hovered.chain_deps);
@@ -113,22 +113,11 @@ d3.json("dynamic_data.json", function (error, graph) {
                    set.has(d.target.number);
         })
         .attr('style', 'stroke: red;');
+        // TODO: apply a style instead (better coding style, but more complicated)
     })
     .on("mouseout", function(d) {
         path.attr('style', '');
     })
-    // // .on("mousemove", mousemove);
-    
-    
-    // function mousemove() {
-    //     var x0 = x.invert(d3.mouse(this)[0]),
-    //         i = bisectDate(data, x0, 1),
-    //         d0 = data[i - 1],
-    //         d1 = data[i],
-    //         d = x0 - d0.date > d1.date - x0 ? d1 : d0;
-    //     focus.attr("transform", "translate(" + x(d.date) + "," + y(d.close) + ")");
-    //     focus.select("text").text(formatCurrency(d.close));
-    // }
 });
 
 function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }

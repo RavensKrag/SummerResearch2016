@@ -57,7 +57,10 @@ Dir.chdir File.expand_path(File.dirname(__FILE__)) do
 	
 	
 	configure do
-		set :public_folder, File.join(File.dirname(__FILE__), '..', 'static')
+		set :public_folder,
+			File.join(
+				File.dirname(__FILE__), '..', 'static'
+			)
 		
 		set :views, [
 			File.expand_path('../views')

@@ -177,52 +177,17 @@ end
 def json_directional(name, logger)
 	# return '{"nodes":[], "links":[], "constraints":[]}'
 	
+	relative_filepath = "./#{name}.yaml"
+	data_dir = File.join(File.dirname(__FILE__), '..', 'data')
+	filepath = File.expand_path(relative_filepath, data_dir)
+	raw_data2 = YAML.load_file filepath
 	
-	raw_data2 = {
-		"MATH 104"=>[],
-		"MATH 105"=>[],
-		"CS 222"=>["CS 112"],
-		"ENGH 302"=>[],
-		"HNRS 108"=>[],
-		"HNRS 109"=>["HNRS 108"],
-		"HNRS 110"=>[],
-		"HNRS 122"=>[],
-		"HNRS 130"=>["HNRS 109", "HNRS 110", "HNRS 210", "HNRS 302"],
-		"HNRS 131"=>["HNRS 109", "HNRS 110", "HNRS 210", "HNRS 302"],
-		"HNRS 230"=>["HNRS 109", "HNRS 110", "HNRS 210", "HNRS 302"],
-		"HNRS 240"=>["HNRS 109", "HNRS 110", "HNRS 210", "HNRS 302"],
-		"HNRS 302"=>[],
-		"MATH 108"=>[],
-		"MATH 112"=>["MATH 105", "MATH 108", "MATH 113"],
-		"ECE 331"=>["PHYS 260"],
-		"PHYS 160"=>[],
-		"PHYS 260"=>["PHYS 160"],
-		"MATH 123"=>[],
-		"MATH 124"=>["MATH 123"],
-		"MATH 115"=>[],
-		"MATH 116"=>["MATH 115", "MATH 113", "MATH 113"],
-		"ECE 332"=>["PHYS 261", "PHYS 265"],
-		"ECE 445"=>["ECE 331", "ECE 332", "CS 262", "CS 222"],
-		"PHYS 161"=>[],
-		"PHYS 261"=>["PHYS 161"],
-		"PHYS 265"=>[],
-		"CS 351"=>["CS 262", "CS 310"],
-		"MATH 215"=>["MATH 114", "MATH 116"],
-		"STAT 346"=>["MATH 213", "MATH 215"],
-		"MATH 351"=>["MATH 213", "MATH 215"],
-		"ECE 280"=>[],
-		"ECE 285"=>["PHYS 260", "PHYS 261"],
-		"ECE 333"=>["ECE 280", "ECE 285"],
-		"SWE 321"=>["CS 310", "ENGH 302"],
-		"SYST 101"=>[],
-		"SYST 210"=>["SYST 101"],
-		"MATH 110"=>[],
-		"PHIL 173"=>[],
-		"CHEM 211"=>[],
-		"CHEM 214"=>["CHEM 211"],
-		"CHEM 212"=>["CHEM 211", "CHEM 214"],
-		"GEOL 101"=>[],
-	}
+	# logger.info raw_data2.to_yaml
+	
+	# File.open(filepath, 'w') do |f|
+	# 	f.puts raw_data2.to_yaml
+	# end
+	
 	
 	chains = SummerResearch::Utilities.load_yaml_file(
 		'./CS_BS_dep_chains.yaml'
