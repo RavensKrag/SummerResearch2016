@@ -784,7 +784,7 @@ namespace :cs_requirements do
 		    .to_h
 	
 	
-	def foo_fx(list_of_course_ids, dependency_relation)
+	def chain_deps(list_of_course_ids, dependency_relation)
 		stack = Array.new
 		
 		list_of_course_ids.collect do |course_id|
@@ -792,6 +792,7 @@ namespace :cs_requirements do
 			
 			
 			deps = dependency_relation[course_id]
+			# p deps
 			
 			stack.concat deps unless deps.nil? # guard against intial list being nil
 			
@@ -799,16 +800,17 @@ namespace :cs_requirements do
 			
 			until stack.empty? do
 				c = stack.pop
-				p c
+				# p c
 				
 				deps = dependency_relation[c]
-				p deps
+				# p [deps, course_id]
 				
 				unless deps.nil?
 					# OPTIMIZATION: don't check deps of classes you have already checked.
 					# see if the class is in the set.
 					# if it is, you can ignore it and move on
-					deps.reject!{  |x| set.include? x  }
+					deps = deps.reject{  |x| set.include? x  }
+						# WARNING: don't do in-place reject here. It will destroy the original dependency relation. What a nasty bug.
 					
 					# some prereqs may no longer exist in catalog. just ignore them
 					stack.concat deps 
@@ -816,7 +818,8 @@ namespace :cs_requirements do
 				
 				set.add c
 			end
-			
+			# p set
+			# p [course_id, set.to_a.sort]
 			
 			# remove self from dep list
 			# that happens sometimes, because the incoming data is not totally correct 
@@ -824,6 +827,7 @@ namespace :cs_requirements do
 		end
 	end
 	
+	task :dep_chains => 'data/CS_BS_dep_chains.yaml'
 	
 	# find full prereq chains for all courses in requirements,
 	# be they required, or elective
@@ -837,12 +841,24 @@ namespace :cs_requirements do
 		
 		
 		
+		# Something is happening such that the dependency relation is being mutated
 		
+		
+		dependency_relation = dependencies[sym[:prereq]]
+		# p dependency_relation
 		
 		list_of_course_ids = requirements[:required] + requirements[:elective]
 		
-		data = foo_fx(list_of_course_ids, dependencies[sym[:prereq]])
-			
+		
+		data = chain_deps(list_of_course_ids, dependency_relation)
+		
+		# run it a second time. now you can get chains for everything, even courses that don't apply directly to major requirements
+		data = chain_deps(data.flatten.uniq.sort, dependency_relation)
+		
+		puts "=========="
+		p data.to_h['ECE 331']
+		puts "=========="
+		
 		SummerResearch::Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
 	end
 	
@@ -913,7 +929,7 @@ namespace :cs_requirements do
 		hidden_prereq_requirements = data.values.flatten.uniq
 		p hidden_prereq_requirements
 		
-		out = foo_fx(hidden_prereq_requirements, dependencies[sym[:prereq]]).to_h
+		out = chain_deps(hidden_prereq_requirements, dependencies[sym[:prereq]]).to_h
 		p out
 		
 		out.each do |k,v|
@@ -934,6 +950,39 @@ namespace :cs_requirements do
 		hidden_prereq_requirements.each do |class_id|
 			d = { class_id => dependencies[sym[:prereq]][class_id]  }
 			p d if set.include? class_id
+		end
+	end
+	
+	
+	
+	# all dependency chains for all courses in the graph
+	task :bar => [
+		'data/CS_BS_dep_chains.yaml',
+		'data/CS_BS_requirements_by_type.yaml',
+		'data/all_dependencies.yaml',
+	] do 
+		chains       = YAML.load_file('./data/CS_BS_dep_chains.yaml')
+		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		dependencies = YAML.load_file('./data/all_dependencies.yaml')
+		
+		
+		
+		set = requirements[:required].to_set
+		
+		
+		
+		# all prereq chains, but hide the prereqs that are satisfied by required classes
+		data = 
+			chains.collect do |chain|
+				parent_course, deps = chain
+				
+				[parent_course, deps.reject{  |x| set.include? x  }]
+			end
+		data = data.to_h
+		
+		# p data
+		data.each do |k,v|
+			p "#{k} => #{v.join(', ')}"
 		end
 	end
 end
