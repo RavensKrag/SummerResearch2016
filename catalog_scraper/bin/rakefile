@@ -2246,3 +2246,87 @@ end
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+namespace :fetch_all do
+	task :populate_index => SQLITE_DATABASE_FILEPATH
+	file SQLITE_DATABASE_FILEPATH do
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		@catalog.fetch_full_index()
+		# START: 10:32 PM, Aug 1, 2016
+		# END:   11:28 PM, Aug 1, 2016
+	end
+	
+	
+	
+	# fetch all of the data in the catalog, and put it into a Mongo database
+	task :populate_mongo_db => SQLITE_DATABASE_FILEPATH do
+		# START: 11:32 PM, Aug 1, 2016
+		# END:    1:15 AM  Aug 2 (incomplete. ~2 years worth of data. stopped a couple times)
+		
+		filepath = File.expand_path(
+			'./all_fetch_logfile.txt',
+			SummerResearch::Utilities::DATA_DIR
+		)
+		
+		
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		@catalog.activerecord_query do |course_model, catologyear_model|
+			catologyear_model.all.order("year_range DESC").each do |year_record|
+				File.open(filepath, 'a') do |f|
+					f.puts year_record.inspect
+				end
+				
+				
+				all_courses_in_year = 
+					year_record.courses
+					           .order(:dept)
+					           .reject{|course| course.dept == "Mason Core"}
+				
+				# --- Try to fetch information for all courses in the desired set.
+				#     If you can't process a course, just keep going, but log some error data.
+				#     This error log can be examined later to determine new CatalogInfo Types.
+				# TODO: would be nice if you could have some sort of progress indicator for this.
+					
+				all_courses_in_year.each do |course_record|			
+					begin
+						@catalog.fetch_course_info(course_record)
+					rescue StandardError => e
+						File.open(filepath, 'a') do |f|
+							f.puts "course id:   #{course_record.course_id}"
+							# TODO: Add short description to index
+							# f.puts "description: #{course.description}"
+							f.puts "url:         #{course_record.url}"
+							
+							# output the data from the exception
+							# (the program will still continue to run)
+							# (resulting in all errors printed in one place)
+							f.puts e.message
+							e.backtrace.each do |line|
+								f.puts "\t" + line
+								# indent the lines of the backtrace.
+								# makes it easier to see things when you start getting multiple errors
+							end
+							f.puts "=============="
+							f.puts
+							f.puts
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+

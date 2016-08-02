@@ -3,7 +3,6 @@ module SummerResearch
 
 class CourseInfo
 	attr_reader :url, :catalog_year, :id, :title, :credits, :attempts, :department
-	attr_reader :type
 	
 	def initialize(dept, course_number, catalog_year, url)
 		@storage = nil
@@ -27,7 +26,7 @@ class CourseInfo
 	# TODO: maybe implement serialization *to* Mongo in this class as well? just pass in the Mongo object and do things that way?
 	
 	def to_h
-		attributes = [:type, :url, :catalog_year, :id, :title, :credits, :attempts, :department]
+		attributes = [:url, :catalog_year, :id, :title, :credits, :attempts, :department]
 		
 		values = 
 			attributes.collect do |x|
@@ -239,7 +238,11 @@ class CourseInfo
 				
 				@credits    = data[0].split(':').last.strip
 				@attempts   = data[1].strip
-				@department = data[2].tr(' ', ' ').strip
+				@department = if data[2].nil?
+				              	''
+				              else
+				              	data[2].tr(' ', ' ').strip  
+				              end
 				# the first character here is not a normal space. the second one is normal.
 				# it's not a tab either
 				
@@ -374,7 +377,7 @@ class CourseInfo
 		
 		# TODO: remove 'type' from attributes. Don't care about that value any more.
 		# (not just this list, but remove from all the code)
-		[:url, :catalog_year, :id, :title, :credits, :attempts, :department, :type].each do |attr|
+		[:url, :catalog_year, :id, :title, :credits, :attempts, :department].each do |attr|
 			var = self.instance_variable_get("@#{attr}")
 			p var
 		end

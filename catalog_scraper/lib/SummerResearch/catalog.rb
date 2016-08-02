@@ -113,6 +113,17 @@ class Catalog
 		# TODO: move this into another method or something. it is not needed here.
 	end
 	
+	def fetch_full_index
+		# populates 'catoid' and 'year_range' on CatalogYear
+		discover_catalog_years()
+		
+		# populates 'courses_navoid' field on CatalogYear
+		discover_catalog_search_pages(CatalogYear.all) 
+		
+		# === Populate course index for all years, for departments within the resticted set
+		populate_course_index(CatalogYear.all)
+	end
+	
 	
 	
 	private
