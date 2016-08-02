@@ -10,6 +10,7 @@ var color = d3.scale.category20();
 
 var d3cola = cola.d3adaptor()
     .avoidOverlaps(true)
+    // .linkDistance(500)
     .size([width, height]);
 
 var svg = d3.select("div#main").append("svg")

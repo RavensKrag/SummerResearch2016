@@ -54,6 +54,8 @@ var canvas = {width: 700, height: 500};
 // Size the SVG element, and set the click handler.
 // (click handler spawns new circles wherever you click)
 var svg = d3.select("svg")
+  .attr("width",  canvas.width)
+  .attr("height", canvas.height)
   .on("click", click);
 
 // Define drag beavior

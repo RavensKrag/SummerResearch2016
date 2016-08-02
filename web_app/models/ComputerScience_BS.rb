@@ -208,9 +208,9 @@ def json_directional(name, logger)
 		# annotate node with names of all its ancestors
 		logger.info h['name']
 		
-		
+		deps = chains[h['name']] || []
 		chain_deps = 
-			chains[h['name']].collect do |name|
+			deps.collect do |name|
 				nodes.find_index{ |x| x['name'] == name}
 			end
 		
@@ -273,7 +273,7 @@ def json_directional(name, logger)
 			logger.info [n1,n2].inspect
 			a,b = [n1, n2].collect{|x| x.split.last[0].to_i }
 			
-			a < b
+			a > 3
 		}.collect{ |n1, n2|
 			i_left  =
 				nodes.find_index{ |x| x['name'] == n1}
@@ -283,7 +283,7 @@ def json_directional(name, logger)
 			
 			{
 				"axis" => "y", 
-				"left" => i_left, "right" => i_right, "gap" => gap
+				"left" => 28, "right" => i_left, "gap" => gap
 			}
 		}
 	
@@ -293,8 +293,47 @@ def json_directional(name, logger)
 	
 	
 	
+	# all nodes want to have horizontal spacing
+	gap = 25
+	c3 =
+		nodes.combination(2)
+		.collect{  |n1, n2| # isolate the names
+			[n1['name'], n2['name']]
+		}
+		.select{   |n1, n2| # filter by course number
+			logger.info [n1,n2].inspect
+			a,b = [n1, n2].collect{|x| x.split.last[0].to_i }
+			
+			a > 3
+			true
+		}.collect{ |n1, n2|
+			i_left  =
+				nodes.find_index{ |x| x['name'] == n1}
+			
+			i_right =
+				nodes.find_index{ |x| x['name'] == n2}
+			
+			{
+				"axis" => "x", 
+				"left" => i_left, "right" => i_right, "gap" => gap
+			}
+		}
+	
+		# this constraint currently has no effect on the output
+	constraints = constraints + c3
+	constraints.flatten!
+	
+	
+	
 	
 	# TODO: implement constraint that causes all courses from a single department to clump
+	
+	
+	
+	
+	
+	# === additional processing on the graph
+	
 	
 	
 	

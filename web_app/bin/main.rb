@@ -231,7 +231,9 @@ get '/api/course_info/:course' do
 				)
 				.limit(1)
 				.first
-			
+		
+		
+		raise "Document not found. Was looking for a course called '#{course_id}' for the #{catalog_year} catalog_year" if document.nil? 
 		
 		course = SummerResearch::CourseInfo.load(document)
 	

@@ -1,5 +1,5 @@
 function course_info_display(course_node){
-	console.log(course_node.name);
+	// console.log(course_node.name);
 	
 	name = course_node.name.replace(" ", "_")
 	
@@ -8,7 +8,7 @@ function course_info_display(course_node){
 		
 	    container = d3.select("div#output");
 	    
-	    console.log(api_data);
+	    // console.log(api_data);
 	    
 	    container.selectAll("h1")
 	             // .data(api_data.id)
