@@ -1,3 +1,33 @@
+body{
+	height: auto;
+}
+
+#main{
+	display: inline-block;
+	vertical-align:top;
+	width: auto;
+	height: 100%;
+	top: 0px;
+}
+
+#output{
+	display: inline-block;
+	vertical-align:top;
+	width: 300px;
+	height: 100%;
+	top: 0px;
+}
+
+#output h1{
+	font-size: 28px;
+}
+
+#output .description{
+	overflow: scroll;
+	height: auto;
+}
+
+
 dot{
 	fill:lightblue;
 	stroke:#999999;
@@ -9,9 +39,9 @@ dot2{
 }
 
 svg{
-	width:  700px;
+/*	width:  700px;
 	height: 500px;
-	background-color: #DBDBDB
+*/	background-color: #DBDBDB
 }
 
 svg rect.background{

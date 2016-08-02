@@ -24,19 +24,43 @@
 </head>
 
 <body>
-	<!--
-		input field adapted from this example: 
-		https://bl.ocks.org/eesur/9910343
-	-->
-	<form name="myform" onSubmit="return handleClick()">
-        <input name="Submit"  type="submit" value="Graph number" >
-        <input type="text" id="myVal" placeholder="1">
-    </form>
-	<!-- <canvas width="750" height="600"></canvas> -->
+	<div id="main">
+		<!--
+			input field adapted from this example: 
+			https://bl.ocks.org/eesur/9910343
+		-->
+		<form name="myform" onSubmit="return handleClick()">
+	        <input name="Submit"  type="submit" value="Graph number" >
+	        <input type="text" id="myVal" placeholder="1">
+	    </form>
+		<!-- <canvas width="750" height="600"></canvas> -->
+		
+		<script src="/<%= bar %>" type="text/javascript"/></script>
+		<script src="/<%= foo %>" type="text/javascript"/></script>
+		
+		<div>testing: <%= test %></div>
+	</div>
+	<div id="output">
+		<h1>CHEM 214 - General Chemistry Laboratory II</h1>
+		<p class="top">
+			Credits: <span class="credits"></span><br>
+			<span class="attempts"></span><br>
+			Offered by <span class="department"></span><br>
+		<hr>
+		</p>
+		<p class="description">
+			description
+		</p>
+
+		<p class="tags">
+			<ul>
+				<li>
+					<strong class="key">key</strong>:&nbsp;<span class="value">value</span>
+				</li>
+			</ul>
+		</p>
+	</div>
 	
-	<script src="/<%= foo %>" type="text/javascript"/></script>
-	
-	<div>testing: <%= test %></div>
 </body>
 
 </html>

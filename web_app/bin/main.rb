@@ -103,6 +103,11 @@ end
 
 
 
+@mongo_ip      = "127.0.0.1"
+@mongo_port    = "12345"
+@mongo_address = [@mongo_ip, @mongo_port].join(':')
+mongo = Mongo::Client.new([ @mongo_address ], :database => 'mydb')
+
 # TODO: figure out a better way to declare these variables.
 # don't want to have to duplicate this logic from the rakefile
 # need to store these constants in a file that's easily loadable from here,
@@ -204,10 +209,37 @@ end
 
 
 
-
 # bin/database.log
 # what the heck is this file? what is it a log of? SQLite? Mongo?
 # man, this configuration is messed up...
+
+get '/api/course_info/:course' do
+	course_id = params['course']
+	
+	
+	# NOTE: not sure why the Catalog object doesn't work (it apparently can't connect to the SQLite DB?) but it's probably better to just interface with Mongo directly anyway.
+	
+	
+	course_id = course_id.tr('_', ' ')
+	
+	# course = catalog.course_info(course_id)
+		catalog_year = "2016-2017"
+		document = 
+				mongo[:course_info].find(
+					:course_id => course_id,
+					:catalog_year => catalog_year
+				)
+				.limit(1)
+				.first
+			
+		
+		course = SummerResearch::CourseInfo.load(document)
+	
+	
+	return JSON.generate(course.to_h)
+end
+
+
 
 
 
@@ -224,7 +256,9 @@ get '/graphs/:name/graph' do
 			'downward_edges_example.css'
 		],
 		
-		:test => 'hello world'
+		:test => 'hello world',
+		
+		:bar  => 'course_info_display.js'
 	}
 end
 

@@ -3,7 +3,7 @@
 
 // with some modifications
 
-var width = 960,
+var width = 560,
     height = 500;
 
 var color = d3.scale.category20();
@@ -12,7 +12,7 @@ var d3cola = cola.d3adaptor()
     .avoidOverlaps(true)
     .size([width, height]);
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("div#main").append("svg")
     .attr("width", width)
     .attr("height", height);
 
@@ -107,6 +107,7 @@ d3.json("dynamic_data.json", function (error, graph) {
     node.on('mouseover', function(hovered) {
         // console.log("callback");
         // console.log(hovered);
+        course_info_display(hovered);
         
         path.filter(function (d) {
             set = new Set(hovered.chain_deps);
@@ -126,3 +127,4 @@ d3.json("dynamic_data.json", function (error, graph) {
 });
 
 function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
+
