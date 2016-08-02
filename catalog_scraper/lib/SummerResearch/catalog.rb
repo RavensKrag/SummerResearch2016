@@ -637,7 +637,7 @@ class Catalog
 	# backs to SQL (relational logic)
 	class CatalogYear < SQLite
 		# TODO: link to Course with foreign key constraint (catoid)
-		self.primary_keys = :catoid
+		self.primary_key = :catoid
 		
 		has_many :courses, :foreign_key => 'catoid'
 		

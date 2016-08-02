@@ -1,0 +1,800 @@
+# --- basic setup
+# need to figure out where files are in the system tree
+
+repo_root = ->(){
+	path_to_file = File.expand_path(File.dirname(__FILE__))
+	
+	dir_list = path_to_file.split(File::SEPARATOR)
+	i = dir_list.find_index("SummerResearch2016")
+	
+	return File.join(*dir_list[0..i])
+}[]
+
+# p repo_root
+
+# ---
+
+
+
+require 'rubygems'
+
+# --- gems
+# TODO: reuse the gemfile from catalog_scraper to find the correct verson of mongo to load
+require 'mongo'
+require 'active_record'
+
+
+
+
+
+
+module SummerResearch
+	module WebApp
+		
+	end
+end
+SummerResearch::WebApp::DATA_DIR = File.expand_path('./web_app/models/CS_BS/data', repo_root)
+
+
+# === same as SummerResearch2016/catalog_scraper/lib/SummerResearch/utilities.rb
+module Utilities
+	class << self
+	
+def write_to_file(relative_filepath, data)
+	filepath = File.expand_path(relative_filepath, SummerResearch::WebApp::DATA_DIR)
+	File.open(filepath, 'w') do |f|
+		f.puts data
+	end
+end
+
+def load_yaml_file(relative_filepath)
+	filepath = File.expand_path(relative_filepath, SummerResearch::WebApp::DATA_DIR)
+	return YAML.load_file filepath
+end
+
+
+end
+end
+# =====================================================
+
+# === Same as in rakefile for catalog_scraper
+
+
+catalog_scraper_root = File.expand_path('./catalog_scraper/', repo_root)
+
+
+# how to start and run MongoDB:
+	# https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/
+mongo_db_storage_path = File.expand_path("bin/data/mongo",          catalog_scraper_root)
+mongo_db_logpath      = File.expand_path("bin/data/mongo_logs/log", catalog_scraper_root)
+
+puts "========="
+puts "Start up mongo in another terminal with the following command:"
+puts "mongod --dbpath '#{mongo_db_storage_path}' --port 12345"
+
+puts "and if necessary, mongo can be stopped with this command:"
+puts "mongod --dbpath '#{mongo_db_storage_path}' --port 12345 --shutdown"
+puts "========="
+# (needs to know just the dbpath so it knows what DB to stop, but may as well pass everything)
+
+
+# launch mongo as a daemon
+		# mongod --fork --logpath /var/log/mongodb.log
+
+# =====================================================
+
+
+
+# --- files
+
+require File.expand_path('./catalog_scraper/lib/SummerResearch/catalog', repo_root)
+require File.expand_path('./catalog_scraper/lib/SummerResearch/course_info', repo_root)
+require File.expand_path('./web_app/lib/dependency_parser', repo_root)
+
+
+
+
+
+# same as in SummerResearch::Catalog
+@mongo_ip      = "127.0.0.1"
+@mongo_port    = "12345"
+@mongo_address = [@mongo_ip, @mongo_port].join(':')
+@mongo = Mongo::Client.new([ @mongo_address ], :database => 'mydb')
+
+# @catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+
+
+
+
+# assumes that all the data you need is already loaded up into Mongo
+file 'data/all_dependencies.yaml' do
+	@mongo[:course_info].tap do |mongo|
+		courses_from_this_year = 
+			mongo.find(
+				:catalog_year => "2016-2017"
+			).sort(
+				:course_id => 1 # 1 or -1 to control the order
+			)
+		
+		# p data.to_a
+		
+		
+		# === parse direct prereqs for each and every class
+		
+		data = Hash.new
+		%w[Prerequisite(s) Corequisite(s) Notes].each do |category_name|
+			data[category_name] = Hash.new
+			
+			courses_from_this_year.collect do |mongo_bson|
+				course_info =  SummerResearch::CourseInfo.load(mongo_bson)
+				
+				
+				
+				name = course_info.id
+				
+				deps = course_info[category_name]
+					# puts "=>  #{deps.inspect}"
+				deps = deps.nil? ? [] : SummerResearch::DependencyParser.call(deps)
+					# puts "=>  #{deps.inspect}"
+				deps = [] if deps.nil?
+					# puts "=>  #{deps.inspect}"
+				
+				# oooh yeah. SummerResearch::DependencyParser.call can return nil, even if the dependencies field is set
+					# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
+				
+				
+				raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
+				
+				
+				data[category_name][name] = deps
+			end
+		end
+		
+		# === convert to desired output format
+		Utilities.write_to_file('./all_dependencies.yaml', data.to_yaml)
+	end
+end
+# NOTE: need to manually update a record
+# change 
+	# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
+# to
+	# CS-321:CS-310,ENGH-302
+# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
+
+# Actually, in general
+# SWE 421 and CS 421 need to be removed from the file that this procedure generates
+# or else all of the downstream data gets polluted
+
+
+# assumes that all the data you need is already loaded up into Mongo
+namespace :cs_requirements do
+	file 'data/CS_BS_requirements.yaml' do
+		# main_requirements.each do |course_info|
+			# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
+			# ERROR: can't deal with 'or 240'
+			# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
+			
+			# "Grade of C or better in CS 310, 330, and 367."
+			# ERROR: can't deal with 'CS 310, 330, and 367' => 'and 367'
+			
+			# CS 499 
+			# Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
+			
+			# PHIL 371 - Philosophy of Natural Sciences
+			# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
+			
+			
+			
+			
+			# SWE 443 - Software Architectures
+			# Prerequisite(s): Grade of C or better in CS 321 or CS 421 or SWE 321 or SWE 421.
+			# IIRC, 421 was re-numbered to 321.
+			# Notice that the numbers are the same for CS and SWE
+			# this is a cross-listed course.
+				# (note that some cross listed courses are exactly the same, but there's some OR course that's not? depending on if you take it as OR or MATH, there are a different number of seats avaiable in the class, and the prereqs are fairly different. This is despite it being the exact same physical lecture section.)
+			
+			
+	
+			# "math placement test"
+			# "Placement Test"
+			# "Mathematics Placement Test"
+			
+			# "algebra tutorial program"
+			
+			
+			
+			
+			# HNRS 122, 130, 131, 230 or 240
+			# CS 262 or 222
+			# ECE 301 or 331
+			# CS 310, 330, and 367
+			# "Grade of C or better in CS 310, 330, and 367."
+			# MATH 123 and 124
+			# "C or better in MATH 113 or in both MATH 123 and 124."
+			
+			
+			
+			
+			# "Completion of 45 credits including the Mason core composition and literature requirements, requires a grade of C or better."
+			# => ["of 45"]
+			
+			# "Score of 13 or better on the Math Placement Test, or Grade of C or better in MATH 105, or Grade of C or better in MATH 108, or Grade of C or better in MATH 113."
+			# => ["of 13", "MATH 105", "MATH 108", "MATH 113"]
+			
+			# "C or higher in STAT 346 and a course in Statistics, or STAT 344."
+			# "a course in Statistics" ???
+				# ACS Gaming specifies that you can take "344 or a course in statistics relevant to your major" [paraphrased] so I have seen precedience for this sort of loose dependency around stat.
+				# (but IIRC there aren't currently any courses like that offered at Mason? so why is there this stipulation at all? future-proofing?)
+				# 
+				# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
+			
+			
+			
+			
+			
+			# # "#{course} with grade of C or better"
+			# # "Minimum grade of C in #{course}"
+			# soft_deps = 
+			# 	if course_info["Notes"]
+			# 		# [0] PHYS 161
+			# 		# [1] PHYS
+			# 		# [2] 161
+					
+			# 		# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
+			# 		[] # pseudo-return empty array to stub this out
+			# 	else
+			# 		[] # if "Notes" attribute not set, return empty Array
+			# 	end
+			
+			
+			# # p hard_deps
+			# # p soft_deps
+			# dependencies = hard_deps + soft_deps
+			
+			
+			# # p dependencies.flatten.compact.uniq
+			# puts "---------"
+			
+			
+			
+			# # === generate "source code"
+			# puts ">>>>>>>>>>"
+			# all_deps_text =
+			# %w[Prerequisite(s) Corequisite(s)]
+			# 	.collect do |x|
+			# 		requirements = course_info[x]
+			# 	end
+			
+			# all_deps_text = all_deps_text.join("\n")
+			
+			# # p all_deps_text
+			# # enum =  lexer.lex(all_deps_text)
+			# # p enum.to_a
+			
+			# SummerResearch::DependencyParser.call(all_deps_text)
+		# end
+		
+		
+		degree_requirements = {
+			"Computer science core (36 credits)" => {
+				:credits => 36,
+				:data => [
+					"CS 101",
+					"CS 105",
+					"CS 112",
+					"CS 211",
+					"CS 262",
+					"CS 306",
+					"CS 310",
+					"CS 321",
+					"CS 330",
+					"CS 367",
+					"CS 465",
+					"CS 483",
+					"ECE 301"
+				]
+			},
+			
+			"Senior computer science (15 credits)" => {
+				:credits => 15,
+				
+				:data => {
+					"One of the following:" => [
+						"CS 463",
+						"CS 471",
+						"CS 475"
+					],
+					
+					"And four additional courses chosen from:" => [
+						"CS 425",
+						"CS 440",
+						"CS 450",
+						"CS 451",
+						"CS 455",
+						"CS 463",
+						"CS 468",
+						"CS 469",
+						"CS 471",
+						"CS 475",
+						"CS 477",
+						"CS 480",
+						"CS 482",
+						"CS 484",
+						"CS 485",
+						"CS 490",
+						"CS 499",
+						# "MATH 446 or OR 481" # FIGURE THIS OUT
+						"MATH 446",
+						"OR 481"
+					]
+				},
+				
+				"Note:" => "Only three credits of CS 499 can be used toward the senior computer science requirement."
+			},
+			
+			"Mathematics (17 credits)" => {
+				:credits => 17,
+				
+				:data => [
+					"MATH 113",
+					"MATH 114",
+					"MATH 125",
+					"MATH 203",
+					"MATH 213"
+				]
+			},
+			
+			"Statistics (3 credits)" => {
+				:credits => 3,
+				
+				:data => [
+					"STAT 344"
+				]
+			},
+			
+			"Computer science-related courses (6 credits)" => {
+				:credits => 6,
+				
+				:data => {
+					"Two courses chosen from:" => [
+						"STAT 354",
+						"OR 335",
+						"OR 441",
+						"OR 442",
+						"ECE 280",
+						"ECE 431",
+						"ECE 447",
+						"ECE 450",
+						"ECE 511",
+						"SWE 432",
+						"SWE 437",
+						"SWE 443",
+						"SYST 371",
+						"SYST 470",
+						"PHIL 371",
+						"ENGH 388",
+						# "Any MATH or CS course numbered above 300 (except MATH 351)", # FIGURE THIS OUT
+						"PHIL 376",
+					]
+				},
+				
+				"Note:" => "Students may need to choose electives to satisfy prerequisites for these courses. Those planning to take MATH 352 may replace STAT 344 with MATH 351."
+			},
+			
+			"Natural Science (12 credits)" => {
+				:credits => 12,
+				
+				:description => "The BS in Computer Science requires 12 credits of natural science.  The courses should be intended for science and engineering students and must include a two course sequence with laboratories.  Some approved combinations have a total of more than 12 hours.  Approved two course sequences with laboratories are:",
+				
+				# each pair is a two-course lab sequence. must take both items in a pair
+				:data => {
+					"Astronomy:" => [
+						["ASTR 111", "ASTR 112"],
+						["ASTR 113", "ASTR 114"]
+					],
+					 
+					"Biology:" => [
+						["BIOL 103", "BIOL 104"]
+					],
+					"Chemistry:" => [
+						["CHEM 211", "CHEM 213"],
+						["CHEM 212", "CHEM 214"]
+					],
+					 
+					"Environmental Science:" => [
+						["EVPP 110", "EVPP 111"]
+						 
+					],
+					"Geology:" => [
+						["GEOL 101", "GEOL 102"]
+						 
+					],
+					"Physics:" => [
+						["PHYS 160", "PHYS 161"],
+						["PHYS 260", "PHYS 261"]
+					]
+				}
+			},
+			
+			"Communication (3 credits)" => {
+				:credits => 3,
+				
+				:description => "Computer Science students must make a technical presentation.  This course fulfills the  Mason Core requirement in oral communication.",
+				
+				:data => [
+					"COMM 100"
+				]
+			},
+			
+			"Additional Humanities (3 credits)" => {
+				:credits => 3,
+				
+				:description => "Students must complete three additional credits of Humanities courses.  This can be fulfilled by any Mason Core course except those listed under Information Technology, Synthesis, Quantitative Reasoning, or Natural Science.  Students wishing to substitute alternate courses for this requirement must obtain departmental approval.",
+				
+				
+				:data => 
+				"	ANY Mason Core
+					EXCEPT Information Technology
+					       Synthesis
+					       Quantitative Reasoning
+					       Natural Science
+					
+					or alternates with departmental approval
+				".lines.collect{|l| l.lstrip }.join
+			},
+			
+			"Additional Mason Core (21 credits)" => {
+				:credits => 21,
+				
+				:description => "Students must complete all Mason Core requirements not fulfilled by major requirements.",
+				
+				:data => 
+				"	Written Communication: 6 credits
+					Literature: 3 credits
+					Arts: 3 credits
+					Western Civilization/World History: 3 credits
+					Social and Behavioral Science: 3 credits
+					Global Understanding: 3 credits
+				".lines.collect{|l| l.lstrip }.join,
+				
+				"Note:" => "CS majors must take the Natural Sciences section of ENGH 302."
+			},
+			
+			"Electives (4 credits)" => {
+				:credits => 4,
+				:description => "Students must complete 4 elective credits.",
+				:data => ''
+			}
+		}
+		
+		
+		Utilities.write_to_file(
+			'./CS_BS_requirements.yaml', degree_requirements.to_yaml
+		)
+	end
+	
+	
+	file 'data/CS_BS_requirements_by_type.yaml' => 'data/CS_BS_requirements.yaml' do
+		degree_requirements = Utilities.load_yaml_file('./CS_BS_requirements.yaml')
+		
+		# Explanation of how the requirements data format works:
+		# -----
+		# 
+		# for sectors with options, :data is a hash.                    (electives)
+		# for sectors where ALL items must be taken, :data is an array. (required)
+		# for sectors where information given was not parsable, :data is a string.
+			# Sometimes, it may be an empty string,
+			# as the only relevant information in the sector
+			# was used to populat the :description field instead.
+		# :description is a category I created,                         (implict category)
+		# which describes the text before classes are listed
+		# (at least for CS BS). 
+		# on the other hand,
+		# "Note:" is a sector explictly marked in the Program of Study page for the CS BS
+			# notice the difference in key type,
+					# symbol: implict type created by me.
+					# string: something declared by the catalog.
+		# -------------------------------------------------------
+		
+		
+		
+		
+		
+		# standard core courses can be replaced by Honors College stuff,
+		# but there is no clear 1-to-1 equivalence between Honors and Mason Core classes.
+		# (because Honors provides interdiciplinary approaches)
+		standard_core = [
+			degree_requirements["Additional Humanities (3 credits)"],
+			degree_requirements["Additional Mason Core (21 credits)"]
+		]
+		
+		
+		
+		
+		
+		
+		
+		requirements_by_type = {
+			:required =>
+				degree_requirements.select{ |name, sector|  sector[:data].is_a? Array }
+				                   .collect{  |name, sector|  sector[:data] }
+				                   .flatten,
+			
+			:elective =>
+				degree_requirements.select{   |name, sector|  sector[:data].is_a? Hash }
+				                   .collect{  |name, sector|  sector[:data].values }
+				                   .flatten,
+			
+			:unclear  => degree_requirements.select{ |name, sector|  sector[:data].is_a? String }
+		}
+		
+		
+		
+		out = requirements_by_type
+		
+		Utilities.write_to_file('./CS_BS_requirements_by_type.yaml', out.to_yaml)
+	end
+	
+	# this data was used to generate the inital graphs in D3
+	# it was generated through this process, and then manually copied over to the 'web_app'
+	task :data_dump => ['data/CS_BS_requirements_by_type.yaml'] do
+		# @catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		
+		
+		
+		requirements_by_type = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		
+		
+		filepath = 
+			File.expand_path(
+				'./data/CS_BS_data_dump.txt', 
+			)
+		File.open(filepath, 'w') do |f|
+			requirements_by_type.collect do |type, requirement_list|
+				next if type == :unclear
+				
+				course_info_list = requirement_list.collect{  |x| p x; @catalog.course_info(x)  }
+				
+				
+				
+				# bascially, just ignore this block
+				# enable this block to get the sample data used in the inital graphs
+				dependency_list = 
+					course_info_list.collect do |course_info|
+						puts ">>>>>>>>>>"
+						puts "#{course_info.id} - #{course_info.title}"
+						
+						all_deps_text_list =
+							%w[Prerequisite(s) Corequisite(s)]
+								.collect do |x|
+									requirements = course_info[x]
+								end
+						all_deps_text = all_deps_text_list.join("\n")
+						
+						
+						SummerResearch::DependencyParser.call(all_deps_text) || []
+					end
+				dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
+				
+				
+				
+				f.puts "requirement type: #{type}"
+				f.puts "---"
+				f.puts dependency_map.inspect
+				f.puts
+			end
+		end
+	end
+	
+	
+	
+	
+	
+	# Start with prereq data first,
+	# then try to blend in co reqs,
+	# and the stuff from NOTES
+	sym = 
+		%w[prereq coreq notes].collect{|x| x.to_sym}
+		    .zip(%w[Prerequisite(s) Corequisite(s) Notes])
+		    .to_h
+	
+	
+	def chain_deps(list_of_course_ids, dependency_relation)
+		stack = Array.new
+		
+		list_of_course_ids.collect do |course_id|
+			set     = Set.new
+			
+			
+			deps = dependency_relation[course_id]
+			# p deps
+			
+			stack.concat deps unless deps.nil? # guard against intial list being nil
+			
+			
+			
+			until stack.empty? do
+				c = stack.pop
+				# p c
+				
+				deps = dependency_relation[c]
+				# p [deps, course_id]
+				
+				unless deps.nil?
+					# OPTIMIZATION: don't check deps of classes you have already checked.
+					# see if the class is in the set.
+					# if it is, you can ignore it and move on
+					deps = deps.reject{  |x| set.include? x  }
+						# WARNING: don't do in-place reject here. It will destroy the original dependency relation. What a nasty bug.
+					
+					# some prereqs may no longer exist in catalog. just ignore them
+					stack.concat deps 
+				end
+				
+				set.add c
+			end
+			# p set
+			# p [course_id, set.to_a.sort]
+			
+			# remove self from dep list
+			# that happens sometimes, because the incoming data is not totally correct 
+			[course_id, set.to_a.sort.reject{  |x| x == course_id  }]
+		end
+	end
+	
+	task :dep_chains => 'data/CS_BS_dep_chains.yaml'
+	
+	# find full prereq chains for all courses in requirements,
+	# be they required, or elective
+	file 'data/CS_BS_dep_chains.yaml' => [
+		'data/CS_BS_requirements_by_type.yaml',
+		'data/all_dependencies.yaml',
+	] do 
+		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		dependencies = YAML.load_file('./data/all_dependencies.yaml')
+		
+		
+		
+		
+		# Something is happening such that the dependency relation is being mutated
+		
+		
+		dependency_relation = dependencies[sym[:prereq]]
+		# p dependency_relation
+		
+		list_of_course_ids = requirements[:required] + requirements[:elective]
+		
+		
+		data = chain_deps(list_of_course_ids, dependency_relation)
+		
+		# run it a second time. now you can get chains for everything, even courses that don't apply directly to major requirements
+		data = chain_deps(data.flatten.uniq.sort, dependency_relation)
+		
+		puts "=========="
+		p data.to_h['ECE 331']
+		puts "=========="
+		
+		Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
+	end
+	
+	
+	# find elements on chains that are not covered by the core requirements
+	task :foo => [
+		'data/CS_BS_dep_chains.yaml',
+		'data/CS_BS_requirements_by_type.yaml',
+		'data/all_dependencies.yaml',
+	] do 
+		chains       = YAML.load_file('./data/CS_BS_dep_chains.yaml')
+		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		dependencies = YAML.load_file('./data/all_dependencies.yaml')
+		
+		
+		
+		set = requirements[:required].to_set
+		
+		
+		
+		# low-numbered math courses should be removed.
+		# you can't even declare CS as a major, unless you exceed this level of mathematics,
+		# 
+		# To switch to CS as a major, you need to meet at least this level of math,
+		# but you can declare CS as a freshman without needing all of these (ex MATH 125: Discrete)
+		low_math = [
+			'MATH 104',
+			'MATH 105',
+			'MATH 113', # these first three gate "CS 112 - Intro to Computer Programming"
+			'MATH 108',
+			'MATH 114',
+			'MATH 123',
+			'MATH 124',
+			'MATH 125',
+		]
+		
+		core_english = [
+			'ENGH 101',
+			'ENGH 100',
+			'ENGH 302'
+		]
+		
+		(low_math + core_english).each do |course|
+			# set.add course
+		end
+		
+		
+		
+		# all prereq chains, but hide the prereqs that are satisfied by required classes
+		data = 
+			chains.collect do |chain|
+				parent_course, deps = chain
+				
+				[parent_course, deps.reject{  |x| set.include? x  }]
+			end
+		data = data.to_h
+		
+		# p data
+		data.each do |k,v|
+			p "#{k} => #{v.join(', ')}"
+		end
+		
+		
+		
+		
+		
+		# take just the prereqs from 'data', and figure out what their requirements are
+		hidden_prereq_requirements = data.values.flatten.uniq
+		p hidden_prereq_requirements
+		
+		out = chain_deps(hidden_prereq_requirements, dependencies[sym[:prereq]]).to_h
+		p out
+		
+		out.each do |k,v|
+			v.reject!{  |x| set.include? x  }
+		end
+		
+		p out
+		
+		
+		# Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
+		
+		set = 
+			[:prereq, :coreq, :notes]
+			 .collect{ |category|
+				dependencies[sym[:prereq]].keys
+			}.flatten.to_set
+		
+		hidden_prereq_requirements.each do |class_id|
+			d = { class_id => dependencies[sym[:prereq]][class_id]  }
+			p d if set.include? class_id
+		end
+	end
+	
+	
+	
+	# all dependency chains for all courses in the graph
+	task :bar => [
+		'data/CS_BS_dep_chains.yaml',
+		'data/CS_BS_requirements_by_type.yaml',
+		'data/all_dependencies.yaml',
+	] do 
+		chains       = YAML.load_file('./data/CS_BS_dep_chains.yaml')
+		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
+		dependencies = YAML.load_file('./data/all_dependencies.yaml')
+		
+		
+		data = 
+			chains.to_h.keys.collect do |course|
+				deps = dependencies[sym[:prereq]][course] || []
+				deps.delete(course)
+				
+				[course, deps]
+			end
+		data = data.to_h
+		
+		Utilities.write_to_file('./CS_BS_all.yaml', data.to_yaml)
+	end
+end
+
+
+
+
