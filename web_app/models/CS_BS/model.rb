@@ -81,13 +81,20 @@ def initialize
 	
 	@rake = Rake::Application.new
 	
-	Dir.chdir MODEL_ROOT do
-		puts "LOAD START?"
-		Rake.application = @rake
-		@rake.init
-		@rake.load_rakefile() # uses the working directory? wow that's weird
-		puts "LOAD END!"
-	end
+	
+	
+	Dir.chdir MODEL_ROOT
+	# run the rest of the program from the same directory as the model's rakefile
+	# (if you don't do this, the paths in the model's rakefile for file tasks all need to be updated relative to the 'web_app' directory, otherwise files will get built over and over again for no reason.)
+	
+	puts "LOAD START?"
+	Rake.application = @rake
+	@rake.init
+	@rake.load_rakefile() # uses the working directory? wow that's weird
+	puts "LOAD END!"
+	
+	
+	@graphs = Hash.new
 end
 
 
@@ -212,25 +219,35 @@ def json_directional(name, logger)
 	
 	
 	
-	raw_data2 = YAML.load_file filepath
-	
-	
 	
 	# input sanitization???
 	# I mean, the name is coming from a URL piece, so it could be anything...
-	'CS_BS_all.yaml'
-	logger.info @rake.methods.grep(/task/).inspect
-	logger.info @rake.tasks.inspect
-	@rake['public/CS_BS_all.yaml']
 	
 	
+	# logger.info @rake.methods.grep(/task/).inspect
+	# logger.info @rake.tasks.inspect
+	
+	short_path = 'public/CS_BS_all.yaml'
+	
+	@rake[short_path].invoke ->(){
+		logger.info "testing callback"
+	}
+	raw_data2 = Models::Utilities.load_yaml_file short_path
 	
 	
 	# logger.info raw_data2.to_yaml
+	# raise
 	
-	# File.open(filepath, 'w') do |f|
-	# 	f.puts raw_data2.to_yaml
-	# end
+	
+	
+	# cache the graph after generating it once
+	@graphs[short_path] ||= SummerResearch::DependencyGraph.new.tap do |graph|
+		graph
+	end
+	
+	# use cached graph if available
+	graph = @graphs[short_path]
+	
 	
 	
 	chains = Models::Utilities.load_yaml_file(

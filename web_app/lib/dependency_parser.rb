@@ -125,7 +125,7 @@ class DependencyParser
 		
 		# --- print data dump to file, for debugging	
 		dump = tokens.collect{|t| t.inspect }.join("\n")
-		Utilities.write_to_file('./dep_parser_dump.txt', dump)
+		Models::Utilities.write_to_file('data/dep_parser_dump.txt', dump)
 		
 		
 		

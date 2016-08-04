@@ -474,7 +474,7 @@ end
 
 
 file 'data/CS_BS_requirements_by_type.yaml' => 'data/CS_BS_requirements.yaml' do
-	degree_requirements = Models::Utilities.load_yaml_file('./CS_BS_requirements.yaml')
+	degree_requirements = Models::Utilities.load_yaml_file('data/CS_BS_requirements.yaml')
 	
 	# Explanation of how the requirements data format works:
 	# -----
@@ -598,8 +598,8 @@ file 'data/CS_BS_dep_chains.yaml' => [
 	'data/CS_BS_requirements_by_type.yaml',
 	'data/all_dependencies.yaml',
 ] do 
-	requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-	dependencies = YAML.load_file('./data/all_dependencies.yaml')
+	requirements = Models::Utilities.load_yaml_file('data/CS_BS_requirements_by_type.yaml')
+	dependencies = Models::Utilities.load_yaml_file('data/all_dependencies.yaml')
 	
 	
 	
@@ -632,9 +632,9 @@ task :foo => [
 	'data/CS_BS_requirements_by_type.yaml',
 	'data/all_dependencies.yaml',
 ] do 
-	chains       = YAML.load_file('./data/CS_BS_dep_chains.yaml')
-	requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-	dependencies = YAML.load_file('./data/all_dependencies.yaml')
+	chains       = Models::Utilities.load_yaml_file('data/CS_BS_dep_chains.yaml')
+	requirements = Models::Utilities.load_yaml_file('data/CS_BS_requirements_by_type.yaml')
+	dependencies = Models::Utilities.load_yaml_file('data/all_dependencies.yaml')
 	
 	
 	
@@ -720,14 +720,14 @@ end
 
 # all direct dependencies of all courses in the graph
 # this is the raw node / edge data you feed to D3
-file 'public/CS_BS_all.yaml' => [
+file 'public/CS_BS_all.yaml', [:lambda] => [
 	'data/CS_BS_dep_chains.yaml',
 	'data/CS_BS_requirements_by_type.yaml',
 	'data/all_dependencies.yaml',
-] do 
-	chains       = YAML.load_file('./data/CS_BS_dep_chains.yaml')
-	requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-	dependencies = YAML.load_file('./data/all_dependencies.yaml')
+] do |t, args|
+	chains       = Models::Utilities.load_yaml_file('data/CS_BS_dep_chains.yaml')
+	requirements = Models::Utilities.load_yaml_file('data/CS_BS_requirements_by_type.yaml')
+	dependencies = Models::Utilities.load_yaml_file('data/all_dependencies.yaml')
 	
 	
 	data = 
@@ -740,6 +740,9 @@ file 'public/CS_BS_all.yaml' => [
 	data = data.to_h
 	
 	Models::Utilities.write_to_file('public/CS_BS_all.yaml', data.to_yaml)
+	
+	
+	args[:lambda].call
 end
 
 

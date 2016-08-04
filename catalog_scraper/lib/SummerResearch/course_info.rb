@@ -56,7 +56,7 @@ class CourseInfo
 		# load from object with hash-style interface
 		# (actually expects a BSON::Document)
 		def load(data)
-			dept, course_number = Catalog.parse_course_id(data['course_id'])
+			dept, course_number = parse_course_id(data['course_id'])
 			catalog_year        = data['catalog_year']
 			url                 = data['url']
 			
@@ -90,6 +90,39 @@ class CourseInfo
 			
 			return obj
 			# ---
+		end
+		
+		
+		
+		# 'parse_course_id()' copied from catlog.rb in 'catalog_scraper' package
+		# this removed dependency on Catalog, which means you don't have to load ActiveRecord
+		# for the web app
+		
+		# TODO: consider case of Mason Core classes
+		def parse_course_id(course_id)
+			dept_code     = nil
+			course_number = nil
+			
+			if course_id.include? "Mason Core"
+				dept_code = "Mason Core"
+				
+				matchdata = course_id.match(/Mason Core (.*)/)
+				
+				course_number = 
+					if matchdata
+						matchdata[1]
+					else
+						nil
+					end
+				
+				# don't want it to trip up on just getting "Mason Core"
+				# but not sure what to do, because this isn't really course?
+			else
+				dept_code, course_number = course_id.split(' ')
+				course_number = course_number
+			end
+			
+			return dept_code, course_number
 		end
 	end
 	
