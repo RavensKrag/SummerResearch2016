@@ -13,7 +13,7 @@ repo_root = ->(){
 # p repo_root
 
 # ---
-
+puts "LOADING RAKETASKS"
 
 
 
@@ -26,10 +26,11 @@ module SummerResearch
 		
 	end
 end
-SummerResearch::WebApp::DATA_DIR = File.expand_path('./web_app/models/CS_BS/data', repo_root)
+SummerResearch::WebApp::DATA_DIR = File.expand_path('./web_app/models/CS_BS', repo_root)
 
 
 # === same as SummerResearch2016/catalog_scraper/lib/SummerResearch/utilities.rb
+module Models
 module Utilities
 	class << self
 	
@@ -46,6 +47,7 @@ def load_yaml_file(relative_filepath)
 end
 
 
+end
 end
 end
 # =====================================================
@@ -149,7 +151,7 @@ file 'data/all_dependencies.yaml' do
 		end
 		
 		# === convert to desired output format
-		Utilities.write_to_file('./all_dependencies.yaml', data.to_yaml)
+		Models::Utilities.write_to_file('data/all_dependencies.yaml', data.to_yaml)
 	end
 end
 # NOTE: need to manually update a record
@@ -465,14 +467,14 @@ file 'data/CS_BS_requirements.yaml' do
 	}
 	
 	
-	Utilities.write_to_file(
-		'./CS_BS_requirements.yaml', degree_requirements.to_yaml
+	Models::Utilities.write_to_file(
+		'data/CS_BS_requirements.yaml', degree_requirements.to_yaml
 	)
 end
 
 
 file 'data/CS_BS_requirements_by_type.yaml' => 'data/CS_BS_requirements.yaml' do
-	degree_requirements = Utilities.load_yaml_file('./CS_BS_requirements.yaml')
+	degree_requirements = Models::Utilities.load_yaml_file('./CS_BS_requirements.yaml')
 	
 	# Explanation of how the requirements data format works:
 	# -----
@@ -529,7 +531,7 @@ file 'data/CS_BS_requirements_by_type.yaml' => 'data/CS_BS_requirements.yaml' do
 	
 	out = requirements_by_type
 	
-	Utilities.write_to_file('./CS_BS_requirements_by_type.yaml', out.to_yaml)
+	Models::Utilities.write_to_file('data/CS_BS_requirements_by_type.yaml', out.to_yaml)
 end
 
 
@@ -591,6 +593,7 @@ task :dep_chains => 'data/CS_BS_dep_chains.yaml'
 
 # find full prereq chains for all courses in requirements,
 # be they required, or elective
+# aka -- all dependency chains for all courses in the graph
 file 'data/CS_BS_dep_chains.yaml' => [
 	'data/CS_BS_requirements_by_type.yaml',
 	'data/all_dependencies.yaml',
@@ -619,7 +622,7 @@ file 'data/CS_BS_dep_chains.yaml' => [
 	p data.to_h['ECE 331']
 	puts "=========="
 	
-	Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
+	Models::Utilities.write_to_file('data/CS_BS_dep_chains.yaml', data.to_yaml)
 end
 
 
@@ -699,7 +702,7 @@ task :foo => [
 	p out
 	
 	
-	# Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
+	# Models::Utilities.write_to_file('data/CS_BS_dep_chains.yaml', data.to_yaml)
 	
 	set = 
 		[:prereq, :coreq, :notes]
@@ -715,8 +718,9 @@ end
 
 
 
-# all dependency chains for all courses in the graph
-task :bar => [
+# all direct dependencies of all courses in the graph
+# this is the raw node / edge data you feed to D3
+file 'public/CS_BS_all.yaml' => [
 	'data/CS_BS_dep_chains.yaml',
 	'data/CS_BS_requirements_by_type.yaml',
 	'data/all_dependencies.yaml',
@@ -735,7 +739,7 @@ task :bar => [
 		end
 	data = data.to_h
 	
-	Utilities.write_to_file('./CS_BS_all.yaml', data.to_yaml)
+	Models::Utilities.write_to_file('public/CS_BS_all.yaml', data.to_yaml)
 end
 
 

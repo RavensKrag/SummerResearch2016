@@ -1,5 +1,14 @@
 require 'rubygems'
 
+require 'rake'
+
+require 'bundler'
+Bundler.require(:default)
+require 'bundler/setup'
+
+require 'rgl/adjacency'
+require 'rgl/bidirectional'
+
 
 # other libs for 'catalog_scraper'
 require 'yaml'
@@ -8,19 +17,16 @@ require 'set'
 
 # other libs for this main thing
 require 'json'
-require 'rake'
 
 
 
-require 'bundler'
-Bundler.require(:default)
-require 'bundler/setup'
+
 
 
 Dir.chdir File.expand_path('../', File.dirname(__FILE__)) do
 	# Files for the web app specifically
 	require_all './models'
-	
+	require_all './lib'
 	
 	
 	

@@ -5,6 +5,8 @@ gem 'rack_csrf', '~> 2.5.0'
 gem 'require_all'
 
 
+gem 'rgl', '~> 0.5.2'
+
+
 # same as in catalog_scraper
 gem 'mongo', '~> 2.2.5' # using Mongo 2.6
-gem 'activerecord', '4.2.6'

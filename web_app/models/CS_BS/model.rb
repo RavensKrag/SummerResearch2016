@@ -4,6 +4,8 @@
 module Models
 	class ComputerScience_BS
 
+path_to_file = File.expand_path(File.dirname(__FILE__))
+MODEL_ROOT = File.expand_path('./', path_to_file)
 
 attr_reader :data
 
@@ -75,9 +77,17 @@ def initialize
 	}
 	
 	
+	
+	
 	@rake = Rake::Application.new
-	@rake.init
-	@rake.load_rakefile()
+	
+	Dir.chdir MODEL_ROOT do
+		puts "LOAD START?"
+		Rake.application = @rake
+		@rake.init
+		@rake.load_rakefile() # uses the working directory? wow that's weird
+		puts "LOAD END!"
+	end
 end
 
 
@@ -161,7 +171,7 @@ def json
 		end
 	end
 	
-	SummerResearch::Utilities.write_to_file(
+	Models::Utilities.write_to_file(
 		'./leaves.yaml', leaves.uniq.to_yaml
 	)
 	# need to recursively add all children of these leaves
@@ -184,13 +194,37 @@ end
 
 
 # output data for directonal Cola all-arrows-point-down graph
+# data   -- backend information
+# public -- information that can be exposed to the outside world
+# out    -- static files to be vendored
 def json_directional(name, logger)
 	# return '{"nodes":[], "links":[], "constraints":[]}'
 	
 	relative_filepath = "./#{name}.yaml"
-	data_dir = File.join(File.dirname(__FILE__), '..', 'data')
-	filepath = File.expand_path(relative_filepath, data_dir)
+	
+	
+	public_data_dir = File.expand_path('./public', MODEL_ROOT)
+	filepath = File.expand_path(relative_filepath, public_data_dir)
+	
+	
+	raise "No data exists for '#{name}'" unless File.exist? filepath
+	
+	
+	
+	
 	raw_data2 = YAML.load_file filepath
+	
+	
+	
+	# input sanitization???
+	# I mean, the name is coming from a URL piece, so it could be anything...
+	'CS_BS_all.yaml'
+	logger.info @rake.methods.grep(/task/).inspect
+	logger.info @rake.tasks.inspect
+	@rake['public/CS_BS_all.yaml']
+	
+	
+	
 	
 	# logger.info raw_data2.to_yaml
 	
@@ -199,8 +233,8 @@ def json_directional(name, logger)
 	# end
 	
 	
-	chains = SummerResearch::Utilities.load_yaml_file(
-		'./CS_BS_dep_chains.yaml'
+	chains = Models::Utilities.load_yaml_file(
+		'data/CS_BS_dep_chains.yaml'
 	).to_h
 	# logger.info chains.inspect
 	
