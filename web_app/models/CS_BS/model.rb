@@ -207,14 +207,7 @@ end
 def json_directional(name, logger)
 	# return '{"nodes":[], "links":[], "constraints":[]}'
 	
-	relative_filepath = "./#{name}.yaml"
 	
-	
-	public_data_dir = File.expand_path('./public', MODEL_ROOT)
-	filepath = File.expand_path(relative_filepath, public_data_dir)
-	
-	
-	raise "No data exists for '#{name}'" unless File.exist? filepath
 	
 	
 	
@@ -229,18 +222,23 @@ def json_directional(name, logger)
 	
 	short_path = 'public/CS_BS_all.yaml'
 	
+	regenerate_graph = false
 	@rake[short_path].invoke ->(){
 		# --- this callback runs when YAML file in 'short_path' is regenerated
 		logger.info "graph generation callback"
 		
-		
-		# only generate graphs if the yaml file was regenerated
-		# cache the graph after generating it once
-		@graphs[short_path] ||= SummerResearch::DependencyGraph.new.tap do |graph|
+		regenerate_graph = true
+	}
+	
+	# Generate graphs if
+	# 1) no graph yet in memory
+	# 2) source YAML file was modified
+	if regenerate_graph or @graphs[short_path].nil?
+		@graphs[short_path] = SummerResearch::DependencyGraph.new.tap do |graph|
 			graph
 		end
-		
-	}
+	end
+	
 	# pull graph from the cache
 	graph = @graphs[short_path]
 	
@@ -253,6 +251,20 @@ def json_directional(name, logger)
 	
 	# logger.info raw_data2.to_yaml
 	# raise
+	
+	
+	
+	
+	
+	
+	relative_filepath = "./#{name}.yaml"
+	
+	
+	public_data_dir = File.expand_path('./public', MODEL_ROOT)
+	filepath = File.expand_path(relative_filepath, public_data_dir)
+	
+	
+	raise "No data exists for '#{name}'" unless File.exist? filepath
 	
 	
 	
