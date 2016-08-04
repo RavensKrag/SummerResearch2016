@@ -230,8 +230,24 @@ def json_directional(name, logger)
 	short_path = 'public/CS_BS_all.yaml'
 	
 	@rake[short_path].invoke ->(){
-		logger.info "testing callback"
+		# --- this callback runs when YAML file in 'short_path' is regenerated
+		logger.info "graph generation callback"
+		
+		
+		# only generate graphs if the yaml file was regenerated
+		# cache the graph after generating it once
+		@graphs[short_path] ||= SummerResearch::DependencyGraph.new.tap do |graph|
+			graph
+		end
+		
 	}
+	# pull graph from the cache
+	graph = @graphs[short_path]
+	
+	raise "Could not find DependencyGraph data. Should have been generated after #{short_path} was made, but it seems like that as not the case." if graph.nil?
+	
+	
+	
 	raw_data2 = Models::Utilities.load_yaml_file short_path
 	
 	
@@ -240,13 +256,7 @@ def json_directional(name, logger)
 	
 	
 	
-	# cache the graph after generating it once
-	@graphs[short_path] ||= SummerResearch::DependencyGraph.new.tap do |graph|
-		graph
-	end
 	
-	# use cached graph if available
-	graph = @graphs[short_path]
 	
 	
 	
