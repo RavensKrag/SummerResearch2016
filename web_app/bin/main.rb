@@ -1,25 +1,14 @@
 require 'rubygems'
 
-# catalog_scraper_rakefile_path =
-# 	File.expand_path(
-# 		File.join(
-# 			'..', '..', '..', 'catalog_scraper', 'bin', 'rakefile'
-# 		),
-# 		File.dirname(__FILE__)
-# 	)
-# p catalog_scraper_rakefile_path
 
-# load catalog_scraper_rakefile_path
+# other libs for 'catalog_scraper'
+require 'yaml'
+require 'csv'
+require 'set'
 
-# load rakefile in order to load all of the dependencies 
-# (there are some dependencies that are not gems)
-
-# TODO: isolate dependency loading for 'catalog_scraper' gem into another file, so it can be easily loaded here.
-# (or have a full-on gem-style setup, so I can require the library in a reasonable way.)
-
-# ==================
-
-# NOTE: can't actually load the rakefile here, because loading 'rake' inhibits Sinatra from starting
+# other libs for this main thing
+require 'json'
+require 'rake'
 
 
 
@@ -27,51 +16,46 @@ require 'bundler'
 Bundler.require(:default)
 require 'bundler/setup'
 
-# other libs for 'catalog_scraper'
-require 'yaml'
-require 'csv'
-require 'set'
-require 'open-uri'
 
-# other libs for this main thing
-require 'json'
-
-Dir.chdir File.expand_path(File.dirname(__FILE__)) do
+Dir.chdir File.expand_path('../', File.dirname(__FILE__)) do
 	# Files for the web app specifically
-	require_all '../models'
-
-
-
-	# Files to load up 'catalog_scraper', which is basically a gem
-
-	# NOTE: 'catalog_scraper' files use the 'PATH_TO_ROOT' constant, which is pretty bad, because I'm just polluting the global namespace with that constant. Need to move that into a module or something.
-
-	# Must expand '..' shortcut into a proper path. But that results in a shorter string.
-	PATH_TO_ROOT = File.expand_path '../..', '../../catalog_scraper/bin/rakefile'
-
-
+	require_all './models'
+	
+	
+	
+	
 	# files
-	Dir.chdir PATH_TO_ROOT do
-		require_all './lib/SummerResearch'
-	end
+	repo_root = ->(){
+		path_to_file = File.expand_path(File.dirname(__FILE__))
+		
+		dir_list = path_to_file.split(File::SEPARATOR)
+		i = dir_list.find_index("SummerResearch2016")
+		
+		return File.join(*dir_list[0..i])
+	}[]
+	
+	require File.expand_path('./catalog_scraper/lib/SummerResearch/course_info', repo_root)
+	
 	
 	
 	configure do
-		set :public_folder,
-			File.join(
-				File.dirname(__FILE__), '..', 'static'
-			)
+		set :public_folder, File.expand_path('./static')
 		
 		set :views, [
-			File.expand_path('../views')
+			File.expand_path('./views')
 		]
 		
 		set :logging, :true
 		enable :logging
-		set :logger, Logger.new(STDOUT)
-		use Rack::CommonLogger, Logger.new(STDOUT)
+		# set :logger, Logger.new(STDOUT)
+		# use Rack::CommonLogger, Logger.new(STDOUT)
 	end
 end
+
+
+
+
+
 
 
 get '/' do
@@ -108,27 +92,9 @@ end
 @mongo_address = [@mongo_ip, @mongo_port].join(':')
 mongo = Mongo::Client.new([ @mongo_address ], :database => 'mydb')
 
-# TODO: figure out a better way to declare these variables.
-# don't want to have to duplicate this logic from the rakefile
-# need to store these constants in a file that's easily loadable from here,
-# and the 'catalog_scraper' rakefile.
 
-filepath = File.expand_path('bin/data/required_courses.yaml', PATH_TO_ROOT)
-required_courses ||= YAML.load_file(filepath)
-
-SQLITE_DATABASE_FILEPATH = File.expand_path('bin/example.db', PATH_TO_ROOT)
-catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-
-# NOTE: can't use instance variables because of weird DSL scoping side-effects
 
 get '/api/foo.json' do
-	data = catalog.course_info('CS 101')
-	
-	
-	JSON.generate data.to_h
-end
-
-get '/api/foo2.json' do
 	
 	data = [
 		[150, 300],
@@ -143,75 +109,14 @@ get '/api/foo2.json' do
 end
 
 
-# code copied over from the rakefile for 'catalog_scraper'
-# not final implementation, just a sketch of getting program overview
-get '/api/required_courses/ComputerScienceBS' do
-	puts "=== setup data"
-	# search for relevant programs of study
-	
-	list_of_degrees = [
-		"Computer Science",
-		"Information Technology",
-		"Electrical Engineering",
-		"Biology",
-		"Psychology"
-	]
-	
-	degrees = SummerResearch.search_programs_of_study(list_of_degrees)
-	
-	
-	count = degrees.keys.size
-	puts "#{count} programs found for search query."
-	
-	
-	programs_of_study = degrees
-	
-	# TODO: output data on different degrees to different folders.
-	
-	program_name = "Computer Science, BS"
-	url = programs_of_study[program_name]
-	
-	
-	fragment = SummerResearch.requirements_subtree(url)
-	
-	course_list = SummerResearch.get_all_weird_link_urls(fragment)
-	
-	p course_list.first.class
-	data = 
-		course_list.collect do |catalog_link| 
-			# catalog_link.to_h
-			{  "id" => catalog_link.id  }
-		end
-	
-	JSON.generate data
-end
-
-
-
-
-
-
-
-
-model = Models::ComputerScience_BS.new()
-
-SummerResearch::Utilities.write_to_file(
-	'./CS_BS_courses.txt', model.all_courses.join("\n")
-)
-
-get '/api/program_of_study/CS_BS' do
-	model.json
-end
-
-get '/api/program_of_study/CS_BS/all' do
-	model.json_list_all_courses
-end
 
 
 
 # bin/database.log
 # what the heck is this file? what is it a log of? SQLite? Mongo?
 # man, this configuration is messed up...
+
+
 
 get '/api/course_info/:course' do
 	course_id = params['course']
@@ -244,6 +149,22 @@ end
 
 
 
+
+
+
+model = Models::ComputerScience_BS.new()
+
+# SummerResearch::Utilities.write_to_file(
+# 	'./CS_BS_courses.txt', model.all_courses.join("\n")
+# )
+
+get '/api/program_of_study/CS_BS' do
+	model.json
+end
+
+get '/api/program_of_study/CS_BS/all' do
+	model.json_list_all_courses
+end
 
 
 

@@ -1,13 +1,10 @@
-catalog_scraper_gemfile_path =
-	File.expand_path(
-		File.join(
-			File.dirname(__FILE__), '..', 'catalog_scraper', 'Gemfile'
-		)
-	)
-
-eval(IO.read(catalog_scraper_gemfile_path), binding)
-# NOTE: eval() is for Ruby-level evaluaton. exec() is for shell.
-
+source 'https://rubygems.org'
 
 gem 'sinatra', '~> 1.4.7'
 gem 'rack_csrf', '~> 2.5.0'
+gem 'require_all'
+
+
+# same as in catalog_scraper
+gem 'mongo', '~> 2.2.5' # using Mongo 2.6
+gem 'activerecord', '4.2.6'

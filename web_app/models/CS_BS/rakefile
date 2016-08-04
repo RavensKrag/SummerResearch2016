@@ -21,7 +21,7 @@ require 'rubygems'
 # --- gems
 # TODO: reuse the gemfile from catalog_scraper to find the correct verson of mongo to load
 require 'mongo'
-require 'active_record'
+# require 'active_record'
 
 
 
@@ -87,7 +87,6 @@ puts "========="
 
 # --- files
 
-require File.expand_path('./catalog_scraper/lib/SummerResearch/catalog', repo_root)
 require File.expand_path('./catalog_scraper/lib/SummerResearch/course_info', repo_root)
 require File.expand_path('./web_app/lib/dependency_parser', repo_root)
 
@@ -105,6 +104,8 @@ require File.expand_path('./web_app/lib/dependency_parser', repo_root)
 
 
 
+# Take the depedency data out of Mongo at the begining,
+# and then you don't have to touch the DB again
 
 # assumes that all the data you need is already loaded up into Mongo
 file 'data/all_dependencies.yaml' do
@@ -534,59 +535,6 @@ namespace :cs_requirements do
 		
 		Utilities.write_to_file('./CS_BS_requirements_by_type.yaml', out.to_yaml)
 	end
-	
-	# this data was used to generate the inital graphs in D3
-	# it was generated through this process, and then manually copied over to the 'web_app'
-	task :data_dump => ['data/CS_BS_requirements_by_type.yaml'] do
-		# @catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		
-		
-		
-		requirements_by_type = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-		
-		
-		filepath = 
-			File.expand_path(
-				'./data/CS_BS_data_dump.txt', 
-			)
-		File.open(filepath, 'w') do |f|
-			requirements_by_type.collect do |type, requirement_list|
-				next if type == :unclear
-				
-				course_info_list = requirement_list.collect{  |x| p x; @catalog.course_info(x)  }
-				
-				
-				
-				# bascially, just ignore this block
-				# enable this block to get the sample data used in the inital graphs
-				dependency_list = 
-					course_info_list.collect do |course_info|
-						puts ">>>>>>>>>>"
-						puts "#{course_info.id} - #{course_info.title}"
-						
-						all_deps_text_list =
-							%w[Prerequisite(s) Corequisite(s)]
-								.collect do |x|
-									requirements = course_info[x]
-								end
-						all_deps_text = all_deps_text_list.join("\n")
-						
-						
-						SummerResearch::DependencyParser.call(all_deps_text) || []
-					end
-				dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
-				
-				
-				
-				f.puts "requirement type: #{type}"
-				f.puts "---"
-				f.puts dependency_map.inspect
-				f.puts
-			end
-		end
-	end
-	
 	
 	
 	

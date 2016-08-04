@@ -1,5 +1,9 @@
+# require 'rubygems'
+# require 'rake'
+
 module Models
 	class ComputerScience_BS
+
 
 attr_reader :data
 
@@ -69,7 +73,13 @@ def initialize
 		"PHIL 371"=>[],
 		"ENGH 388"=>["ENGL 302", "ENGH 302"], "PHIL 376"=>["PHIL 173", "MATH 110"]
 	}
+	
+	
+	@rake = Rake::Application.new
+	@rake.init
+	@rake.load_rakefile()
 end
+
 
 def json
 	d1 = 
