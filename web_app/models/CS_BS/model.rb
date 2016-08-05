@@ -210,9 +210,6 @@ def json_directional(name, logger)
 	
 	
 	
-	
-	
-	
 	# input sanitization???
 	# I mean, the name is coming from a URL piece, so it could be anything...
 	
@@ -235,7 +232,60 @@ def json_directional(name, logger)
 	# 2) source YAML file was modified
 	if regenerate_graph or @graphs[short_path].nil?
 		@graphs[short_path] = SummerResearch::DependencyGraph.new.tap do |graph|
-			graph
+			raw_data = Models::Utilities.load_yaml_file(short_path)
+			
+			# NOTE: just get the node and vert information first. The data will be converted to the proper output format later.
+			
+			
+			
+			# --- add basic node and edge information to the graph
+			nodes = raw_data.collect{  |k,v|   [k, v] }.flatten.uniq
+			
+			links =
+				raw_data.collect do |course, deps|
+					deps.collect do |dependency|
+						[course, dependency]
+					end
+				end
+			links = links.flatten(1) # remove extra level of nesting
+			links.delete_if do |course, dependency|
+				course == dependency # remove self-links resulting from messy data
+			end
+			
+			
+			logger.info nodes.inspect
+			logger.info links.inspect
+			
+			
+			
+			
+			
+			nodes.each do |vertex|
+				graph.add_vertex(vertex)
+			end
+			
+			links.each do |course, dependency|
+				graph.add_edge(dependency, course)
+			end
+			
+			
+			
+			# --- debug printing to make sure that worked
+			
+			# NOTE: the first item in either of these lists, is the requested node.
+			# ie) ancestors of CS 367 includes CS 367 itself, even if all self-loops were removed
+			# NOTE: was able to fix this by returning a slightly different Enumerator from the DependencyGraph class.
+			logger.info "Ancestors"
+			logger.info graph.ancestors("CS 367").to_a.inspect
+			logger.info "Parents"
+			logger.info graph.parents("CS 367").to_a.inspect
+			logger.info "Children"
+			logger.info graph.children("CS 367").to_a.inspect
+			logger.info "Descendants"
+			logger.info graph.descendants("CS 367").to_a.inspect
+			
+			# raise
+			
 		end
 	end
 	

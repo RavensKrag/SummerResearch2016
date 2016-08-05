@@ -11,8 +11,8 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 		@reverse = self.reverse
 	end
 	
-	def add_edge(edge)
-		super(edge)
+	def add_edge(u,v)
+		super(u,v)
 		@reverse = self.reverse
 	end
 	
@@ -28,12 +28,20 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 		# (hash {vert => set of adjacent verts})
 		# not a real matrix at all
 	
+	# NOTE: dfs clumps by courses in a related chain. bfs clumps by local prereqs.
 	
 	def ancestors(vert)
-		@reverse.bfs_iterator(vert)
+		inner_enum = @reverse.dfs_iterator(vert)
+		Enumerator.new do |y|
+			inner_enum.each do |v|
+				next if v == vert
+				
+				y.yield(v)
+			end
+		end
 	end
 	
-	def parent(vert)
+	def parents(vert)
 		self.each_in_neighbor(vert)
 	end
 	
@@ -42,7 +50,14 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 	end
 	
 	def descendants(vert)
-		self.bfs_iterator(vert)
+		inner_enum = self.dfs_iterator(vert)
+		Enumerator.new do |y|
+			inner_enum.each do |v|
+				next if v == vert
+				
+				y.yield(v)
+			end
+		end
 	end
 	
 	

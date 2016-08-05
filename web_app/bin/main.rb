@@ -7,6 +7,7 @@ Bundler.require(:default)
 require 'bundler/setup'
 
 require 'rgl/adjacency'
+require 'rgl/traversal'
 require 'rgl/bidirectional'
 
 
