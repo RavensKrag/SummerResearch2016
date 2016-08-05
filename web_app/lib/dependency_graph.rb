@@ -102,18 +102,21 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 	# export nodes and edges to JSON
 	# as well as constraints
 	def to_json_d3v3_cola
+		vert_conversion_table = self.vertices.each_with_index.to_a.to_h
+		
+		
 		out = Hash.new
 		
 		out['nodes'] = 
 			self.vertices.each_with_index.collect do |v, i|
 				{
 					'name' => v,
-					'number' => i
+					'number' => i,
+					'chain_deps' => ancestors(v).to_a.collect{  |x| vert_conversion_table[x]  }
 				}
 			end
 		
 		
-		vert_conversion_table = self.vertices.each_with_index.to_a.to_h
 		out['links'] = 
 			self.each_edge.collect do |u,v|
 				{
