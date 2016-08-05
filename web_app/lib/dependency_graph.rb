@@ -4,6 +4,37 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 	include RGL::BidirectionalGraph
 	
 	
+	# Interface Improvements
+	# If these methods are called without blocks, the return Enumerators, as expected
+	def each_vertex
+		return enum_for(:each_vertex) unless block_given?
+		
+		super do |v|
+			yield v
+		end
+	end
+	
+	def each_edge
+		return enum_for(:each_edge) unless block_given?
+		
+		super do |u,v|
+			yield u,v
+		end
+	end
+	
+	
+	def vertices
+		return super()
+	end
+	
+	def edges
+		return self.each_edge.to_a
+	end
+	
+	
+	
+	
+	
 	
 	# add this to speed up #each_in_neighbor
 	def add_vertex(vert)
@@ -71,7 +102,61 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 	# export nodes and edges to JSON
 	# as well as constraints
 	def to_json_d3v3_cola
+		out = Hash.new
 		
+		out['nodes'] = 
+			self.vertices.each_with_index.collect do |v, i|
+				{
+					'name' => v,
+					'number' => i
+				}
+			end
+		
+		
+		vert_conversion_table = self.vertices.each_with_index.to_a.to_h
+		out['links'] = 
+			self.each_edge.collect do |u,v|
+				{
+					'source' => vert_conversion_table[u],
+					'target' => vert_conversion_table[v]
+				}
+			end
+		
+		out['constraints'] = constraints_foo()
+		
+		JSON.generate(out)
+	end
+	
+	
+	
+	private
+	
+	
+	def constraints_foo
+		# basic constraint: prereqs go above later courses.
+		# (overall visual flow: top to bottom as skill increases)
+		# defined as local property.
+		# graph ends up showing global properties.
+		
+		
+		vert_conversion_table = self.vertices.each_with_index.to_a.to_h
+		c1 =
+			self.each_vertex.collect do |vert|
+				self.parents(vert).collect do |dependency|
+					i_left  = vert_conversion_table[vert]
+					i_right = vert_conversion_table[dependency]
+					
+					{
+						"axis" => "y", 
+						"left" => i_left, "right" => i_right, "gap" => 25
+					}
+				end
+			end
+		c1.flatten!
+		
+		constraints = c1
+		
+		return constraints
 	end
 end
 

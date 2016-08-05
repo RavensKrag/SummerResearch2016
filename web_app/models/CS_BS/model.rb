@@ -284,8 +284,10 @@ def json_directional(name, logger)
 			logger.info "Descendants"
 			logger.info graph.descendants("CS 367").to_a.inspect
 			
-			# raise
 			
+			
+			logger.info graph.each_vertex.to_a
+			logger.info graph.each_edge.to_a
 		end
 	end
 	
@@ -294,6 +296,8 @@ def json_directional(name, logger)
 	
 	raise "Could not find DependencyGraph data. Should have been generated after #{short_path} was made, but it seems like that as not the case." if graph.nil?
 	
+	
+	return graph.to_json_d3v3_cola
 	
 	
 	raw_data2 = Models::Utilities.load_yaml_file short_path
