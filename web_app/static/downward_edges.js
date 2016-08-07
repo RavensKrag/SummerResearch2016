@@ -4,7 +4,7 @@
 // with some modifications
 
 var width = 960,
-    height = 800;
+    height = 1500;
 
 var color = d3.scale.category20b();
 
@@ -20,7 +20,7 @@ var svg = d3.select("div#main").append("svg")
 d3.json("dynamic_data.json", function (error, graph) {
     if (error) throw error;
     
-    var nodeCollisionRadius =  16;
+    var nodeCollisionRadius =  20;
     var nodeVisualRadius    =   8; //  10
     var nodeSymbolSize      = 100; // 140
     

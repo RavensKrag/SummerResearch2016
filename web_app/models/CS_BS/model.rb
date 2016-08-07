@@ -232,13 +232,13 @@ def json_directional(name, logger)
 	# 2) source YAML file was modified
 	if regenerate_graph or @graphs[short_path].nil?
 		@graphs[short_path] = SummerResearch::DependencyGraph.new.tap do |graph|
-			raw_data = 
-				if name.include? 'split'
-					Models::Utilities.load_yaml_file "public/#{name}.yaml"
-				else
-					Models::Utilities.load_yaml_file(short_path)
-				end
-				
+			raw_data = Models::Utilities.load_yaml_file(short_path)
+			# raw_data = 
+				# if name.include? 'split'
+				# 	Models::Utilities.load_yaml_file "public/#{name}.yaml"
+				# else
+					# Models::Utilities.load_yaml_file(short_path)
+				# end
 			
 			# NOTE: just get the node and vert information first. The data will be converted to the proper output format later.
 			
@@ -303,7 +303,30 @@ def json_directional(name, logger)
 	raise "Could not find DependencyGraph data. Should have been generated after #{short_path} was made, but it seems like that as not the case." if graph.nil?
 	
 	
+	# if short_path == 'data/CS_BS_all.yaml'
+		[
+			'CS 310',
+			'CS 330',
+			'CS 367',
+			# 'ENGH 302',
+			# # 'CS 262',
+			# # 'CS 351',
+			# # 'MATH 351',
+			# # 'MATH 203',
+			# 'STAT 344',
+			# # 'MATH 125',
+			# 'ECE 445',
+			# # 'CS 222',
+			# # 'CS 112',
+			# # 'STAT 346',
+			# 'SYST 210',
+		].each do |course|
+			# graph.cut course
+		end
+	# end
 	
+	# graph.remove_vertex('MATH 112') # Discrete Math for IT
+	# graph.remove_vertex('CS 222') # "Computer Programming for Engineers", basically like CS 262
 	
 	
 	

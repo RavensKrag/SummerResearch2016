@@ -11,20 +11,25 @@ body{
 }
 
 #output{
+	position: fixed;
 	display: inline-block;
 	vertical-align:top;
 	width: 300px;
 	height: 100%;
 	top: 0px;
+	margin-left: 20px;
 }
 
 #output h1{
+	display: inline-block;
 	font-size: 28px;
 }
 
 #output .description{
 	overflow: scroll;
+	display: block;
 	height: auto;
+	
 }
 
 

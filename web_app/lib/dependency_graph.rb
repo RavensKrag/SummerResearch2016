@@ -93,6 +93,35 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 	
 	
 	
+	# cut the graph below the given vert
+	# (results in two subgraphs)
+	def cut(vert)
+		return unless self.has_vertex? vert
+		
+		new_name = "#{vert}_"
+		
+		# create the new target node
+		# (the old one should still also exist in the graph)
+		self.add_vertex(new_name)
+		
+		# get the children of the specified node, and rename their parents to the new target
+		self.children(vert).each do |child|
+			self.each_edge.select{ |dep, course|
+				dep == vert && course == child
+			}.each{ |dep, course|
+				self.remove_edge  dep, course
+				# self.add_edge     new_name, course
+			}
+		end
+		
+	end
+	
+	
+	def rename_vert(old_vert_name, new_vert_name)
+		
+	end
+	
+	
 	
 	
 	def add_constraint()
@@ -171,6 +200,25 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 		c1.flatten!
 		
 		constraints = c1
+		
+		
+		
+		c2 = 
+			self.vertices.select{ |vert|
+				vert.include? '_'
+			}.collect do |vert|
+				dependency = vert.tr('_', '')
+				
+				i_left  = vert_conversion_table[vert]
+				i_right = vert_conversion_table[dependency]
+				
+				{
+					"axis" => "y", 
+					"left" => i_left, "right" => i_right, "gap" => 25
+				}
+			end
+		
+		constraints += c2
 		
 		return constraints
 	end
