@@ -3,8 +3,8 @@
 
 // with some modifications
 
-var width = 560,
-    height = 500;
+var width = 960,
+    height = 800;
 
 var color = d3.scale.category20b();
 
@@ -20,10 +20,13 @@ var svg = d3.select("div#main").append("svg")
 d3.json("dynamic_data.json", function (error, graph) {
     if (error) throw error;
     
-    var nodeRadius = 8;
+    var nodeCollisionRadius =  16;
+    var nodeVisualRadius    =   8; //  10
+    var nodeSymbolSize      = 100; // 140
     
-    // graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeRadius; });
-    graph.nodes.forEach(function (v) { v.height = v.width = 20; });
+    
+    graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeCollisionRadius; });
+    // graph.nodes.forEach(function (v) { v.height = v.width = 20; });
     
     d3cola
         .nodes(graph.nodes)
@@ -76,7 +79,7 @@ d3.json("dynamic_data.json", function (error, graph) {
              //    return color(d.elective_type);
              // })
              .attr("d", d3.svg.symbol()
-                          .size(100)
+                          .size(nodeSymbolSize)
                           .type(function(d) { if
                              (d.class == 'required'     ) { return "circle"; } else if
                              (d.class == 'elective'     ) { return "square";} else if
@@ -132,8 +135,8 @@ d3.json("dynamic_data.json", function (error, graph) {
                 dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
                 normX = deltaX / dist,
                 normY = deltaY / dist,
-                sourcePadding = nodeRadius,
-                targetPadding = nodeRadius + 2,
+                sourcePadding = nodeVisualRadius,
+                targetPadding = nodeVisualRadius + 2,
                 sourceX = d.source.x + (sourcePadding * normX),
                 sourceY = d.source.y + (sourcePadding * normY),
                 targetX = d.target.x - (targetPadding * normX),
