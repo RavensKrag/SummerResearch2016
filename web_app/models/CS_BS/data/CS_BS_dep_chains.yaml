@@ -1,0 +1,812 @@
+---
+- - ASTR 111
+  - []
+- - ASTR 112
+  - []
+- - ASTR 113
+  - []
+- - ASTR 114
+  - []
+- - BIOL 103
+  - []
+- - BIOL 104
+  - []
+- - CHEM 211
+  - []
+- - CHEM 212
+  - - CHEM 211
+    - CHEM 214
+- - CHEM 213
+  - - CHEM 211
+- - CHEM 214
+  - - CHEM 211
+    - CHEM 212
+- - COMM 100
+  - []
+- - CS 101
+  - []
+- - CS 105
+  - []
+- - CS 112
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+- - CS 211
+  - - CS 112
+    - MATH 104
+    - MATH 105
+    - MATH 113
+- - CS 222
+  - - CS 112
+    - MATH 104
+    - MATH 105
+    - MATH 113
+- - CS 262
+  - - CS 112
+    - CS 211
+    - CS 222
+    - MATH 104
+    - MATH 105
+    - MATH 113
+- - CS 306
+  - - COMM 100
+    - CS 105
+    - ENGH 302
+    - HNRS 108
+    - HNRS 109
+    - HNRS 110
+    - HNRS 122
+    - HNRS 130
+    - HNRS 131
+    - HNRS 210
+    - HNRS 230
+    - HNRS 240
+    - HNRS 302
+- - CS 310
+  - - CS 112
+    - CS 211
+    - MATH 104
+    - MATH 105
+    - MATH 113
+- - CS 321
+  - - CS 112
+    - CS 211
+    - CS 310
+    - ENGH 302
+    - MATH 104
+    - MATH 105
+    - MATH 113
+- - CS 330
+  - - CS 112
+    - CS 211
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+- - CS 351
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - MATH 104
+    - MATH 105
+    - MATH 113
+- - CS 367
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+- - CS 425
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - CS 351
+    - MATH 104
+    - MATH 105
+    - MATH 113
+- - CS 440
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - CS 330
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+- - CS 450
+  - - CS 112
+    - CS 211
+    - CS 310
+    - CS 330
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+- - CS 451
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 125
+    - MATH 203
+    - PHYS 160
+    - PHYS 260
+- - CS 455
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+    - STAT 344
+- - CS 463
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 330
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+- - CS 465
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+- - CS 468
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+- - CS 469
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 330
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+    - STAT 344
+- - CS 471
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - ECE 332
+    - ECE 445
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+    - PHYS 265
+- - CS 475
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+- - CS 477
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 260
+- - CS 480
+  - - CS 112
+    - CS 211
+    - CS 310
+    - CS 330
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+- - CS 482
+  - - CS 112
+    - CS 211
+    - CS 310
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 203
+    - STAT 344
+- - CS 483
+  - - CS 112
+    - CS 211
+    - CS 310
+    - CS 330
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+- - CS 484
+  - - CS 112
+    - CS 211
+    - CS 310
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - STAT 344
+- - CS 485
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 310
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 203
+- - CS 490
+  - - CS 112
+    - CS 211
+    - CS 310
+    - CS 321
+    - CS 330
+    - CS 483
+    - ENGH 302
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+- - CS 499
+  - []
+- - ECE 280
+  - - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+- - ECE 285
+  - - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+- - ECE 301
+  - - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+- - ECE 331
+  - - PHYS 160
+    - PHYS 260
+- - ECE 332
+  - - PHYS 161
+    - PHYS 261
+    - PHYS 265
+- - ECE 333
+  - - ECE 280
+    - ECE 285
+    - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+- - ECE 431
+  - - ECE 280
+    - ECE 285
+    - ECE 331
+    - ECE 333
+    - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+- - ECE 445
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - ECE 331
+    - ECE 332
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+    - PHYS 265
+- - ECE 447
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - CS 367
+    - ECE 301
+    - ECE 331
+    - ECE 332
+    - ECE 445
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+    - PHYS 265
+- - ECE 450
+  - - CS 112
+    - ECE 280
+    - ECE 301
+    - ECE 331
+    - ECE 332
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+    - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+    - PHYS 265
+- - ECE 511
+  - - CS 112
+    - CS 211
+    - CS 222
+    - CS 262
+    - ECE 331
+    - ECE 332
+    - ECE 445
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - PHYS 160
+    - PHYS 161
+    - PHYS 260
+    - PHYS 261
+    - PHYS 265
+- - ENGH 302
+  - []
+- - ENGH 388
+  - - ENGH 302
+- - EVPP 110
+  - []
+- - EVPP 111
+  - []
+- - GEOL 101
+  - []
+- - GEOL 102
+  - - GEOL 101
+- - HNRS 108
+  - []
+- - HNRS 109
+  - - HNRS 108
+- - HNRS 110
+  - []
+- - HNRS 122
+  - []
+- - HNRS 130
+  - - HNRS 108
+    - HNRS 109
+    - HNRS 110
+    - HNRS 210
+    - HNRS 302
+- - HNRS 131
+  - - HNRS 108
+    - HNRS 109
+    - HNRS 110
+    - HNRS 210
+    - HNRS 302
+- - HNRS 210
+  - []
+- - HNRS 230
+  - - HNRS 108
+    - HNRS 109
+    - HNRS 110
+    - HNRS 210
+    - HNRS 302
+- - HNRS 240
+  - - HNRS 108
+    - HNRS 109
+    - HNRS 110
+    - HNRS 210
+    - HNRS 302
+- - HNRS 302
+  - []
+- - MATH 104
+  - []
+- - MATH 105
+  - []
+- - MATH 108
+  - - MATH 104
+    - MATH 105
+    - MATH 112
+    - MATH 113
+- - MATH 110
+  - []
+- - MATH 112
+  - - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 113
+- - MATH 113
+  - - MATH 104
+    - MATH 105
+- - MATH 114
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 123
+    - MATH 124
+- - MATH 115
+  - []
+- - MATH 116
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 115
+- - MATH 123
+  - - MATH 104
+    - MATH 105
+- - MATH 124
+  - - MATH 104
+    - MATH 105
+    - MATH 123
+- - MATH 125
+  - - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+- - MATH 203
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+- - MATH 213
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+- - MATH 215
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+- - MATH 351
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 213
+    - MATH 215
+- - MATH 446
+  - - CS 112
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 203
+- - OR 335
+  - - CS 112
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 213
+    - MATH 215
+    - MATH 351
+    - STAT 344
+    - STAT 346
+- - OR 441
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 203
+- - OR 442
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 213
+    - MATH 215
+    - MATH 351
+    - STAT 344
+    - STAT 346
+- - OR 481
+  - - CS 112
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 203
+- - PHIL 173
+  - []
+- - PHIL 371
+  - []
+- - PHIL 376
+  - - MATH 110
+    - PHIL 173
+- - PHYS 160
+  - []
+- - PHYS 161
+  - []
+- - PHYS 260
+  - - PHYS 160
+- - PHYS 261
+  - - PHYS 161
+- - PHYS 265
+  - []
+- - STAT 344
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+- - STAT 346
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 213
+    - MATH 215
+- - STAT 354
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - MATH 213
+    - MATH 215
+    - STAT 344
+    - STAT 346
+- - SWE 321
+  - - CS 112
+    - CS 211
+    - CS 310
+    - ENGH 302
+    - MATH 104
+    - MATH 105
+    - MATH 113
+- - SWE 432
+  - - CS 112
+    - CS 211
+    - CS 310
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+- - SWE 437
+  - - CS 112
+    - CS 211
+    - CS 310
+    - MATH 104
+    - MATH 105
+    - MATH 108
+    - MATH 112
+    - MATH 113
+    - MATH 125
+- - SWE 443
+  - - CS 112
+    - CS 211
+    - CS 310
+    - CS 321
+    - ENGH 302
+    - MATH 104
+    - MATH 105
+    - MATH 113
+    - SWE 321
+- - SYST 101
+  - []
+- - SYST 210
+  - - SYST 101
+- - SYST 371
+  - []
+- - SYST 470
+  - - MATH 104
+    - MATH 105
+    - MATH 113
+    - MATH 114
+    - MATH 115
+    - MATH 116
+    - MATH 123
+    - MATH 124
+    - STAT 344
+    - SYST 101
+    - SYST 210

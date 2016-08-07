@@ -166,6 +166,13 @@ end
 # or else all of the downstream data gets polluted
 
 
+# NOTE: ENGL course code needs to be manually removed
+# there are no ENGL courses, but ENGL codes are listed for prereqs in some cases
+# (the reason for this is that ENGL -> ENGH in recent years)
+
+
+
+
 # assumes that all the data you need is already loaded up into Mongo
 file 'data/CS_BS_requirements.yaml' do
 	# main_requirements.each do |course_info|

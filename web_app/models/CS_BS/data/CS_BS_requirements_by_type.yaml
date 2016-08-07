@@ -1,0 +1,111 @@
+---
+:required:
+- CS 101
+- CS 105
+- CS 112
+- CS 211
+- CS 262
+- CS 306
+- CS 310
+- CS 321
+- CS 330
+- CS 367
+- CS 465
+- CS 483
+- ECE 301
+- MATH 113
+- MATH 114
+- MATH 125
+- MATH 203
+- MATH 213
+- STAT 344
+- COMM 100
+:elective:
+- CS 463
+- CS 471
+- CS 475
+- CS 425
+- CS 440
+- CS 450
+- CS 451
+- CS 455
+- CS 463
+- CS 468
+- CS 469
+- CS 471
+- CS 475
+- CS 477
+- CS 480
+- CS 482
+- CS 484
+- CS 485
+- CS 490
+- CS 499
+- MATH 446
+- OR 481
+- STAT 354
+- OR 335
+- OR 441
+- OR 442
+- ECE 280
+- ECE 431
+- ECE 447
+- ECE 450
+- ECE 511
+- SWE 432
+- SWE 437
+- SWE 443
+- SYST 371
+- SYST 470
+- PHIL 371
+- ENGH 388
+- PHIL 376
+- ASTR 111
+- ASTR 112
+- ASTR 113
+- ASTR 114
+- BIOL 103
+- BIOL 104
+- CHEM 211
+- CHEM 213
+- CHEM 212
+- CHEM 214
+- EVPP 110
+- EVPP 111
+- GEOL 101
+- GEOL 102
+- PHYS 160
+- PHYS 161
+- PHYS 260
+- PHYS 261
+:unclear:
+  Additional Humanities (3 credits):
+    :credits: 3
+    :description: Students must complete three additional credits of Humanities courses.  This
+      can be fulfilled by any Mason Core course except those listed under Information
+      Technology, Synthesis, Quantitative Reasoning, or Natural Science.  Students
+      wishing to substitute alternate courses for this requirement must obtain departmental
+      approval.
+    :data: |
+      ANY Mason Core
+      EXCEPT Information Technology
+      Synthesis
+      Quantitative Reasoning
+      Natural Science
+      or alternates with departmental approval
+  Additional Mason Core (21 credits):
+    :credits: 21
+    :description: Students must complete all Mason Core requirements not fulfilled
+      by major requirements.
+    :data: |
+      Written Communication: 6 credits
+      Literature: 3 credits
+      Arts: 3 credits
+      Western Civilization/World History: 3 credits
+      Social and Behavioral Science: 3 credits
+      Global Understanding: 3 credits
+    'Note:': CS majors must take the Natural Sciences section of ENGH 302.
+  Electives (4 credits):
+    :credits: 4
+    :description: Students must complete 4 elective credits.
+    :data: ''

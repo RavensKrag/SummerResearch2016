@@ -1,0 +1,43 @@
+---
+- type: TypeA
+  url: http://catalog.gmu.edu/preview_course.php?catoid=29&coid=306130
+  catalog_year: 2016-2017
+  course_id: PSYC 320
+  title: Psychological Tests and Measurements
+  credits: '4' # why is this not an actual number ???. REASON: because it's not always a single number. EX: REAL 796 - "Credits: 1-6"
+  attempts: Not Repeatable for Credit
+  department: Psychology
+  Description: |-
+     
+
+    Examination and application of principles underlying the theory, interpretation, and administration of psychological tests, including a study of tests of intelligence, achievement, and ability.
+  Prerequisite(s): PSYC 300, or permission of instructor.
+  Schedule Type: LAB,
+  Hours of Lecture or Seminar per week: 3
+  Hours of Lab or Studio per week: 2
+- type: TypeB
+  url: http://catalog.gmu.edu/preview_course.php?catoid=29&coid=303982
+  catalog_year: 2016-2017
+  course_id: EVPP 110
+  title: 'The Ecosphere: An Introduction to Environmental Science I'
+  credits: '4'
+  attempts: Not Repeatable for Credit
+  department: Environmental Science and Policy
+  Description: "Designated a \n\n.\n\nFulfills Mason Core requirement in natural science
+    (lab)."
+  Notes: One of two semesters of environmental lab science that fulfills Mason Core
+    science requirements for non science majors. Along with EVPP 111, can be taken
+    in any order.
+  Schedule Type: LAB,
+  Hours of Lecture or Seminar per week: 3
+  Hours of Lab or Studio per week: 3
+- type: TypeC
+  url: http://catalog.gmu.edu/preview_course.php?catoid=29&coid=308635
+  catalog_year: 2016-2017
+  course_id: Mason Core UGU
+  title: Global Understanding
+  credits: 
+  attempts: 
+  department: 
+  Credits: '3'
+  Course List: content.php?catoid=29&navoid=6167#Global
