@@ -232,7 +232,13 @@ def json_directional(name, logger)
 	# 2) source YAML file was modified
 	if regenerate_graph or @graphs[short_path].nil?
 		@graphs[short_path] = SummerResearch::DependencyGraph.new.tap do |graph|
-			raw_data = Models::Utilities.load_yaml_file(short_path)
+			raw_data = 
+				if name.include? 'split'
+					Models::Utilities.load_yaml_file "public/#{name}.yaml"
+				else
+					Models::Utilities.load_yaml_file(short_path)
+				end
+				
 			
 			# NOTE: just get the node and vert information first. The data will be converted to the proper output format later.
 			
@@ -314,7 +320,45 @@ def json_directional(name, logger)
 	
 	
 	
-	return graph.to_json_d3v3_cola(required_courses, elective_courses)
+	
+	
+	
+	requirements_file = 'data/CS_BS_requirements.yaml'
+	@rake[requirements_file].invoke
+	
+	degree_requirements = Models::Utilities.load_yaml_file(requirements_file)
+	degree_requirements
+	
+	elective_category = 
+		degree_requirements.select{   |name, sector|  sector[:data].is_a? Hash }
+		                   .collect { |name, sector|
+		                   	 sector[:data].collect{ |category, course_id|
+		                   	 	[course_id, name]
+		                   	 }
+		                   }
+		                   .flatten(1) # array of [course_id, name] pairs
+	
+	# convert [course_id, name] relation into { course_id => i }, where i is an integer corresponding to 'name' in a list of all values for 'name'
+	elective_category = elective_category.to_h
+	
+	name_list = elective_category.values.uniq
+	name_to_number = name_list.each_with_index.to_h
+	
+	logger.info name_list.inspect
+	
+	elective_category = 
+		elective_category.collect{ |course_id, name|
+			[course_id].flatten.collect { |id|
+				[ id, name_to_number[name] ]
+			}
+		}
+		.flatten(1)
+		.to_h
+	
+	logger.info elective_category.inspect
+	
+	
+	return graph.to_json_d3v3_cola(required_courses, elective_courses, elective_category)
 	
 	
 	
@@ -527,7 +571,7 @@ def json_directional(name, logger)
 	
 	color_key ||= {
 		:gated_elective_clump   => "#10D588",  # light green
-		:link_to_other_graph    => "#3399FF",  # blue
+		:split_link             => "#3399FF",  # blue
 		
 		:required               => "#CC2300",  # red / orange
 		:elective               => "#242424",  # black

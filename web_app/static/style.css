@@ -75,11 +75,20 @@ svg path{
 	stroke-width: 2px;
 }
 
+.link{
+	/*stroke: #1d90b0;*/
+}
+
+g.node{
+	stroke: rgb(24, 65, 95);
+	/*stroke: #000000;*/
+}
+
 .gated-elective-clump{
 	fill: #10D588; /* light green */
 }
 
-.link-to-other-graph{
+.split-link{
 	fill: #3399FF; /* blue */
 }
 
@@ -92,6 +101,7 @@ svg path{
 }
 
 .not-required{
+	
 	fill: #AAAAAA; /* grey */ 
 }
 
@@ -100,10 +110,29 @@ svg path{
 	fill:  #AA0000; /* bright red */
 }
 
+.type-1 {
+	fill: rgb(1 0 103); /* grey */ 
+}
+
+.type-2 {
+	fill: rgb(213 255 0); /* grey */ 
+}
+
+.type-3 {
+	fill: rgb(255 0 86); /* grey */ 
+}
+
+.type-4 {
+	fill: rgb(158 0 142); /* grey */ 
+}
+
+.type-5 {
+	fill: rgb(14 76 161); /* grey */ 
+}
+
 svg circle{
 	fill:  rgb(31, 119, 180);
 }
-
 
 
 

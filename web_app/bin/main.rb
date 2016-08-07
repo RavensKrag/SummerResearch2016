@@ -182,8 +182,8 @@ get '/graphs/:name/graph' do
 		:d3_version => '3.5.17',
 		
 		:stylesheets => [
+			'downward_edges_example.css',
 			'style.css',
-			'downward_edges_example.css'
 		],
 		
 		:test => 'hello world',

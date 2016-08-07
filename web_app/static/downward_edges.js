@@ -6,7 +6,7 @@
 var width = 560,
     height = 500;
 
-var color = d3.scale.category20();
+var color = d3.scale.category20b();
 
 var d3cola = cola.d3adaptor()
     .avoidOverlaps(true)
@@ -22,7 +22,8 @@ d3.json("dynamic_data.json", function (error, graph) {
     
     var nodeRadius = 8;
     
-    graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeRadius; });
+    // graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeRadius; });
+    graph.nodes.forEach(function (v) { v.height = v.width = 20; });
     
     d3cola
         .nodes(graph.nodes)
@@ -70,15 +71,33 @@ d3.json("dynamic_data.json", function (error, graph) {
              .attr("class", function(d) { 
                 return d.class;
              })
-             .style("stroke", "black")
-             // .style("fill", "white")
+             // .style("stroke", "black")
+             // .style("fill", function(d){
+             //    return color(d.elective_type);
+             // })
              .attr("d", d3.svg.symbol()
                           .size(100)
                           .type(function(d) { if
                              (d.class == 'required'     ) { return "circle"; } else if
                              (d.class == 'elective'     ) { return "square";} else if
-                             (d.class == 'not-required' ) { return "triangle-up";}
-                           }));  
+                             (d.class == 'not-required' ) { return "triangle-up";} else if
+                             (d.class == 'split-link'   ) { return "cross";}
+                           }));
+    
+    
+    color.domain([0,1,2,3,4,5,6,7,8,9,10]);
+    nodeEnter.selectAll('.elective')
+             .style("fill", function(d){
+                console.log(d.elective_type);
+                return color(d.elective_type);
+             });
+    
+    console.log(color.range());
+    
+    
+    // TODO: send and bind additional data showing the different categories that electives can be placed into. Want to show color swatches next to text descriptions of the different categories. ie: pick two of these color nodes.
+    d3.select('div#swatch-container').selectAll('div.swatch')
+      ;
     
     // nodeEnter.append("text")
     //       // .attr("x", function(d) { 

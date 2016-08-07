@@ -101,7 +101,7 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 	
 	# export nodes and edges to JSON
 	# as well as constraints
-	def to_json_d3v3_cola(required_courses, elective_courses)
+	def to_json_d3v3_cola(required_courses, elective_courses, elective_category)
 		vert_to_i_table = self.vertices.each_with_index.to_a.to_h
 		
 		
@@ -110,12 +110,22 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 		out['nodes'] = 
 			self.vertices.each_with_index.collect do |v, i|
 				type = node_type(v, required_courses, elective_courses)
+				class_string = type.to_s.tr('_', '-')
+				
+				elective_type =
+					if type == :elective
+						elective_category[v]*2
+					else
+						-1
+					end
+				
 				
 				{
 					'name' => v,
 					'number' => i,
 					'chain_deps' => ancestors(v).to_a.collect{  |x| vert_to_i_table[x]  },
-					'class' => type.to_s.tr('_', '-')
+					'class' => class_string,
+					'elective_type' => elective_type
 				}
 			end
 		
@@ -186,7 +196,7 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 			:gated_elective_clump 
 		elsif course_string.include? '_'
 			# link to another sub-graph
-			:link_to_other_graph
+			:split_link
 		else
 			if required_courses.include? course_string
 				# required course
