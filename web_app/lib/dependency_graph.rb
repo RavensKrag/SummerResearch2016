@@ -190,10 +190,10 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 		else
 			if required_courses.include? course_string
 				# required course
-				:required_course
+				:required
 			elsif elective_courses.include? course_string
 				# an elective that can be applied to your major
-				:elective_for_requirements
+				:elective
 			else
 				# non-required
 				# (not an elective, but a non-core dependency)

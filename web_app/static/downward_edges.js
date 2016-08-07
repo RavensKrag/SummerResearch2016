@@ -20,7 +20,7 @@ var svg = d3.select("div#main").append("svg")
 d3.json("dynamic_data.json", function (error, graph) {
     if (error) throw error;
     
-    var nodeRadius = 5;
+    var nodeRadius = 8;
     
     graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeRadius; });
     
@@ -43,21 +43,57 @@ d3.json("dynamic_data.json", function (error, graph) {
         .attr('d', 'M0,-5L10,0L0,5')
         .attr('fill', '#000');
     
-    var path = svg.selectAll(".link")
+    var path =
+        svg.selectAll(".link")
         .data(graph.links)
-      .enter().append('svg:path')
-        .attr('class', 'link');
+        .enter()
+          .append('svg:path')
+          .attr('class', 'link');
     
-    var node = svg.selectAll(".node")
-        .data(graph.nodes)
-      .enter().append("circle")
-        .attr("class", function (d) {
-                return "node " + d.class; 
-            }
-        )
-        .attr("r", nodeRadius)
-        // .style("fill", function (d) { return color(d.group); })
-        .call(d3cola.drag);
+    
+    // code for varing symbols from here (has been edited a bit to integrate with the other stuff)
+    // src: bl.ocks.org/d3noob/11137963
+    
+    // Declare the nodes…
+    var node = svg.selectAll("g.node")
+      .data(graph.nodes, function(d) { return d.number; });
+    
+    // Enter the nodes.
+    var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { 
+          return "translate(" + d.y + "," + d.x + ")";
+      })
+      .call(d3cola.drag);
+    
+    nodeEnter.append("path")
+             .attr("class", function(d) { 
+                return d.class;
+             })
+             .style("stroke", "black")
+             // .style("fill", "white")
+             .attr("d", d3.svg.symbol()
+                          .size(100)
+                          .type(function(d) { if
+                             (d.class == 'required'     ) { return "circle"; } else if
+                             (d.class == 'elective'     ) { return "square";} else if
+                             (d.class == 'not-required' ) { return "triangle-up";}
+                           }));  
+    
+    // nodeEnter.append("text")
+    //       // .attr("x", function(d) { 
+    //       //     return d.children || d._children ? 
+    //       //     (d.value + 4) * -1 : d.value + 4
+    //       // })
+    //       // .attr("dy", ".35em")
+    //       // .attr("text-anchor", function(d) { 
+    //       //     return d.children || d._children ? "end" : "start"; })
+    //       .text(function(d) { return d.name; })
+    //       .style("fill-opacity", 1);
+    
+    
+    
+    
     
     node.append("title")
         .text(function (d) { return d.name; });
@@ -87,8 +123,10 @@ d3.json("dynamic_data.json", function (error, graph) {
             return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
         });
         
-        node.attr("cx", function (d) { return d.x; })
-            .attr("cy", function (d) { return d.y; });
+        
+        node.attr("transform", function(d) { 
+          return "translate(" + d.x + "," + d.y + ")";
+        });
     });
     // turn on overlap avoidance after first convergence
     //cola.on("end", function () {

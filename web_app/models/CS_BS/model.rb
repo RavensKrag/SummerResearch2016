@@ -526,12 +526,12 @@ def json_directional(name, logger)
 	# === style the nodes
 	
 	color_key ||= {
-		:gated_elective_clump      => "#10D588",  # light green
-		:link_to_other_graph       => "#3399FF",  # blue
+		:gated_elective_clump   => "#10D588",  # light green
+		:link_to_other_graph    => "#3399FF",  # blue
 		
-		:required_course           => "#CC2300",  # red / orange
-		:elective_for_requirements => "#242424",  # black
-		:not_required              => "#AAA"      # grey
+		:required               => "#CC2300",  # red / orange
+		:elective               => "#242424",  # black
+		:not_required           => "#AAA"      # grey
 	}
 	
 	required =
