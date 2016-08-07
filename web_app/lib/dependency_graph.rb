@@ -101,7 +101,7 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 	
 	# export nodes and edges to JSON
 	# as well as constraints
-	def to_json_d3v3_cola
+	def to_json_d3v3_cola(required_courses, elective_courses)
 		vert_to_i_table = self.vertices.each_with_index.to_a.to_h
 		
 		
@@ -109,10 +109,13 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 		
 		out['nodes'] = 
 			self.vertices.each_with_index.collect do |v, i|
+				type = node_type(v, required_courses, elective_courses)
+				
 				{
 					'name' => v,
 					'number' => i,
-					'chain_deps' => ancestors(v).to_a.collect{  |x| vert_to_i_table[x]  }
+					'chain_deps' => ancestors(v).to_a.collect{  |x| vert_to_i_table[x]  },
+					'class' => type.to_s.tr('_', '-')
 				}
 			end
 		
@@ -160,6 +163,46 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 		constraints = c1
 		
 		return constraints
+	end
+	
+	
+	
+	
+	
+	def node_type(course_string, required_courses, elective_courses)
+		# if course_string.split(' ')[0] != 'CS'
+			# "#10D588"
+		# if course_string.split.collect{|x| x.to_i }.include? 0
+		# 	# something in the list was not a number.
+		# 	# normal department codes were given
+		# else
+			
+		# end
+		
+		
+		
+		if course_string.include? '?'
+			# elective clump gated by one or more courses
+			:gated_elective_clump 
+		elsif course_string.include? '_'
+			# link to another sub-graph
+			:link_to_other_graph
+		else
+			if required_courses.include? course_string
+				# required course
+				:required_course
+			elsif elective_courses.include? course_string
+				# an elective that can be applied to your major
+				:elective_for_requirements
+			else
+				# non-required
+				# (not an elective, but a non-core dependency)
+				:not_required
+			end
+		end
+		
+		
+		# '?' and elective.include? are competing for priority
 	end
 end
 

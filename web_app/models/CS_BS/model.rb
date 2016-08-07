@@ -297,7 +297,44 @@ def json_directional(name, logger)
 	raise "Could not find DependencyGraph data. Should have been generated after #{short_path} was made, but it seems like that as not the case." if graph.nil?
 	
 	
-	return graph.to_json_d3v3_cola
+	
+	
+	
+	
+	
+	requirement_by_type_file = 'data/CS_BS_requirements_by_type.yaml'
+	@rake[requirement_by_type_file].invoke
+	
+	requirement_by_type = Models::Utilities.load_yaml_file(requirement_by_type_file)
+	
+	
+	
+	required_courses = requirement_by_type[:required].to_set
+	elective_courses = requirement_by_type[:elective].to_set
+	
+	
+	
+	return graph.to_json_d3v3_cola(required_courses, elective_courses)
+	
+	
+	
+	
+	
+	requirements_file = 'data/CS_BS_requirements.yaml'
+	@rake[requirements_file].invoke
+	
+	degree_requirements = Models::Utilities.load_yaml_file(requirements_file)
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	raw_data2 = Models::Utilities.load_yaml_file short_path
