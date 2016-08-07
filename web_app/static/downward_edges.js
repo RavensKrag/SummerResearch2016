@@ -164,26 +164,41 @@ d3.json("dynamic_data.json", function (error, graph) {
     
     
     
-    
+    var paths_to_highlight;
     node.on('mouseover', function(hovered) {
         // console.log("callback");
         // console.log(hovered);
         course_info_display(hovered);
         
-        path.filter(function (d) {
-            set = new Set(hovered.chain_deps);
-            set.add(hovered.number);
-            
-            // console.log(set);
-            
-            return set.has(d.source.number) && 
-                   set.has(d.target.number);
-        })
+        set = new Set(hovered.chain_deps);
+        set.add(hovered.number);
+        
+        // console.log(set);
+        
+        
+        paths_to_highlight = 
+          path.filter(function (d) {
+              return set.has(d.source.number) && 
+                     set.has(d.target.number);
+          })
+        
+        paths_to_highlight
         .attr('style', 'stroke: red;');
         // TODO: apply a style instead (better coding style, but more complicated)
+        
+        
+        
+        nodes_to_highlight = 
+          node.filter(function (d) {
+              return set.has(d.number);
+          })
+        
+        nodes_to_highlight
+        .attr('style', 'stroke: red;');
     })
     .on("mouseout", function(d) {
-        path.attr('style', '');
+        paths_to_highlight.attr('style', '');
+        nodes_to_highlight.attr('style', '');
     })
 });
 
