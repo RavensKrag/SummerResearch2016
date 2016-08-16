@@ -153,6 +153,7 @@ class DependencyGraph < RGL::DirectedAdjacencyGraph
 					'name' => v,
 					'number' => i,
 					'chain_deps' => ancestors(v).to_a.collect{  |x| vert_to_i_table[x]  },
+					'descendants' => descendants(v).to_a.collect{  |x| vert_to_i_table[x]  },
 					'class' => class_string,
 					'elective_type' => elective_type
 				}

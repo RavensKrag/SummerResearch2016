@@ -164,7 +164,6 @@ d3.json("dynamic_data.json", function (error, graph) {
     
     
     
-    var paths_to_highlight;
     node.on('mouseover', function(hovered) {
         // console.log("callback");
         // console.log(hovered);
@@ -195,10 +194,38 @@ d3.json("dynamic_data.json", function (error, graph) {
         
         nodes_to_highlight
         .attr('style', 'stroke: red;');
+        
+        
+        
+        
+        
+        
+        forward_set = new Set(hovered.descendants);
+        forward_set.add(hovered.number);
+        
+        forward_edges = 
+          path.filter(function (d) {
+              return forward_set.has(d.source.number) && 
+                     forward_set.has(d.target.number);
+          })
+        
+        forward_edges
+        .attr('style', 'stroke: blue;');
+        
+        forward_nodes = 
+          node.filter(function (d) {
+              return forward_set.has(d.number);
+          })
+        
+        forward_nodes
+        .attr('style', 'stroke: blue;');
     })
     .on("mouseout", function(d) {
         paths_to_highlight.attr('style', '');
         nodes_to_highlight.attr('style', '');
+        
+        forward_edges.attr('style', '');
+        forward_nodes.attr('style', '');
     })
 });
 
