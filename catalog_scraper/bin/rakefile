@@ -15,7 +15,7 @@ require 'yaml'
 require 'csv'
 require 'set'
 require 'open-uri'
-
+require 'csv'
 
 # constants
 PATH_TO_FILE = File.expand_path(File.dirname(__FILE__))
@@ -1385,6 +1385,63 @@ task :qian_hu_data do
 		end
 	end
 	
+end
+
+
+
+
+task :thi_data do
+	@mongo_ip      = "127.0.0.1"
+	@mongo_port    = "12345"
+	@mongo_address = [@mongo_ip, @mongo_port].join(':')
+	@mongo = Mongo::Client.new([ @mongo_address ], :database => 'mydb')
+	
+	
+	@mongo[:course_info].tap do |mongo|
+		courses_from_this_year = 
+			mongo.find(
+					:catalog_year => "2016-2017"
+				).sort(
+					:course_id => 1 # 1 or -1 to control the order
+				)
+		
+		course_info_list = 
+			courses_from_this_year.collect do |mongo_bson|
+				SummerResearch::CourseInfo.load(mongo_bson)
+			end
+		
+		
+		puts "data points: #{course_info_list.size}"
+		course_info_list.each do |info|
+			# info.to_h.keys
+		end
+		
+		
+		possible_keys = courses_from_this_year.collect{ |info|  info.to_h.keys }.flatten.uniq
+		possible_keys.delete "_id" # Mongo-specific key
+		possible_keys.delete "type" # depreciated key
+		p possible_keys
+		
+		
+		# first row lists the schema, each other row lists values
+		# NOTE: the number of rows in the text file is not equal to the number of CSV rows, because of multi-line strings.
+		
+		data = 
+			CSV.generate do |csv|
+				csv << possible_keys
+				
+				courses_from_this_year.each do |info|
+					# p info
+					info["Description"].strip!
+					
+					row = possible_keys.collect{|k| info[k]}
+					csv << row
+					
+				end
+			end
+		
+		SummerResearch::Utilities.write_to_file("./thi_data_csv.csv", data)
+	end
 end
 
 
