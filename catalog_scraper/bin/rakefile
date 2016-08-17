@@ -212,15 +212,98 @@ task :wipe_mongo => [SQLITE_DATABASE_FILEPATH] do
 end
 
 
+namespace :fetch_all do
+	task :populate_index => SQLITE_DATABASE_FILEPATH
+	file SQLITE_DATABASE_FILEPATH do
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		@catalog.fetch_full_index()
+		# START: 10:32 PM, Aug 1, 2016
+		# END:   11:28 PM, Aug 1, 2016
+	end
+	
+	
+	
+	# fetch all of the data in the catalog, and put it into a Mongo database
+	task :populate_mongo_db => SQLITE_DATABASE_FILEPATH do
+		# START: 11:32 PM, Aug 1, 2016
+		# END:    1:15 AM  Aug 2 (incomplete. ~2 years worth of data. stopped a couple times)
+		
+		filepath = File.expand_path(
+			'./all_fetch_logfile.txt',
+			SummerResearch::Utilities::DATA_DIR
+		)
+		
+		
+		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+		
+		@catalog.activerecord_query do |course_model, catologyear_model|
+			catologyear_model.all.order("year_range DESC").each do |year_record|
+				File.open(filepath, 'a') do |f|
+					f.puts year_record.inspect
+				end
+				
+				
+				all_courses_in_year = 
+					year_record.courses
+					           .order(:dept)
+					           .reject{|course| course.dept == "Mason Core"}
+				
+				# --- Try to fetch information for all courses in the desired set.
+				#     If you can't process a course, just keep going, but log some error data.
+				#     This error log can be examined later to determine new CatalogInfo Types.
+				# TODO: would be nice if you could have some sort of progress indicator for this.
+					
+				all_courses_in_year.each do |course_record|			
+					begin
+						@catalog.fetch_course_info(course_record)
+					rescue StandardError => e
+						File.open(filepath, 'a') do |f|
+							f.puts "course id:   #{course_record.course_id}"
+							# TODO: Add short description to index
+							# f.puts "description: #{course.description}"
+							f.puts "url:         #{course_record.url}"
+							
+							# output the data from the exception
+							# (the program will still continue to run)
+							# (resulting in all errors printed in one place)
+							f.puts e.message
+							e.backtrace.each do |line|
+								f.puts "\t" + line
+								# indent the lines of the backtrace.
+								# makes it easier to see things when you start getting multiple errors
+							end
+							f.puts "=============="
+							f.puts
+							f.puts
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+task :get_info do
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+	p @catalog.course_info("STAT 344")
+end
 
 
 
 
 
 
+
+
+
+
+# search for relevant programs of study
+# 'list_of_degrees' specifies a list of keywords to search for.
+# All relevant programs of study will be outputted to
+# the 'programs_of_study.yaml' file in the data directory
 file 'data/programs_of_study.yaml' do
 	puts "=== setup data"
-	# search for relevant programs of study
 	
 	list_of_degrees = [
 		"Computer Science",
@@ -241,1216 +324,18 @@ file 'data/programs_of_study.yaml' do
 end
 
 
-# List all the courses required for one particular program of study.
-# Currently not a very advanced procedure, just grabs all of the links on the page.
-# (modern equavialent of foo2)
-file 'data/required_courses.yaml' => 'data/programs_of_study.yaml' do
-	@programs_of_study ||= YAML.load_file("data/programs_of_study.yaml")
-	
-	
-	# TODO: output data on different degrees to different folders.
-	
-	program_name = "Computer Science, BS"
-	url = @programs_of_study[program_name]
-	course_list = all_courses_for_degree(url)
-	
-	SummerResearch::Utilities.write_to_file("./required_courses.yaml", course_list.to_yaml)
-	
-	@required_courses = course_list
-end
-
-
-
-# assumes that all the data you need is already loaded up into Mongo
-file 'data/all_dependencies.yaml' => SQLITE_DATABASE_FILEPATH do
-	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-	
-	@catalog.mongo_query(:course_info) do |mongo|
-		courses_from_this_year = 
-			mongo.find(
-				:catalog_year => "2016-2017"
-			).sort(
-				:course_id => 1
-			)
-		
-		# p data.to_a
-		
-		
-		# === parse direct prereqs for each and every class
-		
-		data = Hash.new
-		%w[Prerequisite(s) Corequisite(s) Notes].each do |category_name|
-			data[category_name] = Hash.new
-			
-			courses_from_this_year.collect do |mongo_bson|
-				course_info =  SummerResearch::CourseInfo.load(mongo_bson)
-				
-				
-				
-				name = course_info.id
-				
-				deps = course_info[category_name]
-					# puts "=>  #{deps.inspect}"
-				deps = deps.nil? ? [] : parse_dependencies(deps)
-					# puts "=>  #{deps.inspect}"
-				deps = [] if deps.nil?
-					# puts "=>  #{deps.inspect}"
-				
-				# oooh yeah. parse_dependencies can return nil, even if the dependencies field is set
-					# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
-				
-				
-				raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
-				
-				
-				data[category_name][name] = deps
-			end
-		end
-		
-		# === convert to desired output format
-		SummerResearch::Utilities.write_to_file('./all_dependencies.yaml', data.to_yaml)
-	end
-end
-# NOTE: need to manually update a record
-# change 
-	# CS-321:CS-310,ENGH-302,CS-421,SWE-421,CS-321
-# to
-	# CS-321:CS-310,ENGH-302
-# (the reason is that those are not actually prereqs, the record for CS 321 says "Students who have received credit for CS 421 or SWE 421 may not take CS 321.")
-
-# Actually, in general
-# SWE 421 and CS 421 need to be removed from the file that this procedure generates
-# or else all of the downstream data gets polluted
-
-
-# assumes that all the data you need is already loaded up into Mongo
-namespace :cs_requirements do
-	file 'data/CS_BS_requirements_by_type.yaml' => SQLITE_DATABASE_FILEPATH do
-		@required_courses ||= YAML.load_file('data/required_courses.yaml')
-		
-		
-		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		
-		
-		# filter out the main Mason Core page. This is not a class, but an overview of the entire core curriculum
-		
-		# main_requirements = 
-		# 	@required_courses
-		# 	.reject{|catalog_link| catalog_link.id == "Mason Core"}
-		# 	.collect do |catalog_link|
-		# 		id = catalog_link.id
-				
-		# 		# puts "============"
-		# 		# p id
-		# 		data = @catalog.course_info(id)
-		# 		# p data
-				
-		# 		data
-		# 	end
-		
-		# main_requirements.each do |course_info|
-			# "C or higher in CS 105; (COMM 100, and ENGH 302) or (HNRS 110 and HNRS 122, 130, 131, 230 or 240); junior standing (at least 60 credit hours)."
-			# ERROR: can't deal with 'or 240'
-			# ERROR: can't deal with 'at least 60 credit hours' => 'least 60'
-			
-			# "Grade of C or better in CS 310, 330, and 367."
-			# ERROR: can't deal with 'CS 310, 330, and 367' => 'and 367'
-			
-			# CS 499 
-			# Prerequisite(s): 60 credits and permission of instructor; specific prerequisites vary with nature of topic.
-			
-			# PHIL 371 - Philosophy of Natural Sciences
-			# Prerequisite(s): "3 credits of philosophy, or permission of instructor"
-			
-			
-			
-			
-			# SWE 443 - Software Architectures
-			# Prerequisite(s): Grade of C or better in CS 321 or CS 421 or SWE 321 or SWE 421.
-			# IIRC, 421 was re-numbered to 321.
-			# Notice that the numbers are the same for CS and SWE
-			# this is a cross-listed course.
-				# (note that some cross listed courses are exactly the same, but there's some OR course that's not? depending on if you take it as OR or MATH, there are a different number of seats avaiable in the class, and the prereqs are fairly different. This is despite it being the exact same physical lecture section.)
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			# "math placement test"
-			# "Placement Test"
-			# "Mathematics Placement Test"
-			
-			# "algebra tutorial program"
-			
-			
-			
-			
-			# HNRS 122, 130, 131, 230 or 240
-			# CS 262 or 222
-			# ECE 301 or 331
-			# CS 310, 330, and 367
-			# "Grade of C or better in CS 310, 330, and 367."
-			# MATH 123 and 124
-			# "C or better in MATH 113 or in both MATH 123 and 124."
-			
-			
-			
-			
-			# "Completion of 45 credits including the Mason core composition and literature requirements, requires a grade of C or better."
-			# => ["of 45"]
-			
-			# "Score of 13 or better on the Math Placement Test, or Grade of C or better in MATH 105, or Grade of C or better in MATH 108, or Grade of C or better in MATH 113."
-			# => ["of 13", "MATH 105", "MATH 108", "MATH 113"]
-			
-			# "C or higher in STAT 346 and a course in Statistics, or STAT 344."
-			# "a course in Statistics" ???
-				# ACS Gaming specifies that you can take "344 or a course in statistics relevant to your major" [paraphrased] so I have seen precedience for this sort of loose dependency around stat.
-				# (but IIRC there aren't currently any courses like that offered at Mason? so why is there this stipulation at all? future-proofing?)
-				# 
-				# (future-proofing is a cool backend-y sort of thing, but it's weird for that to be exposed to students / other end users)
-			
-			
-			
-			
-			
-			# # "#{course} with grade of C or better"
-			# # "Minimum grade of C in #{course}"
-			# soft_deps = 
-			# 	if course_info["Notes"]
-			# 		# [0] PHYS 161
-			# 		# [1] PHYS
-			# 		# [2] 161
-					
-			# 		# soft_deps = course_info["Notes"].scan(regexp).collect{ |matches| matches[0] }
-			# 		[] # pseudo-return empty array to stub this out
-			# 	else
-			# 		[] # if "Notes" attribute not set, return empty Array
-			# 	end
-			
-			
-			# # p hard_deps
-			# # p soft_deps
-			# dependencies = hard_deps + soft_deps
-			
-			
-			# # p dependencies.flatten.compact.uniq
-			# puts "---------"
-			
-			
-			
-			# # === generate "source code"
-			# puts ">>>>>>>>>>"
-			# all_deps_text =
-			# %w[Prerequisite(s) Corequisite(s)]
-			# 	.collect do |x|
-			# 		requirements = course_info[x]
-			# 	end
-			
-			# all_deps_text = all_deps_text.join("\n")
-			
-			# # p all_deps_text
-			# # enum =  lexer.lex(all_deps_text)
-			# # p enum.to_a
-			
-			# parse_dependencies(all_deps_text)
-		# end
-		
-		
-		
-		
-		degree_requirements = {
-			"Computer science core (36 credits)" => {
-				:credits => 36,
-				:data => [
-					"CS 101",
-					"CS 105",
-					"CS 112",
-					"CS 211",
-					"CS 262",
-					"CS 306",
-					"CS 310",
-					"CS 321",
-					"CS 330",
-					"CS 367",
-					"CS 465",
-					"CS 483",
-					"ECE 301"
-				]
-			},
-			
-			"Senior computer science (15 credits)" => {
-				:credits => 15,
-				
-				:data => {
-					"One of the following:" => [
-						"CS 463",
-						"CS 471",
-						"CS 475"
-					],
-					
-					"And four additional courses chosen from:" => [
-						"CS 425",
-						"CS 440",
-						"CS 450",
-						"CS 451",
-						"CS 455",
-						"CS 463",
-						"CS 468",
-						"CS 469",
-						"CS 471",
-						"CS 475",
-						"CS 477",
-						"CS 480",
-						"CS 482",
-						"CS 484",
-						"CS 485",
-						"CS 490",
-						"CS 499",
-						# "MATH 446 or OR 481" # FIGURE THIS OUT
-						"MATH 446",
-						"OR 481"
-					]
-				},
-				
-				"Note:" => "Only three credits of CS 499 can be used toward the senior computer science requirement."
-			},
-			
-			"Mathematics (17 credits)" => {
-				:credits => 17,
-				
-				:data => [
-					"MATH 113",
-					"MATH 114",
-					"MATH 125",
-					"MATH 203",
-					"MATH 213"
-				]
-			},
-			
-			"Statistics (3 credits)" => {
-				:credits => 3,
-				
-				:data => [
-					"STAT 344"
-				]
-			},
-			
-			"Computer science-related courses (6 credits)" => {
-				:credits => 6,
-				
-				:data => {
-					"Two courses chosen from:" => [
-						"STAT 354",
-						"OR 335",
-						"OR 441",
-						"OR 442",
-						"ECE 280",
-						"ECE 431",
-						"ECE 447",
-						"ECE 450",
-						"ECE 511",
-						"SWE 432",
-						"SWE 437",
-						"SWE 443",
-						"SYST 371",
-						"SYST 470",
-						"PHIL 371",
-						"ENGH 388",
-						# "Any MATH or CS course numbered above 300 (except MATH 351)", # FIGURE THIS OUT
-						"PHIL 376",
-					]
-				},
-				
-				"Note:" => "Students may need to choose electives to satisfy prerequisites for these courses. Those planning to take MATH 352 may replace STAT 344 with MATH 351."
-			},
-			
-			"Natural Science (12 credits)" => {
-				:credits => 12,
-				
-				:description => "The BS in Computer Science requires 12 credits of natural science.  The courses should be intended for science and engineering students and must include a two course sequence with laboratories.  Some approved combinations have a total of more than 12 hours.  Approved two course sequences with laboratories are:",
-				
-				# each pair is a two-course lab sequence. must take both items in a pair
-				:data => {
-					"Astronomy:" => [
-						["ASTR 111", "ASTR 112"],
-						["ASTR 113", "ASTR 114"]
-					],
-					 
-					"Biology:" => [
-						["BIOL 103", "BIOL 104"]
-					],
-					"Chemistry:" => [
-						["CHEM 211", "CHEM 213"],
-						["CHEM 212", "CHEM 214"]
-					],
-					 
-					"Environmental Science:" => [
-						["EVPP 110", "EVPP 111"]
-						 
-					],
-					"Geology:" => [
-						["GEOL 101", "GEOL 102"]
-						 
-					],
-					"Physics:" => [
-						["PHYS 160", "PHYS 161"],
-						["PHYS 260", "PHYS 261"]
-					]
-				}
-			},
-			
-			"Communication (3 credits)" => {
-				:credits => 3,
-				
-				:description => "Computer Science students must make a technical presentation.  This course fulfills the  Mason Core requirement in oral communication.",
-				
-				:data => [
-					"COMM 100"
-				]
-			},
-			
-			"Additional Humanities (3 credits)" => {
-				:credits => 3,
-				
-				:description => "Students must complete three additional credits of Humanities courses.  This can be fulfilled by any Mason Core course except those listed under Information Technology, Synthesis, Quantitative Reasoning, or Natural Science.  Students wishing to substitute alternate courses for this requirement must obtain departmental approval.",
-				
-				
-				:data => 
-				"	ANY Mason Core
-					EXCEPT Information Technology
-					       Synthesis
-					       Quantitative Reasoning
-					       Natural Science
-					
-					or alternates with departmental approval
-				".lines.collect{|l| l.lstrip }.join
-			},
-			
-			"Additional Mason Core (21 credits)" => {
-				:credits => 21,
-				
-				:description => "Students must complete all Mason Core requirements not fulfilled by major requirements.",
-				
-				:data => 
-				"	Written Communication: 6 credits
-					Literature: 3 credits
-					Arts: 3 credits
-					Western Civilization/World History: 3 credits
-					Social and Behavioral Science: 3 credits
-					Global Understanding: 3 credits
-				".lines.collect{|l| l.lstrip }.join,
-				
-				"Note:" => "CS majors must take the Natural Sciences section of ENGH 302."
-			},
-			
-			"Electives (4 credits)" => {
-				:credits => 4,
-				:description => "Students must complete 4 elective credits.",
-				:data => ''
-			}
-		}
-		
-		
-		SummerResearch::Utilities.write_to_file(
-			'./CS_BS_requirements.yaml', degree_requirements.to_yaml
-		)
-		
-		
-		# Explanation of how the requirements data format works:
-		# -----
-		# 
-		# for sectors with options, :data is a hash.                    (electives)
-		# for sectors where ALL items must be taken, :data is an array. (required)
-		# for sectors where information given was not parsable, :data is a string.
-			# Sometimes, it may be an empty string,
-			# as the only relevant information in the sector
-			# was used to populat the :description field instead.
-		# :description is a category I created,                         (implict category)
-		# which describes the text before classes are listed
-		# (at least for CS BS). 
-		# on the other hand,
-		# "Note:" is a sector explictly marked in the Program of Study page for the CS BS
-			# notice the difference in key type,
-					# symbol: implict type created by me.
-					# string: something declared by the catalog.
-		# -------------------------------------------------------
-		
-		
-		
-		
-		
-		# standard core courses can be replaced by Honors College stuff,
-		# but there is no clear 1-to-1 equivalence between Honors and Mason Core classes.
-		# (because Honors provides interdiciplinary approaches)
-		standard_core = [
-			degree_requirements["Additional Humanities (3 credits)"],
-			degree_requirements["Additional Mason Core (21 credits)"]
-		]
-		
-		
-		
-		
-		
-		
-		
-		requirements_by_type = {
-			:required =>
-				degree_requirements.select{ |name, sector|  sector[:data].is_a? Array }
-				                   .collect{  |name, sector|  sector[:data] }
-				                   .flatten,
-			
-			:elective =>
-				degree_requirements.select{   |name, sector|  sector[:data].is_a? Hash }
-				                   .collect{  |name, sector|  sector[:data].values }
-				                   .flatten,
-			
-			:unclear  => degree_requirements.select{ |name, sector|  sector[:data].is_a? String }
-		}
-		
-		
-		
-		out = requirements_by_type
-		
-		SummerResearch::Utilities.write_to_file('./CS_BS_requirements_by_type.yaml', out.to_yaml)
-	end
-	
-	# this data was used to generate the inital graphs in D3
-	# it was generated through this process, and then manually copied over to the 'web_app'
-	task :data_dump => [SQLITE_DATABASE_FILEPATH, 'data/CS_BS_requirements_by_type.yaml'] do
-		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		
-		
-		
-		requirements_by_type = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-		
-		
-		filepath = 
-			File.expand_path(
-				'./data/CS_BS_data_dump.txt', 
-			)
-		File.open(filepath, 'w') do |f|
-			requirements_by_type.collect do |type, requirement_list|
-				next if type == :unclear
-				
-				course_info_list = requirement_list.collect{  |x| p x; @catalog.course_info(x)  }
-				
-				
-				
-				# bascially, just ignore this block
-				# enable this block to get the sample data used in the inital graphs
-				dependency_list = 
-					course_info_list.collect do |course_info|
-						puts ">>>>>>>>>>"
-						puts "#{course_info.id} - #{course_info.title}"
-						
-						all_deps_text_list =
-							%w[Prerequisite(s) Corequisite(s)]
-								.collect do |x|
-									requirements = course_info[x]
-								end
-						all_deps_text = all_deps_text_list.join("\n")
-						
-						
-						parse_dependencies(all_deps_text) || []
-					end
-				dependency_map = course_info_list.collect{|x| x.id}.zip(dependency_list).to_h
-				
-				
-				
-				f.puts "requirement type: #{type}"
-				f.puts "---"
-				f.puts dependency_map.inspect
-				f.puts
-			end
-		end
-	end
-	
-	
-	
-	
-	
-	# Start with prereq data first,
-	# then try to blend in co reqs,
-	# and the stuff from NOTES
-	sym = 
-		%w[prereq coreq notes].collect{|x| x.to_sym}
-		    .zip(%w[Prerequisite(s) Corequisite(s) Notes])
-		    .to_h
-	
-	
-	def chain_deps(list_of_course_ids, dependency_relation)
-		stack = Array.new
-		
-		list_of_course_ids.collect do |course_id|
-			set     = Set.new
-			
-			
-			deps = dependency_relation[course_id]
-			# p deps
-			
-			stack.concat deps unless deps.nil? # guard against intial list being nil
-			
-			
-			
-			until stack.empty? do
-				c = stack.pop
-				# p c
-				
-				deps = dependency_relation[c]
-				# p [deps, course_id]
-				
-				unless deps.nil?
-					# OPTIMIZATION: don't check deps of classes you have already checked.
-					# see if the class is in the set.
-					# if it is, you can ignore it and move on
-					deps = deps.reject{  |x| set.include? x  }
-						# WARNING: don't do in-place reject here. It will destroy the original dependency relation. What a nasty bug.
-					
-					# some prereqs may no longer exist in catalog. just ignore them
-					stack.concat deps 
-				end
-				
-				set.add c
-			end
-			# p set
-			# p [course_id, set.to_a.sort]
-			
-			# remove self from dep list
-			# that happens sometimes, because the incoming data is not totally correct 
-			[course_id, set.to_a.sort.reject{  |x| x == course_id  }]
-		end
-	end
-	
-	task :dep_chains => 'data/CS_BS_dep_chains.yaml'
-	
-	# find full prereq chains for all courses in requirements,
-	# be they required, or elective
-	file 'data/CS_BS_dep_chains.yaml' => [
-		'data/CS_BS_requirements_by_type.yaml',
-		'data/all_dependencies.yaml',
-	] do 
-		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-		dependencies = YAML.load_file('./data/all_dependencies.yaml')
-		
-		
-		
-		
-		# Something is happening such that the dependency relation is being mutated
-		
-		
-		dependency_relation = dependencies[sym[:prereq]]
-		# p dependency_relation
-		
-		list_of_course_ids = requirements[:required] + requirements[:elective]
-		
-		
-		data = chain_deps(list_of_course_ids, dependency_relation)
-		
-		# run it a second time. now you can get chains for everything, even courses that don't apply directly to major requirements
-		data = chain_deps(data.flatten.uniq.sort, dependency_relation)
-		
-		puts "=========="
-		p data.to_h['ECE 331']
-		puts "=========="
-		
-		SummerResearch::Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
-	end
-	
-	
-	# find elements on chains that are not covered by the core requirements
-	task :foo => [
-		'data/CS_BS_dep_chains.yaml',
-		'data/CS_BS_requirements_by_type.yaml',
-		'data/all_dependencies.yaml',
-	] do 
-		chains       = YAML.load_file('./data/CS_BS_dep_chains.yaml')
-		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-		dependencies = YAML.load_file('./data/all_dependencies.yaml')
-		
-		
-		
-		set = requirements[:required].to_set
-		
-		
-		
-		# low-numbered math courses should be removed.
-		# you can't even declare CS as a major, unless you exceed this level of mathematics,
-		# 
-		# To switch to CS as a major, you need to meet at least this level of math,
-		# but you can declare CS as a freshman without needing all of these (ex MATH 125: Discrete)
-		low_math = [
-			'MATH 104',
-			'MATH 105',
-			'MATH 113', # these first three gate "CS 112 - Intro to Computer Programming"
-			'MATH 108',
-			'MATH 114',
-			'MATH 123',
-			'MATH 124',
-			'MATH 125',
-		]
-		
-		core_english = [
-			'ENGH 101',
-			'ENGH 100',
-			'ENGH 302'
-		]
-		
-		(low_math + core_english).each do |course|
-			# set.add course
-		end
-		
-		
-		
-		# all prereq chains, but hide the prereqs that are satisfied by required classes
-		data = 
-			chains.collect do |chain|
-				parent_course, deps = chain
-				
-				[parent_course, deps.reject{  |x| set.include? x  }]
-			end
-		data = data.to_h
-		
-		# p data
-		data.each do |k,v|
-			p "#{k} => #{v.join(', ')}"
-		end
-		
-		
-		
-		
-		
-		# take just the prereqs from 'data', and figure out what their requirements are
-		hidden_prereq_requirements = data.values.flatten.uniq
-		p hidden_prereq_requirements
-		
-		out = chain_deps(hidden_prereq_requirements, dependencies[sym[:prereq]]).to_h
-		p out
-		
-		out.each do |k,v|
-			v.reject!{  |x| set.include? x  }
-		end
-		
-		p out
-		
-		
-		# SummerResearch::Utilities.write_to_file('./CS_BS_dep_chains.yaml', data.to_yaml)
-		
-		set = 
-			[:prereq, :coreq, :notes]
-			 .collect{ |category|
-				dependencies[sym[:prereq]].keys
-			}.flatten.to_set
-		
-		hidden_prereq_requirements.each do |class_id|
-			d = { class_id => dependencies[sym[:prereq]][class_id]  }
-			p d if set.include? class_id
-		end
-	end
-	
-	
-	
-	# all dependency chains for all courses in the graph
-	task :bar => [
-		'data/CS_BS_dep_chains.yaml',
-		'data/CS_BS_requirements_by_type.yaml',
-		'data/all_dependencies.yaml',
-	] do 
-		chains       = YAML.load_file('./data/CS_BS_dep_chains.yaml')
-		requirements = YAML.load_file('./data/CS_BS_requirements_by_type.yaml')
-		dependencies = YAML.load_file('./data/all_dependencies.yaml')
-		
-		
-		data = 
-			chains.to_h.keys.collect do |course|
-				deps = dependencies[sym[:prereq]][course] || []
-				deps.delete(course)
-				
-				[course, deps]
-			end
-		data = data.to_h
-		
-		SummerResearch::Utilities.write_to_file('./CS_BS_all.yaml', data.to_yaml)
-	end
-end
-
-
-
-task :parser_test do
-	filepath = File.expand_path(
-		'./dep_parser_test_input.txt',
-		SummerResearch::Utilities::DATA_DIR
-	)
-	
-	# ignore commented lines
-	corpus = File.readlines(filepath).reject{  |line| line.strip[0] == '#'  }
-	corpus = corpus.join('')
-	# puts corpus
-	
-	parse_dependencies(corpus)
-end
-
-# class DependencyLexer < Lex::Lexer
-# 	tokens(
-# 		:NUMBER,
-# 		:DEPT
-# 	)
-
-# 	# Regular expression rules for simple tokens
-# 	rule(:DEPT,   /\p{Lu}{2,4}/)
-	
-# 	# A regular expression rules with actions
-# 	rule(:NUMBER, /\d{3}/) do |lexer, token|
-# 		token.value = token.value.to_i
-# 		token
-# 	end
-	
-# 	# Define a rule so we can track line numbers
-# 	rule(:newline, /\n+/) do |lexer, token|
-# 		lexer.advance_line(token.value.length)
-# 	end
-	
-# 	# A string containing ignored characters (spaces and tabs)
-# 	ignore " \t"
-	
-# 	error do |lexer, token|
-# 		puts "Illegal character: #{token.value}"
-# 	end
-# end
-
-def parse_dependencies(all_deps_text)
-	# === find relevant "tokens"
-	patterns = [
-		[/(Mason Core)/,   :core_overview],
-		
-		[
-			/(#{ %w[UWCU UOC UQR UITC UFA UGU ULIT UNSL USBS UWC USYN].join('|') })/,
-			:core_category
-		],
-		# Exhaustive search for all "mason core" category keys
-		# (must trigger before searching for department codes)
-		
-		[/(\d{3})(-level)/,  :year_level_category],
-		# ex: 600-level course
-		
-		[/(\p{Lu}{2,4})/,  :department_code],
-		# 2-4 capital letters,
-		
-		[/(\d{3})/,        :course_number],
-		# 3 digits,
-		
-		[/(C or higher|(g|G)rade of C or better)/, :c_or_higher], # above 'of something'
-		
-		
-		[/(\d+ (credits|credit hours))/,  :credit_count], # above 'of something'
-		# ooh, this is a multi-fragment token...,
-		
-		[/(permission of instructor)/, :instructor_permission], # above 'of something'
-		
-		
-		# [/(of)/,           :OF], # above 'of something'
-		
-		
-		[/(of \w*)/,       :of_something],
-		# as in '60 credits of philosophy'
-		
-		
-		# [/(and)/,                      :AND],
-		[/(or)/,                       :OR],
-		
-		[/(specific prerequisites vary)/, :it_depends]
-	]
-	
-	# $1 through $9 are the "Pseudo Variables" set by regex matching
-		# src: http://stackoverflow.com/questions/6803647/how-to-write-a-ruby-switch-statement-case-when-with-regex-and-backreferences
-	
-	
-	# NOTE: assuming the only usage of three-digit numbers is in course codes. However, some courses gate by the number of credits, so maybe a three-digit number could appear there? It seems unlikely, (60 and 90 seem like better choices, given 120 to graduate) but making a note in case an error comes up in the future.
-	
-	
-	
-	
-	
-	tokens = lex(patterns, all_deps_text)
-	out = parse(tokens)
-	
-	return out
-end
-
-def lex(patterns, corpus)
-	# foo = patterns[0]
-	# all_deps_text.scan foo[0] do
-	# 	p [$~.offset(1), foo[1]].flatten
-	# end
-	
-	
-	# p patterns[0][0].match(all_deps_text)
-	
-	
-	tokens = 
-		patterns.collect do |regexp, type|
-			matchdata_list = corpus.to_enum(:scan, regexp).collect { Regexp.last_match }
-			
-			matchdata_list.collect do |matchdata|
-				start = matchdata.begin(0) # nth item in the matchdata collection
-				stop  = matchdata.end(0)
-				captures = matchdata.captures
-				
-				[start, stop, type, captures]
-			end
-		end
-	
-	tokens = tokens.flatten(1).sort_by do |start_pos, end_pos, type, captures|
-		start_pos
-	end
-	
-	
-	# --- remove overlapping tokens
-	# whatever token whose pattern is higher on the list stays (lower index)
-	# the other token gets deleted
-	removal_list = Array.new
-	tokens.each_with_index do |t1, i|
-		tokens[(i+1)..-1].each do |t2|
-			t1_start, t1_stop = t1[0..1]
-			t2_start, t2_stop = t2[0..1]
-			
-			removal_list << [t1, t2] if (t1_start..t1_stop).include? t2_start
-		end
-	end
-	
-	removal_list.uniq.each do |t1, t2|
-		type1 = t1[2]
-		type2 = t2[2]
-		
-		a = patterns.each_with_index.find_index{  |pat,i|  pat[1] == type1  }
-		b = patterns.each_with_index.find_index{  |pat,i|  pat[1] == type2  }
-		# p [a,b]
-		
-		if a > b
-			tokens.delete t1
-		else
-			tokens.delete t2
-		end
-		
-	end
-	
-	
-	
-	# --- print data dump to file, for debugging	
-	dump = tokens.collect{|t| t.inspect }.join("\n")
-	SummerResearch::Utilities.write_to_file('./dep_parser_dump.txt', dump)
-	
-	
-	
-	# tokens.
-	
-	
-	
-	return tokens
-end
-
-def parse(tokens)
-	# === use "tokens" to assemble course names
-	return if tokens.empty?
-	# puts "running"
-	
-	
-	out = Array.new
-	
-	
-	# --- parse complex generalized case like '3 credits of 100 or 200-level COMM'
-	
-	# [1138, 1147, :credit_count, ["3 credits", "credits"]]
-	# [1151, 1154, :course_number, ["100"]]
-	# [1158, 1167, :year_level_category, ["200", "-level"]]
-	# [1168, 1172, :department_code, ["COMM"]]
-	
-	foo_data_new = Array.new
-	
-	
-	tokens.each_with_index do |t, i|
-		break if i == tokens.size-1 # need to read one past 'i', so abort when 'i' is max
-		
-		start_pos, end_pos, type, captures = t
-		
-		next unless type == :year_level_category
-		end_index = i+1
-		
-		
-		
-		next unless tokens[end_index][2] == :department_code
-		
-		# walk backwards towards the front, until you hit :credit_count
-		tokens[0..i].reverse_each.each_with_index do |t2, distance|
-			if t2[2] == :credit_count
-				# note: 'j' is further down the array than 'i'
-				j = i - distance
-				# p [j, end_index]
-				
-				
-				foo_data_new << tokens[j..end_index]
-				
-				break
-			end
-		end
-	end
-	
-	p foo_data_new
-	
-	# data = 
-	# 	tokens.collect{  |start_pos, end_pos, type, captures|  type }
-	# 		.join(' ')
-	# 		.match(/(credit_count(.*?)year_level_category department_code)/)
-	# p data.captures[0]
-	
-	
-	# consume these tokens so no other steps can use them
-	foo_data_new.flatten(1).each do |t|
-		# p t
-		tokens.delete t
-	end
-	
-	# out += foo_data_new
-	
-	
-	
-	
-	# unless tokens.first[1] == :department_code
-	# 	# Expect that the first token is a department code
-	# 	# Need to specify department codes if there are any course numbers specified
-	# 	if tokens.any?{|start_pos, type, captures| type == :course_number }
-	# 		raise "ERROR: first token should be a department code"
-	# 	end
-	# end
-	
-	# --- parse standard department codes. ex) 'CS 367'
-	unless tokens.empty?
-		most_recent_dept_code = tokens.first[1]
-		
-		new_data = 
-			tokens.collect do |start_pos, end_pos, type, captures|
-				token = captures[0]
-				
-				most_recent_dept_code = token if type == :department_code
-				
-				if type == :course_number
-					[most_recent_dept_code, token].join(' ')
-				end
-			end
-		new_data.compact!
-		
-		
-		out += new_data 
-	end
-		
-	
-	
-	
-	
-	
-	
-	puts "> #{out.inspect}"
-	
-	
-	return out
-end
-
-
-
-# prereq information only, specific format, for all classes in the 2016-2017 catalog year
-# CS 330 : CS 101, CS 212
-# COURSE : DEP1, DEP2
-# (only show direct dependencies)
-# (these numbers are only for demonstration, I don't know this is real data or not)
-task :qian_hu_data do
-	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-	
-	
-	
-	
-	
-	# this is kinda bad form, because you don't want to be able to call this class outside of the context of @catalog, because the database may not be created yet, or there may not be a connection, etc etc etc
-	# catalog_year = SummerResearch::Catalog::CatalogYear.where(:year_range => '2016-2017')
-	
-	
-	
-	out = nil
-	
-	@catalog.activerecord_query do |course_model, catologyear_model|
-		# === update index with ALL DEPARTMENTS for the most recent catalog year
-		catalog_year = catologyear_model.where(:year_range => '2016-2017')
-		
-		@catalog.populate_course_index(catalog_year)
-		
-		
-		# === fetch specific information of ALL CLASSES in the current year
-		all_courses_in_year = 
-			catologyear_model.where(:year_range => '2016-2017')
-			                 .first.courses
-		
-		# p all_courses_in_year
-		raise "ERROR: expected a course_model" unless all_courses_in_year.first.is_a? course_model
-		
-		
-		# filter out the main Mason Core pages.
-		# These do not have the same structure as other "real courses", and may cause problems.
-		all_courses_in_year = all_courses_in_year.reject{|course| course.dept == "Mason Core"}
-		
-		
-		
-		
-		# --- Try to fetch information for all courses in the desired set.
-		#     If you can't process a course, just keep going, but log some error data.
-		#     This error log can be examined later to determine new CatalogInfo Types.
-		# TODO: would be nice if you could have some sort of progress indicator for this.
-		out = nil
-		
-		filepath = File.expand_path(
-			'./all_courses_2016_new_catalog_info_types.txt',
-			SummerResearch::Utilities::DATA_DIR
-		)
-		File.open(filepath, 'a') do |f|
-			out = 
-				all_courses_in_year.collect do |course_record|			
-					begin
-						@catalog.fetch_course_info(course_record)
-					rescue StandardError => e
-						f.puts "course id:   #{course_record.course_id}"
-						# TODO: Add short description to index
-						# f.puts "description: #{course.description}"
-						f.puts "url:         #{course_record.url}"
-						
-						# output the data from the exception
-						# (the program will still continue to run)
-						# (resulting in all errors printed in one place)
-						f.puts e.message
-						e.backtrace.each do |line|
-							f.puts "\t" + line
-							# indent the lines of the backtrace.
-							# makes it easier to see things when you start getting multiple errors
-						end
-						f.puts "=============="
-						f.puts
-						f.puts
-					end
-				end
-		end
-	end
-	
-	# raise "ERROR: Not all course info types recognized. Define new types and try again." if out.include? nil
-	
-	main_requirements = out.compact
-	
-	
-	
-	# === parse direct prereqs for each and every class
-	p main_requirements.collect{  |course_info| course_info.id  }
-	data = 
-		main_requirements.uniq.collect do |course_info|
-			name = course_info.id
-			
-			puts "-=-=-=-=-=-=-=-="
-			
-			deps = course_info["Prerequisite(s)"]
-				puts "=>  #{deps.inspect}"
-			deps = deps.nil? ? [] : parse_dependencies(deps)
-				puts "=>  #{deps.inspect}"
-			deps = [] if deps.nil?
-				puts "=>  #{deps.inspect}"
-			
-			# oooh yeah. parse_dependencies can return nil, even if the dependecies field is set
-				# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
-			
-			
-			raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
-			
-			[name, deps]
-		end
-	p data
-	
-	# === convert to desired output format
-	filepath = File.expand_path('./qian_sample_5.txt', SummerResearch::Utilities::DATA_DIR)
-	File.open(filepath, 'a') do |f|
-		data.each do |name, deps|
-			name = name.tr(' ', '-')
-			deps.collect!{  |x| x.tr(' ', '-')  }
-			
-			
-			f.puts "#{name}:#{deps.join(',')}"
-		end
-	end
-	
-end
 
 
 
 
-task :thi_data do
-	@mongo_ip      = "127.0.0.1"
-	@mongo_port    = "12345"
-	@mongo_address = [@mongo_ip, @mongo_port].join(':')
-	@mongo = Mongo::Client.new([ @mongo_address ], :database => 'mydb')
-	
-	
-	@mongo[:course_info].tap do |mongo|
-		courses_from_this_year = 
-			mongo.find(
-					:catalog_year => "2016-2017"
-				).sort(
-					:course_id => 1 # 1 or -1 to control the order
-				)
-		
-		course_info_list = 
-			courses_from_this_year.collect do |mongo_bson|
-				SummerResearch::CourseInfo.load(mongo_bson)
-			end
-		
-		
-		puts "data points: #{course_info_list.size}"
-		course_info_list.each do |info|
-			# info.to_h.keys
-		end
-		
-		
-		possible_keys = courses_from_this_year.collect{ |info|  info.to_h.keys }.flatten.uniq
-		possible_keys.delete "_id" # Mongo-specific key
-		possible_keys.delete "type" # depreciated key
-		p possible_keys
-		
-		
-		# first row lists the schema, each other row lists values
-		# NOTE: the number of rows in the text file is not equal to the number of CSV rows, because of multi-line strings.
-		
-		data = 
-			CSV.generate do |csv|
-				csv << possible_keys
-				
-				courses_from_this_year.each do |info|
-					# p info
-					info["Description"].strip!
-					
-					row = possible_keys.collect{|k| info[k]}
-					csv << row
-					
-				end
-			end
-		
-		SummerResearch::Utilities.write_to_file("./thi_data_csv.csv", data)
-	end
-end
 
 
 
 
-task :get_info do
-	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-	p @catalog.course_info("STAT 344")
-end
+
+
+
+
 
 
 # TODO: reimplement these tests calling actual code from Catalog
@@ -1602,15 +487,7 @@ end
 
 
 
-
-
-
-
-
-def get_dependencies(course_info)
-	
-end
-
+# NOTE: this method does not work. this is just a rough sketch
 def all_courses_for_degree(url_to_program_requirements_page)
 	puts "=== run processing"
 	
@@ -1635,9 +512,6 @@ def all_courses_for_degree(url_to_program_requirements_page)
 	
 	return course_list
 end
-
-
-
 
 
 task :restricted_set_size do
@@ -1700,37 +574,8 @@ end
 
 
 
-
-
-
-
-
-
-
-# this is just a template
-# 1 2 3 (list the full foo execution chain?)
-task :pathwayX do
-	
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
 # ==================
 # v  tests, based on old pathways
-
-
-
-
 
 
 # === test conversion of CatalogLink object => CourseInfo object
@@ -2312,77 +1157,185 @@ end
 
 
 
-
-
-namespace :fetch_all do
-	task :populate_index => SQLITE_DATABASE_FILEPATH
-	file SQLITE_DATABASE_FILEPATH do
-		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+# prereq information only, specific format, for all classes in the 2016-2017 catalog year
+# CS 330 : CS 101, CS 212
+# COURSE : DEP1, DEP2
+# (only show direct dependencies)
+# (these numbers are only for demonstration, I don't know this is real data or not)
+task :qian_hu_data do
+	@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
+	
+	
+	
+	
+	
+	# this is kinda bad form, because you don't want to be able to call this class outside of the context of @catalog, because the database may not be created yet, or there may not be a connection, etc etc etc
+	# catalog_year = SummerResearch::Catalog::CatalogYear.where(:year_range => '2016-2017')
+	
+	
+	
+	out = nil
+	
+	@catalog.activerecord_query do |course_model, catologyear_model|
+		# === update index with ALL DEPARTMENTS for the most recent catalog year
+		catalog_year = catologyear_model.where(:year_range => '2016-2017')
 		
-		@catalog.fetch_full_index()
-		# START: 10:32 PM, Aug 1, 2016
-		# END:   11:28 PM, Aug 1, 2016
-	end
-	
-	
-	
-	# fetch all of the data in the catalog, and put it into a Mongo database
-	task :populate_mongo_db => SQLITE_DATABASE_FILEPATH do
-		# START: 11:32 PM, Aug 1, 2016
-		# END:    1:15 AM  Aug 2 (incomplete. ~2 years worth of data. stopped a couple times)
+		@catalog.populate_course_index(catalog_year)
+		
+		
+		# === fetch specific information of ALL CLASSES in the current year
+		all_courses_in_year = 
+			catologyear_model.where(:year_range => '2016-2017')
+			                 .first.courses
+		
+		# p all_courses_in_year
+		raise "ERROR: expected a course_model" unless all_courses_in_year.first.is_a? course_model
+		
+		
+		# filter out the main Mason Core pages.
+		# These do not have the same structure as other "real courses", and may cause problems.
+		all_courses_in_year = all_courses_in_year.reject{|course| course.dept == "Mason Core"}
+		
+		
+		
+		
+		# --- Try to fetch information for all courses in the desired set.
+		#     If you can't process a course, just keep going, but log some error data.
+		#     This error log can be examined later to determine new CatalogInfo Types.
+		# TODO: would be nice if you could have some sort of progress indicator for this.
+		out = nil
 		
 		filepath = File.expand_path(
-			'./all_fetch_logfile.txt',
+			'./all_courses_2016_new_catalog_info_types.txt',
 			SummerResearch::Utilities::DATA_DIR
 		)
-		
-		
-		@catalog = SummerResearch::Catalog.new(SQLITE_DATABASE_FILEPATH)
-		
-		@catalog.activerecord_query do |course_model, catologyear_model|
-			catologyear_model.all.order("year_range DESC").each do |year_record|
-				File.open(filepath, 'a') do |f|
-					f.puts year_record.inspect
-				end
-				
-				
-				all_courses_in_year = 
-					year_record.courses
-					           .order(:dept)
-					           .reject{|course| course.dept == "Mason Core"}
-				
-				# --- Try to fetch information for all courses in the desired set.
-				#     If you can't process a course, just keep going, but log some error data.
-				#     This error log can be examined later to determine new CatalogInfo Types.
-				# TODO: would be nice if you could have some sort of progress indicator for this.
-					
-				all_courses_in_year.each do |course_record|			
+		File.open(filepath, 'a') do |f|
+			out = 
+				all_courses_in_year.collect do |course_record|			
 					begin
 						@catalog.fetch_course_info(course_record)
 					rescue StandardError => e
-						File.open(filepath, 'a') do |f|
-							f.puts "course id:   #{course_record.course_id}"
-							# TODO: Add short description to index
-							# f.puts "description: #{course.description}"
-							f.puts "url:         #{course_record.url}"
-							
-							# output the data from the exception
-							# (the program will still continue to run)
-							# (resulting in all errors printed in one place)
-							f.puts e.message
-							e.backtrace.each do |line|
-								f.puts "\t" + line
-								# indent the lines of the backtrace.
-								# makes it easier to see things when you start getting multiple errors
-							end
-							f.puts "=============="
-							f.puts
-							f.puts
+						f.puts "course id:   #{course_record.course_id}"
+						# TODO: Add short description to index
+						# f.puts "description: #{course.description}"
+						f.puts "url:         #{course_record.url}"
+						
+						# output the data from the exception
+						# (the program will still continue to run)
+						# (resulting in all errors printed in one place)
+						f.puts e.message
+						e.backtrace.each do |line|
+							f.puts "\t" + line
+							# indent the lines of the backtrace.
+							# makes it easier to see things when you start getting multiple errors
 						end
+						f.puts "=============="
+						f.puts
+						f.puts
 					end
 				end
-			end
 		end
+	end
+	
+	# raise "ERROR: Not all course info types recognized. Define new types and try again." if out.include? nil
+	
+	main_requirements = out.compact
+	
+	
+	
+	# === parse direct prereqs for each and every class
+	p main_requirements.collect{  |course_info| course_info.id  }
+	data = 
+		main_requirements.uniq.collect do |course_info|
+			name = course_info.id
+			
+			puts "-=-=-=-=-=-=-=-="
+			
+			deps = course_info["Prerequisite(s)"]
+				puts "=>  #{deps.inspect}"
+			deps = deps.nil? ? [] : parse_dependencies(deps)
+				puts "=>  #{deps.inspect}"
+			deps = [] if deps.nil?
+				puts "=>  #{deps.inspect}"
+			
+			# oooh yeah. parse_dependencies can return nil, even if the dependecies field is set
+				# ex) CS 499 => "60 credits and permission of instructor; specific prerequisites vary with nature of topic."
+			
+			
+			raise "ERROR: #{course_info.id} => #{deps.inspect} "if deps.nil? or deps == ''
+			
+			[name, deps]
+		end
+	p data
+	
+	# === convert to desired output format
+	filepath = File.expand_path('./qian_sample_5.txt', SummerResearch::Utilities::DATA_DIR)
+	File.open(filepath, 'a') do |f|
+		data.each do |name, deps|
+			name = name.tr(' ', '-')
+			deps.collect!{  |x| x.tr(' ', '-')  }
+			
+			
+			f.puts "#{name}:#{deps.join(',')}"
+		end
+	end
+	
+end
+
+
+
+# all Mongo data in CSV format
+task :thi_data do
+	@mongo_ip      = "127.0.0.1"
+	@mongo_port    = "12345"
+	@mongo_address = [@mongo_ip, @mongo_port].join(':')
+	@mongo = Mongo::Client.new([ @mongo_address ], :database => 'mydb')
+	
+	
+	@mongo[:course_info].tap do |mongo|
+		courses_from_this_year = 
+			mongo.find(
+					:catalog_year => "2016-2017"
+				).sort(
+					:course_id => 1 # 1 or -1 to control the order
+				)
+		
+		course_info_list = 
+			courses_from_this_year.collect do |mongo_bson|
+				SummerResearch::CourseInfo.load(mongo_bson)
+			end
+		
+		
+		puts "data points: #{course_info_list.size}"
+		course_info_list.each do |info|
+			# info.to_h.keys
+		end
+		
+		
+		possible_keys = courses_from_this_year.collect{ |info|  info.to_h.keys }.flatten.uniq
+		possible_keys.delete "_id" # Mongo-specific key
+		possible_keys.delete "type" # depreciated key
+		p possible_keys
+		
+		
+		# first row lists the schema, each other row lists values
+		# NOTE: the number of rows in the text file is not equal to the number of CSV rows, because of multi-line strings.
+		
+		data = 
+			CSV.generate do |csv|
+				csv << possible_keys
+				
+				courses_from_this_year.each do |info|
+					# p info
+					info["Description"].strip!
+					
+					row = possible_keys.collect{|k| info[k]}
+					csv << row
+					
+				end
+			end
+		
+		SummerResearch::Utilities.write_to_file("./thi_data_csv.csv", data)
 	end
 end
 
