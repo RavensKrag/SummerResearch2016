@@ -1336,6 +1336,48 @@ task :thi_data do
 			end
 		
 		SummerResearch::Utilities.write_to_file("./thi_data_csv.csv", data)
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		filepath = "/home/ravenskrag/Work/Rangwalla Summer NSF/Work/SummerResearch2016/web_app/models/CS_BS/data/CS_BS_requirements_by_type.yaml"
+		requirements = YAML.load_file filepath
+		
+		categories = [:required, :elective].collect{  |type|  requirements[type] }
+		
+		requ_data, elec_data = 
+			categories.collect do |category|
+				p category
+				
+				CSV.generate do |csv|
+					csv << possible_keys
+					
+					puts "==========="
+					p courses_from_this_year.to_a.first['course_id']
+					puts "==========="
+					
+					courses_from_this_year.to_a
+					.select{  |info|  category.include? info["course_id"]  }
+					.each do |info|
+						# p info
+						info["Description"].strip!
+						
+						row = possible_keys.collect{|k| info[k]}
+						csv << row
+						
+					end
+				end
+			end
+		
+		
+		SummerResearch::Utilities.write_to_file("./thi_data_csv_required.csv", requ_data)
+		SummerResearch::Utilities.write_to_file("./thi_data_csv_elective.csv", elec_data)
 	end
 end
 
