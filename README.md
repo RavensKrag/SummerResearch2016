@@ -46,7 +46,7 @@ $ rake
 
 (Make sure the directory specified by the --dbpath flag exists prior to starting Mongo.)
 
-(This will actually fetch the data)
+Now, to actually fetch the data:
 ```
 $ rake fetch_all:populate_index
 ```
