@@ -385,95 +385,13 @@ def json_directional(name, logger)
 	
 	
 	
+	# below is a bunch of old code, to generate the graph the old way
+	# still keeping it around, because some of these constraints have not been implemented
+	# in the new system.
+	# Also, this alternative way of specifying colors is interesting.
+	# -------------------------------------------------------------------
 	
 	
-	requirements_file = 'data/CS_BS_requirements.yaml'
-	@rake[requirements_file].invoke
-	
-	degree_requirements = Models::Utilities.load_yaml_file(requirements_file)
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	raw_data2 = Models::Utilities.load_yaml_file short_path
-	
-	
-	# logger.info raw_data2.to_yaml
-	# raise
-	
-	
-	
-	
-	
-	
-	relative_filepath = "./#{name}.yaml"
-	
-	
-	public_data_dir = File.expand_path('./public', MODEL_ROOT)
-	filepath = File.expand_path(relative_filepath, public_data_dir)
-	
-	
-	raise "No data exists for '#{name}'" unless File.exist? filepath
-	
-	
-	
-	
-	
-	
-	
-	chains = Models::Utilities.load_yaml_file(
-		'data/CS_BS_dep_chains.yaml'
-	).to_h
-	# logger.info chains.inspect
-	
-	
-	# === create nodes
-	nodes = nodes(raw_data2)
-	nodes.each do |h|
-		h['name'] = h['id']
-		h.delete 'id'
-	end
-	nodes.each_with_index do |h, i|
-		h['number'] = i
-	end
-	nodes.each do |h|
-		# annotate node with names of all its ancestors
-		logger.info h['name']
-		
-		deps = chains[h['name']] || []
-		chain_deps = 
-			deps.collect do |name|
-				nodes.find_index{ |x| x['name'] == name}
-			end
-		
-		logger.info chain_deps.compact.inspect
-		h['chain_deps'] = chain_deps.compact
-	end
-	
-	# === create links (edges)
-	links = links(raw_data2)
-	links.each do |h| 
-		h['source'] = nodes.find_index{ |x| x['name'] == h['source']}
-		h['target'] = nodes.find_index{ |x| x['name'] == h['target']}
-	end
-	links.each do |h|
-		h.delete 'color'
-	end
-	
-	links.each do |h|
-		if h['source'] == h['target']
-			raise "ERROR: #{h.inspect}"
-		end
-	end
 	
 	
 	# === Create Constraints
@@ -625,30 +543,6 @@ def json_directional(name, logger)
 	end
 	
 	
-	
-	
-	# === Highlight nodes with many children
-	nodes.each_with_index
-	.collect{   |n, i|   i }
-	.select{    |i|
-		children = links.select{|link| link['source'] == i }.length
-		children > 5
-	}.collect{  |i|
-		nodes[i]
-	}.each do   |n|
-		n['class'] = [n['class'], "bottleneck"].join(' ')
-	end
-	
-	
-	
-	
-	# === style the edges
-	
-	
-	
-	
-	# === final output
-	return JSON.generate out
 end
 
 

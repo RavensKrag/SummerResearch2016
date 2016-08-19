@@ -168,7 +168,7 @@ puts "========="
 
 
 
-SQLITE_DATABASE_FILEPATH = 'data/example.db'
+SQLITE_DATABASE_FILEPATH = 'data/course_index.db'
 
 
 task :create_db => SQLITE_DATABASE_FILEPATH
