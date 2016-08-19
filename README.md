@@ -43,6 +43,7 @@ $ rake
 ```
 
 (This will not do anything, but it will tell you how to start up the Mongo server.)
+
 (Make sure the directory specified by the --dbpath flag exists prior to starting Mongo.)
 
 (This will actually fetch the data)
@@ -78,7 +79,8 @@ $ rake
 ```
 
 The graph can now be viewed in any browser at the following address:
-	http://localhost:4567/graphs/CS_BS_all/graph
+
+http://localhost:4567/graphs/CS_BS_all/graph
 
 NOTE: Arrows on edges do not render properly in Firefox. If you want to see arrows, try Chrome instead. (However, testing was done mostly in Firefox.)
 
