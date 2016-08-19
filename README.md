@@ -19,7 +19,9 @@ Tested with the following environment:
 
 # Catalog Scraper
 
-First, read the documentation for details and potential complications with trying to generate this dataset. (There should be a copy of the data avaiable for download next to the documentation, if you would rather not wait multiple hours do scrape the data yourself.)
+First, read the documentation for details and potential complications with trying to generate this dataset.
+
+(There should be a copy of the data avaiable for download next to the documentation, if you would rather not wait multiple hours do scrape the data yourself.)
 
 
 make sure you have ruby installed, with gems
