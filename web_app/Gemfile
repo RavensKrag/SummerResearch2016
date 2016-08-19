@@ -6,6 +6,8 @@ gem 'require_all'
 
 
 gem 'rgl', '~> 0.5.2'
+gem 'rerun', '~> 0.11.0'
+gem 'rake', '~> 10.4.0'
 
 
 # same as in catalog_scraper
